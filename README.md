@@ -40,7 +40,7 @@ Stupid) principal.
   - This is possible with `inotify` to look for changes inside the watch 
     directories both on client and on server.
 - Encrypted and passord-less communication between client and server.
-  - `ssh` is very suitable and malleable for this job. **SOME TODO.**
+  - `ssh` is very suitable and malleable for this job. **SOME TODO (keys).**
 - Minimal bandwidth usage.
   - If we are setting up a server at home it is unlikely to have fast upload 
     speed. We have to avoid to use all available upload (and even download 
@@ -62,15 +62,22 @@ Stupid) principal.
     server. **WORK IN PROGRESS**.
 
 ###WARNING
+
 THIS IS A WORK IN PROGESS. DON'T EXPECT THAT IT WORKS OUT OF THE BOX.
 
 ##Howto
 
+```
+$ git clone https://github.com/frnmst/gnupot.git
+$ cd gnupot && chmod +x gnupot
+$ ./gnupot
+```
 At this early stage:
 - Edit `gnupot.config` based on your needs.
 - Be sure to have an ssh server up and running.
+- Be able to connect to that server with private/public keys (i.e. passwordless).
 - Install the packets described below.
-- Create local and remote directories.
+- Create local and remote destination directories.
 
 ###Packets to install (dependencies)
 
@@ -94,4 +101,5 @@ At this early stage:
   - Server and client.
 
 ##Contact
+
 franco.masotti@live.com or franco.masotti@student.unife.it
