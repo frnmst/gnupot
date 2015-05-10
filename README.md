@@ -3,7 +3,7 @@ GNUpot
 
 Yet another libre Dropbox clone (only for the right aspects) written in bash. 
 
-###Purpose of this project
+##Purpose of this project
 
 Lots of us using Dropbox (or similar) like its functionalities. However 
 these services have some defects:
@@ -21,6 +21,7 @@ our computers. All of this is done following the *K-I-S-S* (Keep It Simple,
 Stupid) principal.
 
 **ANY HELP IN CONTRIBUTING TO THIS PROJECT IS WARMLY WELCOMED.**
+
 **LOTS OF DEVELOPMENT IS NEEDED.**
 
 ###Why the name GNUpot
@@ -28,7 +29,7 @@ Stupid) principal.
 **GNU** beause of the freedom associated to this program.
 **pot** because it gives the idea of some type of container.
 
-###Ideas behind the project
+##Ideas behind the project
 
 - Simple.
   - Use of `bash` as scripting language makes the program overall very 
@@ -46,7 +47,7 @@ Stupid) principal.
     bandwidth) on server side (especially).
 - Desktop notifications.
   - When an event is originated (either on client or on server) user must be 
-    notified. The command `inotify-send` is perfect for this because of its 
+    notified. The command `notify-send` is perfect for this because of its 
     simplicity.
 - Solid syncing agent.
   - `rsync` would be grat for this but it is only designed for mirroring. We 
@@ -60,10 +61,10 @@ Stupid) principal.
   - Only programs like `inotify` and `unison` needs to be installed on the 
     server. **WORK IN PROGRESS**.
 
-##WARNING
+###WARNING
 THIS IS A WORK IN PROGESS. DON'T EXPECT THAT IT WORKS OUT OF THE BOX.
 
-###Howto
+##Howto
 
 At this early stage:
 - Edit `gnupot.config` based on your needs.
