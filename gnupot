@@ -1,0 +1,345 @@
+#!/bin/bash
+
+#
+# gnupot
+#
+# Copyright (C) 2015 frnmst (Franco Masotti) <franco.masotti@live.com>
+#                                            <franco.masotti@student.unife.it>
+#
+# This file is part of GNUpot.
+#
+# GNUpot is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# GNUpot is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with GNUpot.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+
+# Enable automatic export of all variables form now on.
+# This avoids putting "export" in front of every variable.
+set -a
+
+# Set path.
+PATH="$PATH":/usr/bin
+
+# Flock so that script is not executed more than once.
+# See man 1 flock (examples section).
+[ "${FLOCKER}" != "$0" ] && exec env FLOCKER="$0" flock -en "$0" "$0" "$@" || :
+
+# Load configuration.
+if [ -f "gnupot.config" ]; then
+	source gnupot.config
+fi
+
+# Define unison env variable so that archive files go there.
+# Do this for server also.
+UNISON=""$gnupotLocalDir"/.unison"
+# Create unison directory.
+mkdir -p ""$gnupotLocalDir"/.unison"
+
+# Macros.
+# Add -i <public key> as explicit parameter.
+SSHCONNECTCMDARGS="-S "$gnupotSSHMasterSocketPath" \
+"$gnupotServerUsername"@"$gnupotServer""
+
+# Open master socket so that further connection will result faster
+# (using multiplexing to avoid re-authentication).
+SSHMASTERSOCKCMDARGS="-M -o \
+ControlPersist="$gnupotSSHMasterSocketTime" \
+$SSHCONNECTCMDARGS exit"
+
+
+# inotifywait command macro: recursive, quiet, listen only to certain events.
+# Check --exclude switch which is not working yet.
+INOTIFYWAITCMD="inotifywait -r -q -e modify -e attrib \
+-e move -e move_self -e create -e delete -e delete_self \
+--exclude '(.unison*)'"
+
+
+# POSSIBLE SOLUTION TO MERGE PROBLEM IN THE FIRST POST HERE:
+# http://permalink.gmane.org/gmane.network.unison.general/9400
+function writeCommonUnisonConfigFile ()
+{
+
+	# Common config for server and client profiles.
+	echo -en "\
+auto = true
+batch = true\n\
+retry = 2
+merge = Path * -> mv CURRENT1 CURRENT1."$USER"."$HOSTNAME".$(date "+%s") \
+&& cp CURRENT2 CURRENT2."$USER"."$HOSTNAME".$(date "+%s")\n\
+confirmbigdel = false
+maxthreads = 1\n\
+times = true\n\
+sshargs = -C -S "$gnupotSSHMasterSocketPath"\n\
+ignore = Path .unison*\n\
+" > ""$UNISON"/gnupotCommonProfile"
+
+	return
+
+}
+
+function writeS2CUnisonConfigFile ()
+{
+
+	# Server to client.
+	echo -en "\
+root = ssh://"$gnupotServerUsername"@"$gnupotServer"/"$gnupotRemoteDir"\n\
+root = "$gnupotLocalDir"\n\
+include gnupotCommonProfile\n\
+" > ""$UNISON"/gnupotS2CProfile"
+
+
+	return
+
+}
+
+function writeC2SUnisonConfigFile ()
+{
+
+	# Client to server.
+	echo -en "\
+root = "$gnupotLocalDir"\n\
+root = ssh://"$gnupotServerUsername"@"$gnupotServer"/"$gnupotRemoteDir"\n\
+include gnupotCommonProfile\n\
+" > ""$UNISON"/gnupotC2SProfile"
+
+	return
+
+}
+# Function that writes profile files for unison.
+function writeUnisonConfigFile ()
+{
+
+	writeCommonUnisonConfigFile
+	writeS2CUnisonConfigFile
+	writeC2SUnisonConfigFile
+
+	return
+
+}
+
+function cleanRemoteUnsionArchiveFiles ()
+{
+
+	ssh $SSHCONNECTCMDARGS \
+"if [ -d ""$gnupotRemoteHome"/.unison" ]; then \
+rm ""$gnupotRemoteHome"/.unison/\*"; fi; exit" 2>&-
+
+	return
+
+}
+
+function cleanLocalUnsionArchiveFiles ()
+{
+
+	if [ -d "$UNISON" ]; then
+		rm "$UNISON"/*[^gnupot]
+	fi
+
+	return
+
+}
+
+# General notification function.
+function notifyCmd ()
+{
+
+	msg="$1"
+	ms="$2"
+
+
+	notify-send -t "$ms" "$msg"
+
+	return
+
+}
+
+function syncNotify ()
+{
+
+	path="$1"
+	dir="$2"
+	source="$3"
+
+
+	notifyCmd "GNUpot syncing $(getRelativePath "$path" \
+"$dir") from "$source"" "$gnupotDefaultNotificationTime"
+
+	return
+
+}
+
+# Get relative path for local files.
+# TODO better.
+function getRelativePath ()
+{
+
+	fullPath="$1"
+	srcDir="$2"
+	tmp=""
+
+
+	# Get relative path of file.
+	tmp="${fullPath##$"$srcDir"}"
+	# Remove heading slash and return value.
+	echo "${tmp:1}"
+
+	return
+
+}
+
+# Main file syncronization function.
+# This is executed inside a critical section.
+function syncOperation ()
+{
+
+	source="$1"
+	path="$2"
+	unisonExitCode=0
+
+
+	sleep "$gnupotTimeToWaitForOtherChanges"
+	syncNotify "$path" "$gnupotLocalDir" "$source"
+
+	if [ "$source" == "client" ]; then
+		unison gnupotC2SProfile
+		unisonExitCode=$?
+	else
+	#	unison gnupotS2CProfile
+	:
+	fi
+
+	# Check if unsion executed correctly or not.
+	case "$unisonExitCode" in
+		# OK.
+		0 )
+			notifyCmd "Done." "$gnupotDefaultNotificationTime"
+		;;
+		# Clear inconsistent state.
+		3 )
+			cleanRemoteUnsionArchiveFiles
+			cleanLocalUnsionArchiveFiles
+		;;
+	esac
+
+	return
+
+}
+
+# Server sync thread.
+function syncS ()
+{
+
+	# return/exit when signal{s} is/are received.
+	trap "return" SIGINT SIGTERM
+
+	# Open master ssh socket.
+	ssh $SSHMASTERSOCKCMDARGS 2>&-
+
+	while true; do
+
+		# Listen for changes on server
+		path=$(ssh $SSHCONNECTCMDARGS "$INOTIFYWAITCMD" \
+"$gnupotRemoteDir" | awk ' { print $1 $3 } ')
+
+		# Open a subshell for critical section.
+		(
+			# While not acquire lock:
+			# while [ ! flock -n 1024 ]; do :; done
+			# is the same as the following line:
+			flock -x "$FD"
+			syncOperation "server" "$path"
+		# End critical section.
+		) {FD}>>.lockfile
+		# Get first valid file descriptor from a bash builtin.
+
+	done
+
+}
+
+# Client sync thread.
+function syncC ()
+{
+
+	trap "return" SIGINT SIGTERM
+
+	while true; do
+
+		path=$($INOTIFYWAITCMD "$gnupotLocalDir" \
+| awk ' { print $1 $3 } ')
+		(
+			flock -x "$FD"
+			syncOperation "client" "$path"
+		) {FD}>>.lockfile
+
+	done
+
+}
+
+# Signal handler function.
+function sigHandler ()
+{
+
+	echo -en "GNUpot killed\n" 1>&2
+
+	# Kill master ssh socket (this will kill any ssh connection associated
+	# with it). Also disable stderr output for this command with "2>&-".
+	ssh -O exit -S "$gnupotSSHMasterSocketPath" "$gnupotServer" 2>&- &
+	# Kill all the processes of this group.
+	kill -s SIGINT 0
+
+	return
+
+}
+
+# Clean before exiting.
+function clean ()
+{
+
+	# Wait for client and server threads before exiting.
+	wait "$srvPid" "$cliPid"
+
+	return
+
+}
+
+# Main function that runs in background.
+function main ()
+{
+
+	# Enable signal interpretation to kill all subshells
+	trap "sigHandler" SIGINT SIGTERM
+
+	notifyCmd "GNUpot starting..." "$gnupotDefaultNotificationTime"
+
+	writeUnisonConfigFile
+
+	# Listen from server and send to client.
+	syncS &
+	srvPid="$!"
+	# Listen from client and send to server.
+	syncC &
+	cliPid="$!"
+
+	clean
+
+	notifyCmd "GNUpot stopped..." "$gnupotDefaultNotificationTime"
+
+	return
+
+}
+
+# Call main function as spawned shell (execute and return control to the
+# shell).
+main &
+
+exit 0
