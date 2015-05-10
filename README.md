@@ -26,8 +26,8 @@ Stupid) principal.
 
 ###Why the name GNUpot
 
-**GNU** beause of the freedom associated to this program.
-**pot** because it gives the idea of some type of container.
+- **GNU** beause of the freedom associated to this program.
+- **pot** because it gives the idea of some type of container.
 
 ##Ideas behind the project
 
