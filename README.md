@@ -70,7 +70,6 @@ THIS IS A WORK IN PROGESS. DON'T EXPECT THAT IT WORKS OUT OF THE BOX.
 ```
 $ git clone https://github.com/frnmst/gnupot.git
 $ cd gnupot && chmod +x gnupot
-$ ./gnupot
 ```
 At this early stage:
 - Edit `gnupot.config` based on your needs.
@@ -78,6 +77,11 @@ At this early stage:
 - Be able to connect to that server with private/public keys (i.e. passwordless).
 - Install the packets described below.
 - Create local and remote destination directories.
+
+One you have completed all the previous points you can actually run the program:
+```
+$ ./gnupot
+```
 
 ###Packets to install (dependencies)
 
@@ -87,7 +91,7 @@ At this early stage:
   - Server and client.
 - inotify-tools 3.14-4 (inotifywait) [Tells the script that some changes have 
   been made to a certain file.]
-  - Server and client
+  - Server and client.
 - util-linux 2.26.1-3 (flock) [Locks script and avoids contemporary local and
   remote sync.]
   - Client only.
