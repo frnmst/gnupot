@@ -70,6 +70,13 @@ function writeCommonUnisonConfigFile ()
 {
 
 	# Common config for server and client profiles.
+
+	# TODO FOR MERGING.
+	#
+	# localFileName=CURRENT1
+	# remoteFileName=CURRENT2
+	#
+	# ${local##.unison???} # get useful part of name only.
 	echo -en "\
 auto = true
 batch = true\n\
@@ -189,7 +196,7 @@ function getRelativePath ()
 
 
 	# Get relative path of file.
-	tmp="${fullPath##$"$srcDir"}"
+	tmp="${fullPath##"$srcDir"}"
 	# Remove heading slash and return value.
 	echo "${tmp:1}"
 

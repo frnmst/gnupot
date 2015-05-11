@@ -51,7 +51,7 @@ Stupid) principal.
     simplicity.
 - Solid syncing agent.
   - `rsync` would be grat for this but it is only designed for mirroring. We 
-    need something more sophistiated like `usinon`. I don't know yet if `git` 
+    need something more sophistiated like `unison`. I don't know yet if `git` 
     would be better. **WORK IN PROGERSS.**
 - Automatic collision detection and resolution. **WORK IN PROGRESS**.
 - Automatic backup to a maximum user defined number of backups. **TODO**
