@@ -69,7 +69,7 @@ Stupid) principal.
 
 ```
 $ git clone https://github.com/frnmst/gnupot.git
-$ cd gnupot && chmod +x gnupot
+$ cd gnupot
 ```
 At this early stage:
 - Edit `gnupot.config` based on your needs.
