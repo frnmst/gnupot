@@ -64,6 +64,13 @@ INOTIFYWAITCMD="inotifywait -r -q -e modify -e attrib \
 --exclude '(.unison*)'"
 
 
+MERGECMD="localFileName=CURRENT1; remoteFileName=CURRENT2; \
+mv localFileName "${localFileName##.unison.merge1-}".\
+"\$USER"."\$HOSTNAME"."L"; \
+mv remoteFileName "${remoteFileName##.unison.merge2-}"."\$USER".\
+"\$HOSTNAME"."R"; rm NEW"
+
+
 # POSSIBLE SOLUTION TO MERGE PROBLEM IN THE FIRST POST HERE:
 # http://permalink.gmane.org/gmane.network.unison.general/9400
 function writeCommonUnisonConfigFile ()
@@ -71,19 +78,12 @@ function writeCommonUnisonConfigFile ()
 
 	# Common config for server and client profiles.
 
-	# TODO FOR MERGING.
-	#
-	# localFileName=CURRENT1
-	# remoteFileName=CURRENT2
-	#
-	# ${local##.unison???} # get useful part of name only.
 	echo -en "\
-auto = true
+auto = true\n\
 batch = true\n\
-retry = 2
-merge = Path * -> mv CURRENT1 CURRENT1."$USER"."$HOSTNAME".$(date "+%s") \
-&& cp CURRENT2 CURRENT2."$USER"."$HOSTNAME".$(date "+%s")\n\
-confirmbigdel = false
+retry = 2\n\
+merge = Path * -> $MERGECMD\n\
+confirmbigdel = false\n\
 maxthreads = 1\n\
 times = true\n\
 sshargs = -C -S "$gnupotSSHMasterSocketPath"\n\
