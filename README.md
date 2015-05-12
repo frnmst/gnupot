@@ -33,12 +33,12 @@ Stupid) principal.
 
 - Simple.
   - Use of `bash` as scripting language makes the program overall very 
-    integraded with a GNU/Linux system (as well as other UNIX-like systems). 
+    integrated with a GNU/Linux system (as well as other UNIX-like systems). 
   - Programming and manteinance should also be trivial this way.
 - When some kind of change is made, this is sent automatically to the server 
-  (or to the clietn).
-  - This is possible with `inotify` to look for changes inside the watch 
-    directories both on client and on server.
+  (or to the client).
+  - This is possible with `inotify` which looks for changes inside the watch 
+    directories both on client and server.
 - Encrypted and passord-less communication between client and server.
   - `ssh` is very suitable and malleable for this job. **SOME TODO (keys).**
 - Minimal bandwidth usage.
@@ -50,10 +50,10 @@ Stupid) principal.
     notified. The command `notify-send` is perfect for this because of its 
     simplicity.
 - Solid syncing agent.
-  - `rsync` would be grat for this but it is only designed for mirroring. We 
+  - `rsync` would be great for this but it is only designed for mirroring. We 
     need something more sophistiated like `unison`. I don't know yet if `git` 
     would be better. **WORK IN PROGERSS.**
-- Automatic collision detection and resolution. **WORK IN PROGRESS**.
+- Automatic file conflict detection and resolution. **WORK IN PROGRESS**.
 - Automatic backup to a maximum user defined number of backups. **TODO**
 - Easily shareble directories.
   - User and groups are managed by simple text files on the server. **TODO.**
@@ -71,7 +71,7 @@ Stupid) principal.
 $ git clone https://github.com/frnmst/gnupot.git
 $ cd gnupot
 ```
-At this early stage:
+At this early stage you must:
 - Edit `gnupot.config` based on your needs.
 - Be sure to have an ssh server up and running.
 - Be able to connect to that server with private/public keys (i.e. passwordless).
@@ -97,11 +97,11 @@ $ ./gnupot
   - Client only.
 - libnotify 0.7.6-1 (notify-send) [Sends notifications to notification server.]
   - Client only.
-- Be sure to have 1 and only 1 notify server installed. It should be already 
+- #Be sure to have 1 and only 1 notify server installed. It should be already 
   installed on your system.
   #dunst () [Lightweight notification server; it displays notifications.]
   - Client only.
-- unison (at this moment).
+- unison (unison) [Program that syncs file. It's a two way rsync].
   - Server and client.
 
 ##Contact
