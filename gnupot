@@ -46,7 +46,7 @@ UNISON=""$gnupotLocalDir"/.unison"
 mkdir -p ""$gnupotLocalDir"/.unison"
 
 # Macros.
-# Add -i <public key> as explicit parameter.
+# TODO: Add -i <public key> as explicit parameter.
 SSHCONNECTCMDARGS="-S "$gnupotSSHMasterSocketPath" \
 "$gnupotServerUsername"@"$gnupotServer""
 
@@ -58,17 +58,19 @@ $SSHCONNECTCMDARGS exit"
 
 
 # inotifywait command macro: recursive, quiet, listen only to certain events.
-# Check --exclude switch which is not working yet.
+# TODO: Check --exclude switch which is not working yet.
 INOTIFYWAITCMD="inotifywait -r -q -e modify -e attrib \
 -e move -e move_self -e create -e delete -e delete_self \
 --exclude '(.unison*)'"
 
-
+#
+# HAVE A LOOK AT https://github.com/photonOli/gitBox
+#
 MERGECMD="localFileName=CURRENT1; remoteFileName=CURRENT2; \
-mv localFileName "${localFileName##.unison.merge1-}".\
-"\$USER"."\$HOSTNAME"."L"; \
-mv remoteFileName "${remoteFileName##.unison.merge2-}"."\$USER".\
-"\$HOSTNAME"."R"; rm NEW"
+mv \$localFileName \${localFileName##.unison.merge1-}.\
+\$USER.\$HOSTNAME."L"; \
+mv \$remoteFileName \${remoteFileName##.unison.merge2-}.\$USER.\
+\$HOSTNAME."R"; echo "end" > NEW"
 
 
 # POSSIBLE SOLUTION TO MERGE PROBLEM IN THE FIRST POST HERE:
@@ -77,7 +79,6 @@ function writeCommonUnisonConfigFile ()
 {
 
 	# Common config for server and client profiles.
-
 	echo -en "\
 auto = true\n\
 batch = true\n\
