@@ -145,8 +145,8 @@ function checkDirExistence ()
 
 
 	if [ "$input" -ne 0 ]; then
-		errMsg="Local and/or remote directory does/do not exist.\n"
-		echo -en "$errMsg"
+		errMsg="Local and/or remote directory does/do not exist."
+		echo -en "$errMsg\n"
 		notifyCmd "$errMsg" "$gnupotDefaultNotificationTime"
 		# THIS IS UGLY BUT SHOULD WORK
 		kill -s SIGINT 0
