@@ -39,12 +39,6 @@ if [ -f "gnupot.config" ]; then
 	source gnupot.config
 fi
 
-# Define unison env variable so that archive files go there.
-# Do this for server also.
-#UNISON=""$gnupotLocalDir"/.unison"
-# Create unison directory.
-mkdir -p ""$gnupotLocalDir"/.unison"
-
 # Macros.
 # TODO: Add -i <public key> as explicit parameter.
 SSHCONNECTCMDARGS="-S "$gnupotSSHMasterSocketPath" \
@@ -60,102 +54,11 @@ $SSHCONNECTCMDARGS exit"
 # inotifywait command macro: recursive, quiet, listen only to certain events.
 # TODO: Check --exclude switch which is not working yet.
 INOTIFYWAITCMD="inotifywait -r -q -e modify -e attrib \
--e move -e move_self -e create -e delete -e delete_self \
---exclude '(.unison*)'"
+-e move -e move_self -e create -e delete -e delete_self"
 
 #
 # HAVE A LOOK AT https://github.com/photonOli/gitBox
 #
-MERGECMD="localFileName=CURRENT1; remoteFileName=CURRENT2; \
-mv \$localFileName \${localFileName##.unison.merge1-}.\
-\$USER.\$HOSTNAME."L"; \
-mv \$remoteFileName \${remoteFileName##.unison.merge2-}.\$USER.\
-\$HOSTNAME."R"; echo "end" > NEW"
-
-
-# POSSIBLE SOLUTION TO MERGE PROBLEM IN THE FIRST POST HERE:
-# http://permalink.gmane.org/gmane.network.unison.general/9400
-function writeCommonUnisonConfigFile ()
-{
-
-	# Common config for server and client profiles.
-	echo -en "\
-auto = true\n\
-batch = true\n\
-retry = 2\n\
-merge = Path * -> $MERGECMD\n\
-confirmbigdel = false\n\
-maxthreads = 1\n\
-times = true\n\
-sshargs = -C -S "$gnupotSSHMasterSocketPath"\n\
-ignore = Path .unison*\n\
-" > ""$UNISON"/gnupotCommonProfile"
-
-	return
-
-}
-
-function writeS2CUnisonConfigFile ()
-{
-
-	# Server to client.
-	echo -en "\
-root = ssh://"$gnupotServerUsername"@"$gnupotServer"/"$gnupotRemoteDir"\n\
-root = "$gnupotLocalDir"\n\
-include gnupotCommonProfile\n\
-" > ""$UNISON"/gnupotS2CProfile"
-
-
-	return
-
-}
-
-function writeC2SUnisonConfigFile ()
-{
-
-	# Client to server.
-	echo -en "\
-root = "$gnupotLocalDir"\n\
-root = ssh://"$gnupotServerUsername"@"$gnupotServer"/"$gnupotRemoteDir"\n\
-include gnupotCommonProfile\n\
-" > ""$UNISON"/gnupotC2SProfile"
-
-	return
-
-}
-# Function that writes profile files for unison.
-function writeUnisonConfigFile ()
-{
-
-	writeCommonUnisonConfigFile
-	writeS2CUnisonConfigFile
-	writeC2SUnisonConfigFile
-
-	return
-
-}
-
-function cleanRemoteUnsionArchiveFiles ()
-{
-
-	ssh $SSHCONNECTCMDARGS \
-"if [ -d ""$gnupotRemoteHome"/.unison" ]; then \
-rm ""$gnupotRemoteHome"/.unison/\*"; fi; exit" 2>&-
-
-	return
-
-}
-
-function cleanLocalUnsionArchiveFiles ()
-{
-
-	if [ -d "$UNISON" ]; then
-		rm "$UNISON"/*[^gnupot]
-	fi
-
-	return
-
-}
 
 # General notification function.
 function notifyCmd ()
@@ -212,32 +115,19 @@ function syncOperation ()
 
 	source="$1"
 	path="$2"
-	unisonExitCode=0
 
 
 	sleep "$gnupotTimeToWaitForOtherChanges"
 	syncNotify "$path" "$gnupotLocalDir" "$source"
 
 	if [ "$source" == "client" ]; then
-		unison gnupotC2SProfile
-		unisonExitCode=$?
+		:
 	else
-	#	unison gnupotS2CProfile
-	:
+		:
 	fi
 
-	# Check if unsion executed correctly or not.
-	case "$unisonExitCode" in
-		# OK.
-		0 )
-			notifyCmd "Done." "$gnupotDefaultNotificationTime"
-		;;
-		# Clear inconsistent state.
-		3 )
-			cleanRemoteUnsionArchiveFiles
-			cleanLocalUnsionArchiveFiles
-		;;
-	esac
+	# OK.
+	notifyCmd "Done." "$gnupotDefaultNotificationTime"
 
 	return
 
@@ -328,8 +218,6 @@ function main ()
 	trap "sigHandler" SIGINT SIGTERM
 
 	notifyCmd "GNUpot starting..." "$gnupotDefaultNotificationTime"
-
-	writeUnisonConfigFile
 
 	# Listen from server and send to client.
 	syncS &
