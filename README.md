@@ -50,9 +50,10 @@ Stupid) principal.
     notified. The command `notify-send` is perfect for this because of its 
     simplicity.
 - Solid syncing agent.
-  - `rsync` would be great for this but it is only designed for mirroring. We 
+  - `rsync` would be great for this but it is only designed for mirroring.~~We 
     need something more sophistiated like `unison`. I don't know yet if `git` 
-    would be better. **WORK IN PROGERSS.**
+    would be better.~~ Unison has some defects (see merge command), so I've 
+    decided to switch to `git`. **WORK IN PROGERSS.**
 - Automatic file conflict detection and resolution. **WORK IN PROGRESS**.
 - Automatic backup to a maximum user defined number of backups. **TODO**
 - Easily shareble directories.

@@ -54,7 +54,8 @@ $SSHCONNECTCMDARGS exit"
 # inotifywait command macro: recursive, quiet, listen only to certain events.
 # TODO: Check --exclude switch which is not working yet.
 INOTIFYWAITCMD="inotifywait -r -q -e modify -e attrib \
--e move -e move_self -e create -e delete -e delete_self"
+-e move -e move_self -e create -e delete -e delete_self \
+--exclude '(.git*)'"
 
 #
 # HAVE A LOOK AT https://github.com/photonOli/gitBox
@@ -70,7 +71,7 @@ function notifyCmd ()
 
 	notify-send -t "$ms" "$msg"
 
-	return
+	return 0
 
 }
 
@@ -85,7 +86,7 @@ function syncNotify ()
 	notifyCmd "GNUpot syncing $(getRelativePath "$path" \
 "$dir") from "$source"" "$gnupotDefaultNotificationTime"
 
-	return
+	return 0
 
 }
 
@@ -104,7 +105,7 @@ function getRelativePath ()
 	# Remove heading slash and return value.
 	echo "${tmp:1}"
 
-	return
+	return 0
 
 }
 
@@ -121,6 +122,9 @@ function syncOperation ()
 	syncNotify "$path" "$gnupotLocalDir" "$source"
 
 	if [ "$source" == "client" ]; then
+		#git add -A
+		#git commit -a -m 'Commit on $(date "+%s")'
+		#git push origin master
 		:
 	else
 		:
@@ -129,8 +133,26 @@ function syncOperation ()
 	# OK.
 	notifyCmd "Done." "$gnupotDefaultNotificationTime"
 
-	return
+	return 0
 
+}
+
+# Kill program if local and/or remote directories do not exist.
+function checkDirExistence ()
+{
+
+	input="$1"
+
+
+	if [ "$input" -ne 0 ]; then
+		errMsg="Local and/or remote directory does/do not exist.\n"
+		echo -en "$errMsg"
+		notifyCmd "$errMsg" "$gnupotDefaultNotificationTime"
+		# THIS IS UGLY BUT SHOULD WORK
+		kill -s SIGINT 0
+	fi
+
+	return 0
 }
 
 # Server sync thread.
@@ -138,17 +160,21 @@ function syncS ()
 {
 
 	# return/exit when signal{s} is/are received.
-	trap "return" SIGINT SIGTERM
+	trap "return 0" SIGINT SIGTERM
 
 	# Open master ssh socket.
 	ssh $SSHMASTERSOCKCMDARGS 2>&-
+
+	# Check if remote directory exists.
+	dirNotExists=$(ssh $SSHCONNECTCMDARGS "if [ ! -d $gnupotRemoteDir ]; \
+then echo 1; else echo 0; fi")
+	checkDirExistence "$dirNotExists"
 
 	while true; do
 
 		# Listen for changes on server
 		path=$(ssh $SSHCONNECTCMDARGS "$INOTIFYWAITCMD" \
 "$gnupotRemoteDir" | awk ' { print $1 $3 } ')
-
 		# Open a subshell for critical section.
 		(
 			# While not acquire lock:
@@ -168,7 +194,12 @@ function syncS ()
 function syncC ()
 {
 
-	trap "return" SIGINT SIGTERM
+	trap "return 0" SIGINT SIGTERM
+
+	# Check if local directory exists.
+		dirNotExists=$(if [ ! -d "$gnupotLocalDir" ]; \
+then echo 1; else echo 0; fi)
+	checkDirExistence "$dirNotExists"
 
 	while true; do
 
@@ -195,7 +226,7 @@ function sigHandler ()
 	# Kill all the processes of this group.
 	kill -s SIGINT 0
 
-	return
+	return 0
 
 }
 
@@ -206,7 +237,7 @@ function clean ()
 	# Wait for client and server threads before exiting.
 	wait "$srvPid" "$cliPid"
 
-	return
+	return 0
 
 }
 
@@ -230,7 +261,7 @@ function main ()
 
 	notifyCmd "GNUpot stopped..." "$gnupotDefaultNotificationTime"
 
-	return
+	return 0
 
 }
 
