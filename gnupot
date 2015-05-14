@@ -41,7 +41,7 @@ fi
 
 # Define unison env variable so that archive files go there.
 # Do this for server also.
-UNISON=""$gnupotLocalDir"/.unison"
+#UNISON=""$gnupotLocalDir"/.unison"
 # Create unison directory.
 mkdir -p ""$gnupotLocalDir"/.unison"
 
