@@ -153,6 +153,31 @@ function checkDirExistence ()
 	fi
 
 	return 0
+
+}
+
+function checkServerDirExistence ()
+{
+
+	# Check if remote directory exists.
+	dirNotExists=$(ssh $SSHCONNECTCMDARGS "if [ ! -d $gnupotRemoteDir ]; \
+then echo 1; else echo 0; fi")
+	checkDirExistence "$dirNotExists"
+
+	return 0
+
+}
+
+function checkClientDirExistence ()
+{
+
+	# Check if local directory exists.
+		dirNotExists=$(if [ ! -d "$gnupotLocalDir" ]; \
+then echo 1; else echo 0; fi)
+	checkDirExistence "$dirNotExists"
+
+	return 0
+
 }
 
 # Server sync thread.
@@ -165,10 +190,7 @@ function syncS ()
 	# Open master ssh socket.
 	ssh $SSHMASTERSOCKCMDARGS 2>&-
 
-	# Check if remote directory exists.
-	dirNotExists=$(ssh $SSHCONNECTCMDARGS "if [ ! -d $gnupotRemoteDir ]; \
-then echo 1; else echo 0; fi")
-	checkDirExistence "$dirNotExists"
+	checkServerDirExistence
 
 	while true; do
 
@@ -196,10 +218,7 @@ function syncC ()
 
 	trap "return 0" SIGINT SIGTERM
 
-	# Check if local directory exists.
-		dirNotExists=$(if [ ! -d "$gnupotLocalDir" ]; \
-then echo 1; else echo 0; fi)
-	checkDirExistence "$dirNotExists"
+	checkClientDirExistence
 
 	while true; do
 
