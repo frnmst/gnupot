@@ -41,9 +41,11 @@ fi
 
 # Macros.
 
+# SSH argument.
+# TODO: Add -i <public key> as explicit parameter.
 SSHARGS="-c -S "$gnupotSSHMasterSocketPath""
 
-# TODO: Add -i <public key> as explicit parameter.
+# Used for general ssh commands
 SSHCONNECTCMDARGS=""$SSHARGS" "$gnupotServerUsername"@"$gnupotServer""
 
 # Open master socket so that further connection will result faster
@@ -107,6 +109,23 @@ function getRelativePath ()
 
 }
 
+function resolveConflicts ()
+{
+
+	returnedVal="$1"
+
+
+	if [ "$returnedVal" -eq 1 ]; then
+		echo "CONFLICT???"
+		echo 1
+	fi
+
+	echo 0
+
+	return 0
+
+}
+
 # Main file syncronization function.
 # This is executed inside a critical section.
 function syncOperation ()
@@ -120,14 +139,20 @@ function syncOperation ()
 	syncNotify "$path" "$gnupotLocalDir" "$source"
 
 	if [ "$source" == "client" ]; then
+		# retry n times if fails (use ret value from resolve
+		# conflict function).
 		cd "$gnupotLocalDir"
 		git add -A
 		git commit -a -m "Commit on $(date "+%s")"
 		git push origin master
+		resolveConflicts "$?"
 		cd --
 	else
+		# retry n times if fails (use ret value from resolve
+		# conflict function).
 		cd "$gnupotLocalDir"
 		git pull origin master
+		resolveConflicts "$?"
 		cd --
 	fi
 
