@@ -40,9 +40,11 @@ if [ -f "gnupot.config" ]; then
 fi
 
 # Macros.
+
+SSHARGS="-c -S "$gnupotSSHMasterSocketPath""
+
 # TODO: Add -i <public key> as explicit parameter.
-SSHCONNECTCMDARGS="-S "$gnupotSSHMasterSocketPath" \
-"$gnupotServerUsername"@"$gnupotServer""
+SSHCONNECTCMDARGS=""$SSHARGS" "$gnupotServerUsername"@"$gnupotServer""
 
 # Open master socket so that further connection will result faster
 # (using multiplexing to avoid re-authentication).
@@ -50,11 +52,12 @@ SSHMASTERSOCKCMDARGS="-M -o \
 ControlPersist="$gnupotSSHMasterSocketTime" \
 $SSHCONNECTCMDARGS exit"
 
-
 # inotifywait command macro: recursive, quiet, listen only to certain events.
 INOTIFYWAITCMD="inotifywait -r -q -e modify -e attrib \
 -e move -e move_self -e create -e delete -e delete_self"
 
+# git environment variable for ssh.
+GIT_SSH_COMMAND="ssh "$SSHARGS""
 
 # General notification function.
 function notifyCmd ()
