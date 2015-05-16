@@ -52,7 +52,6 @@ $SSHCONNECTCMDARGS exit"
 
 
 # inotifywait command macro: recursive, quiet, listen only to certain events.
-# TODO: Check --exclude switch which is not working yet.
 INOTIFYWAITCMD="inotifywait -r -q -e modify -e attrib \
 -e move -e move_self -e create -e delete -e delete_self"
 
@@ -171,7 +170,7 @@ function checkClientDirExistence ()
 {
 
 	# Check if local directory exists.
-		dirNotExists=$(if [ ! -d "$gnupotLocalDir" ]; \
+	dirNotExists=$(if [ ! -d "$gnupotLocalDir" ]; \
 then echo 1; else echo 0; fi)
 	checkDirExistence "$dirNotExists"
 
