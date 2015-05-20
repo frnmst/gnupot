@@ -109,6 +109,7 @@ function getRelativePath ()
 
 }
 
+# LOOK AT https://gist.github.com/hofmannsven/6814451
 function resolveConflicts ()
 {
 
@@ -117,6 +118,24 @@ function resolveConflicts ()
 
 	if [ "$returnedVal" -eq 1 ]; then
 		echo "CONFLICT???"
+		# IT DOES NOT WORK BUT THIS IS THE IDEA:
+		git checkout -b tmp # create new tmp branch
+		git pull origin tmp # Pull remote(or maybe local?) master into tmp
+		<get conflict list>
+		for conflict in $conflictList; do
+			# move conflicting files to new names
+			mv "$conflict" "$conflict"."$REMOTE_USR"."$DATE"
+		done
+		# change to master branch
+		git checkout master
+		for conflict in $conflictList; do
+			# move conflicting files to new names
+			mv "$conflict" "$conflict"."$REMOTE_USR"."$DATE"
+		done
+		# tmp U master
+		git merge tmp
+		# delete tmp branch
+		git branch -D tmp
 		echo 1
 	fi
 
@@ -146,14 +165,12 @@ function syncOperation ()
 		git commit -a -m "Commit on $(date "+%s")"
 		git push origin master
 		resolveConflicts "$?"
-		cd --
 	else
 		# retry n times if fails (use ret value from resolve
 		# conflict function).
 		cd "$gnupotLocalDir"
 		git pull origin master
 		resolveConflicts "$?"
-		cd --
 	fi
 
 	# OK.
