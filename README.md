@@ -73,10 +73,12 @@ At this early stage you must:
 - Edit `gnupot.config` based on your needs.
 - Be sure to have an ssh server up and running.
 - Be able to connect to that server with private/public keys (i.e. passwordless).
+- On the server: `git init --bare --shared <repo name>`
+- On the client: `git clone <remote user>@<server>:<repo name> <local dir>`
 - Install the packets described below.
-- Create local and remote destination directories.
 
-One you have completed all the previous points you can actually run the program:
+Once you have completed all the previous points you can actually run the 
+program:
 ```
 $ ./gnupot
 ```
