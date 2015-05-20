@@ -114,18 +114,38 @@ function resolveConflicts ()
 {
 
 	returnedVal="$1"
+	action="$2"
 
 
 	if [ "$returnedVal" -eq 1 ]; then
-		echo "CONFLICT???"
-		# IT DOES NOT WORK BUT THIS IS THE IDEA:
-		git checkout -b tmp # create new tmp branch
-		git pull origin tmp # Pull remote(or maybe local?) master into tmp
-		<get conflict list>
+		notifyCmd "Resolving file conflicts." \
+"$gnupotDefaultNotificationTime"
+
+		# SOME IDEAS.
+		# Server and clients have master and tmp branches.
+		# If there is no problems, branches are equal.
+		# Otherwise:
+		#
+		# git pull origin tmp
+		# <compare master & tmp branches: get conflicting files list>
+		# <move master files>
+		# git checkout ??-b?? tmp # change to tmp branch
+		# <move tmp files>
+		# <merge branches in master branch without deleting tmp branch>
+		# git push origin master
+		# git push origin tmp
+		# END OF SOME IDEAS.
+
+		# IT DOES NOT WORK BUT THIS IS THE previous IDEA:
+		# get file conflict list
+		conflictList=$(git diff --name-only --diff-filter=U)
+		# Create locally tmp branch if it doen not exist.
+		git checkout -b tmp
 		for conflict in $conflictList; do
 			# move conflicting files to new names
 			mv "$conflict" "$conflict"."$REMOTE_USR"."$DATE"
 		done
+		git commit -a -m "??resolved??"
 		# change to master branch
 		git checkout master
 		for conflict in $conflictList; do
@@ -134,8 +154,16 @@ function resolveConflicts ()
 		done
 		# tmp U master
 		git merge tmp
-		# delete tmp branch
-		git branch -D tmp
+
+		if [ "$action" == "push" ]; then
+			git push origin master
+		else
+			:
+		fi
+
+		notifyCmd "File conflicts resolved." \
+"$gnupotDefaultNotificationTime"
+
 		echo 1
 	fi
 
@@ -143,6 +171,28 @@ function resolveConflicts ()
 
 	return 0
 
+}
+
+function pushToServer ()
+{
+
+	cd "$gnupotLocalDir"
+	git add -A
+	git commit -a -m "Commit on $(date "+%s")"
+	git push origin master
+	resolveConflicts "$?" "push"
+
+	return 0
+}
+
+function pullFromServer ()
+{
+
+	cd "$gnupotLocalDir"
+	git pull origin master
+	resolveConflicts "$?" "pull"
+
+	return 0
 }
 
 # Main file syncronization function.
@@ -160,17 +210,11 @@ function syncOperation ()
 	if [ "$source" == "client" ]; then
 		# retry n times if fails (use ret value from resolve
 		# conflict function).
-		cd "$gnupotLocalDir"
-		git add -A
-		git commit -a -m "Commit on $(date "+%s")"
-		git push origin master
-		resolveConflicts "$?"
+		pushToServer
 	else
 		# retry n times if fails (use ret value from resolve
 		# conflict function).
-		cd "$gnupotLocalDir"
-		git pull origin master
-		resolveConflicts "$?"
+		pullFromServer
 	fi
 
 	# OK.
@@ -191,7 +235,6 @@ function checkDirExistence ()
 		errMsg="Local and/or remote directory does/do not exist."
 		echo -en "$errMsg\n"
 		notifyCmd "$errMsg" "$gnupotDefaultNotificationTime"
-		# THIS IS UGLY BUT SHOULD WORK
 		kill -s SIGINT 0
 	fi
 

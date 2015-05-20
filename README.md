@@ -50,16 +50,14 @@ Stupid) principal.
     notified. The command `notify-send` is perfect for this because of its 
     simplicity.
 - Solid syncing agent.
-  - `rsync` would be great for this but it is only designed for mirroring.~~We 
-    need something more sophistiated like `unison`. I don't know yet if `git` 
-    would be better.~~ Unison has some defects (see merge command), so I've 
-    decided to switch to `git`. **WORK IN PROGERSS.**
+  - `git` is designed for collaboration and has an excellent SSH support. 
+     **WORK IN PROGERSS.**
 - Automatic file conflict detection and resolution. **WORK IN PROGRESS**.
 - Automatic backup to a maximum user defined number of backups. **TODO**
 - Easily shareble directories.
   - User and groups are managed by simple text files on the server. **TODO.**
 - No server-side program running.
-  - Only programs like `inotify` and `unison` needs to be installed on the 
+  - Only programs like `inotify` and `git` needs to be installed on the 
     server. **WORK IN PROGRESS**.
 
 ###WARNING
@@ -102,7 +100,7 @@ $ ./gnupot
   installed on your system.
   #dunst () [Lightweight notification server; it displays notifications.]
   - Client only.
-- unison (unison) [Program that syncs file. It's a two way rsync].
+- git (git) [Program that syncs file and does versioning control].
   - Server and client.
 
 ##Contact
