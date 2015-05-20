@@ -43,10 +43,10 @@ fi
 
 # SSH argument.
 # TODO: Add -i <public key> as explicit parameter.
-SSHARGS="-c -S "$gnupotSSHMasterSocketPath""
+SSHARGS="-C -S "$gnupotSSHMasterSocketPath""
 
 # Used for general ssh commands
-SSHCONNECTCMDARGS=""$SSHARGS" "$gnupotServerUsername"@"$gnupotServer""
+SSHCONNECTCMDARGS="$SSHARGS "$gnupotServerUsername"@"$gnupotServer""
 
 # Open master socket so that further connection will result faster
 # (using multiplexing to avoid re-authentication).
@@ -58,8 +58,11 @@ $SSHCONNECTCMDARGS exit"
 INOTIFYWAITCMD="inotifywait -r -q -e modify -e attrib \
 -e move -e move_self -e create -e delete -e delete_self"
 
+GITCMD="git"
+
 # git environment variable for ssh.
-GIT_SSH_COMMAND="ssh "$SSHARGS""
+GIT_SSH_COMMAND="ssh $SSHARGS"
+
 
 # General notification function.
 function notifyCmd ()
@@ -120,6 +123,14 @@ function resolveConflicts ()
 	if [ "$returnedVal" -eq 1 ]; then
 		notifyCmd "Resolving file conflicts." \
 "$gnupotDefaultNotificationTime"
+		$GITCMD commit -a -m "Commit on $(date "+%s"). Handled \
+conflicts"
+	fi
+
+
+#	if [ "$returnedVal" -eq 1 ]; then
+#		notifyCmd "Resolving file conflicts." \
+#"$gnupotDefaultNotificationTime"
 
 		# SOME IDEAS.
 		# Server and clients have master and tmp branches.
@@ -138,61 +149,53 @@ function resolveConflicts ()
 
 		# IT DOES NOT WORK BUT THIS IS THE previous IDEA:
 		# get file conflict list
-		conflictList=$(git diff --name-only --diff-filter=U)
+		#conflictList=$(git diff --name-only --diff-filter=U)
 		# Create locally tmp branch if it doen not exist.
-		git checkout -b tmp
-		for conflict in $conflictList; do
+		#git checkout -b tmp
+		#for conflict in $conflictList; do
 			# move conflicting files to new names
-			mv "$conflict" "$conflict"."$REMOTE_USR"."$DATE"
-		done
-		git commit -a -m "??resolved??"
+		#	mv "$conflict" "$conflict"."$REMOTE_USR"."$DATE"
+		#done
+		#git commit -a -m "??resolved??"
 		# change to master branch
-		git checkout master
-		for conflict in $conflictList; do
+		#git checkout master
+		#for conflict in $conflictList; do
 			# move conflicting files to new names
-			mv "$conflict" "$conflict"."$REMOTE_USR"."$DATE"
-		done
+		#	mv "$conflict" "$conflict"."$REMOTE_USR"."$DATE"
+		#done
 		# tmp U master
-		git merge tmp
+		#git merge tmp
 
-		if [ "$action" == "push" ]; then
-			git push origin master
-		else
-			:
-		fi
+		#if [ "$action" == "push" ]; then
+			#git push origin master
+		#else
+		#	:
+		#fi
 
-		notifyCmd "File conflicts resolved." \
-"$gnupotDefaultNotificationTime"
+		#notifyCmd "File conflicts resolved." \
+#"$gnupotDefaultNotificationTime"
 
-		echo 1
-	fi
+#		echo 1
+#	fi
 
-	echo 0
+#	echo 0
 
 	return 0
 
 }
 
-function pushToServer ()
+function sharedSyncActions ()
 {
 
 	cd "$gnupotLocalDir"
-	git add -A
-	git commit -a -m "Commit on $(date "+%s")"
-	git push origin master
-	resolveConflicts "$?" "push"
+	$GITCMD add -A
+	$GITCMD commit -a -m "Commit on $(date "+%s")"
+	$GITCMD pull origin master
+	resolveConflicts "$?" "<smt>"
+	$GITCMD push origin master
 
 	return 0
-}
 
-function pullFromServer ()
-{
-
-	cd "$gnupotLocalDir"
-	git pull origin master
-	resolveConflicts "$?" "pull"
-
-	return 0
 }
 
 # Main file syncronization function.
@@ -207,15 +210,8 @@ function syncOperation ()
 	sleep "$gnupotTimeToWaitForOtherChanges"
 	syncNotify "$path" "$gnupotLocalDir" "$source"
 
-	if [ "$source" == "client" ]; then
-		# retry n times if fails (use ret value from resolve
-		# conflict function).
-		pushToServer
-	else
-		# retry n times if fails (use ret value from resolve
-		# conflict function).
-		pullFromServer
-	fi
+	# Do the syncing.
+	sharedSyncActions
 
 	# OK.
 	notifyCmd "Done." "$gnupotDefaultNotificationTime"
@@ -283,17 +279,29 @@ function syncS ()
 		# Listen for changes on server
 		path=$(ssh $SSHCONNECTCMDARGS "$INOTIFYWAITCMD" \
 "$gnupotRemoteDir" | awk ' { print $1 $3 } ')
-		# Open a subshell for critical section.
-		(
-			# While not acquire lock:
-			# while [ ! flock -n 1024 ]; do :; done
-			# is the same as the following line:
-			flock -x "$FD"
-			syncOperation "server" "$path"
-		# End critical section.
-		) {FD}>>.lockfile
-		# Get first valid file descriptor from a bash builtin.
-
+		# Check if the other thread is in the critical section.
+		# This avoids a two way file update. Example: if a file is
+		# modified on the client, it is sent immediately to the server.
+		# However the server thead detects changes and so an unecessary
+		# pull is made from the server.
+		# So there are two types of locks: one between the round
+		# brackets and the other one is made by the if clause.
+		if [ $(cat "$gnupotLockFilePath") -eq 0 ]; then
+			# Open a subshell for critical section.
+			(
+				# Acquire lockfile.
+				echo 1 > "$gnupotLockFilePath"
+				# While not acquire lock:
+				# while [ ! flock -n 1024 ]; do :; done
+				# is the same as the following line:
+				flock -x "$FD"
+				syncOperation "server" "$path"
+			# End critical section.
+			) {FD}>>"$gnupotLockFilePath"
+			# Get first valid file descriptor from a bash builtin.
+			# Free lockfile.
+			echo 0 > "$gnupotLockFilePath"
+		fi
 	done
 
 }
@@ -310,10 +318,14 @@ function syncC ()
 
 		path=$($INOTIFYWAITCMD --exclude .git "$gnupotLocalDir" \
 | awk ' { print $1 $3 } ')
-		(
-			flock -x "$FD"
-			syncOperation "client" "$path"
-		) {FD}>>.lockfile
+		if [ $(cat "$gnupotLockFilePath") -eq 0 ]; then
+			(
+				echo 1 > "$gnupotLockFilePath"
+				flock -x "$FD"
+				syncOperation "client" "$path"
+			) {FD}>>"$gnupotLockFilePath"
+			echo 0 > "$gnupotLockFilePath"
+		fi
 
 	done
 
@@ -354,6 +366,8 @@ function main ()
 	trap "sigHandler" SIGINT SIGTERM
 
 	notifyCmd "GNUpot starting..." "$gnupotDefaultNotificationTime"
+
+	echo 0 > "$gnupotLockFilePath"
 
 	# Listen from server and send to client.
 	syncS &

@@ -40,25 +40,24 @@ Stupid) principal.
   - This is possible with `inotify` which looks for changes inside the watch 
     directories both on client and server.
 - Encrypted and passord-less communication between client and server.
-  - `ssh` is very suitable and malleable for this job. **SOME TODO (keys).**
+  - `ssh` is very suitable and malleable for this job. **SOME TODO (keys)**
 - Minimal bandwidth usage.
   - If we are setting up a server at home it is unlikely to have fast upload 
     speed. We have to avoid to use all available upload (and even download 
-    bandwidth) on server side (especially).
+    bandwidth) on server side (especially). **TODO**
 - Desktop notifications.
   - When an event is originated (either on client or on server) user must be 
     notified. The command `notify-send` is perfect for this because of its 
     simplicity.
 - Solid syncing agent.
   - `git` is designed for collaboration and has an excellent SSH support. 
-     **WORK IN PROGERSS.**
-- Automatic file conflict detection and resolution. **WORK IN PROGRESS**.
+- Automatic file conflict detection and resolution. **BASIC FUNCTIONALITY**
 - Automatic backup to a maximum user defined number of backups. **TODO**
 - Easily shareble directories.
-  - User and groups are managed by simple text files on the server. **TODO.**
+  - User and groups are managed by simple text files on the server. **TODO**
 - No server-side program running.
   - Only programs like `inotify` and `git` needs to be installed on the 
-    server. **WORK IN PROGRESS**.
+    server.
 
 ###WARNING
 
@@ -100,7 +99,7 @@ $ ./gnupot
   installed on your system.
   #dunst () [Lightweight notification server; it displays notifications.]
   - Client only.
-- git (git) [Program that syncs file and does versioning control].
+- git 2.4.1-1 (git) [Program that syncs file and does versioning control].
   - Server and client.
 
 ##Contact
