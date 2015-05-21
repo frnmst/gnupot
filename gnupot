@@ -186,6 +186,18 @@ conflicts"
 
 }
 
+# Clean useless files and keep maximum user defined number of backups.
+# TODO
+function backupAndClean ()
+{
+
+	# Garbage collector for stuff older than 1d.
+	git gc --auto --prune=1d
+
+	return 0
+
+}
+
 # Both client and server threads execute this function.
 function sharedSyncActions ()
 {
@@ -196,8 +208,13 @@ function sharedSyncActions ()
 	# Always pull from server first then check for conflicts using return
 	# value.
 	$GITCMD pull origin master
+
 	resolveConflicts "$?" "<smt>"
+
 	$GITCMD push origin master
+
+	backupAndClean
+
 	# Go back to previous dir.
 	cd "$OLDPWD"
 
