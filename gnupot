@@ -113,6 +113,8 @@ function getRelativePath ()
 }
 
 # LOOK AT https://gist.github.com/hofmannsven/6814451
+# Resolve conflict function.
+# WARING: AT THIS MOMENT THIS FUNCTION WORKS BUT IT'S VERY BASIC.
 function resolveConflicts ()
 {
 
@@ -184,15 +186,20 @@ conflicts"
 
 }
 
+# Both client and server threads execute this function.
 function sharedSyncActions ()
 {
 
 	cd "$gnupotLocalDir"
 	$GITCMD add -A
 	$GITCMD commit -a -m "Commit on $(date "+%s")"
+	# Always pull from server first then check for conflicts using return
+	# value.
 	$GITCMD pull origin master
 	resolveConflicts "$?" "<smt>"
 	$GITCMD push origin master
+	# Go back to previous dir.
+	cd "$OLDPWD"
 
 	return 0
 
@@ -208,7 +215,12 @@ function syncOperation ()
 
 
 	sleep "$gnupotTimeToWaitForOtherChanges"
-	syncNotify "$path" "$gnupotLocalDir" "$source"
+
+	if [ "$source" == "server" ]; then
+		syncNotify "$path" "$gnupotRemoteDir" "server"
+	else
+		syncNotify "$path" "$gnupotLocalDir" "client"
+	fi
 
 	# Do the syncing.
 	sharedSyncActions
@@ -262,6 +274,44 @@ then echo 1; else echo 0; fi)
 
 }
 
+function callSync ()
+{
+
+	source="$1"
+
+
+	# Check if the other thread is in the critical section.
+	# This avoids a two way file update. Example: if a file is
+	# modified on the client, it is sent immediately to the server.
+	# However the server thead detects changes and so an unecessary
+	# pull is made from the server.
+	# So there are two types of locks: one between the round
+	# brackets and the other one is made by the if clause.
+	if [ $(cat "$gnupotLockFilePath") -eq 0 ]; then
+		# Open a subshell for critical section.
+		(
+			# Acquire lockfile.
+			echo 1 > "$gnupotLockFilePath"
+			# While not acquire lock:
+			# while [ ! flock -n 1024 ]; do :; done
+			# is the same as the following line:
+			flock -x "$FD"
+			syncOperation "$source" "$path"
+		# End critical section.
+		) {FD}>>"$gnupotLockFilePath"
+		# Get first valid file descriptor from a bash builtin.
+		# Free lockfile.
+		echo 0 > "$gnupotLockFilePath"
+	else
+		# Wait some time to avoid unecessary loops. This happens if
+		# there are lots of files to be transferred
+		sleep "$gnupotTimeToWaitForOtherChanges"
+	fi
+
+	return 0
+
+}
+
 # Server sync thread.
 function syncS ()
 {
@@ -279,29 +329,8 @@ function syncS ()
 		# Listen for changes on server
 		path=$(ssh $SSHCONNECTCMDARGS "$INOTIFYWAITCMD" \
 "$gnupotRemoteDir" | awk ' { print $1 $3 } ')
-		# Check if the other thread is in the critical section.
-		# This avoids a two way file update. Example: if a file is
-		# modified on the client, it is sent immediately to the server.
-		# However the server thead detects changes and so an unecessary
-		# pull is made from the server.
-		# So there are two types of locks: one between the round
-		# brackets and the other one is made by the if clause.
-		if [ $(cat "$gnupotLockFilePath") -eq 0 ]; then
-			# Open a subshell for critical section.
-			(
-				# Acquire lockfile.
-				echo 1 > "$gnupotLockFilePath"
-				# While not acquire lock:
-				# while [ ! flock -n 1024 ]; do :; done
-				# is the same as the following line:
-				flock -x "$FD"
-				syncOperation "server" "$path"
-			# End critical section.
-			) {FD}>>"$gnupotLockFilePath"
-			# Get first valid file descriptor from a bash builtin.
-			# Free lockfile.
-			echo 0 > "$gnupotLockFilePath"
-		fi
+		callSync "server"
+
 	done
 
 }
@@ -318,14 +347,7 @@ function syncC ()
 
 		path=$($INOTIFYWAITCMD --exclude .git "$gnupotLocalDir" \
 | awk ' { print $1 $3 } ')
-		if [ $(cat "$gnupotLockFilePath") -eq 0 ]; then
-			(
-				echo 1 > "$gnupotLockFilePath"
-				flock -x "$FD"
-				syncOperation "client" "$path"
-			) {FD}>>"$gnupotLockFilePath"
-			echo 0 > "$gnupotLockFilePath"
-		fi
+		callSync "client"
 
 	done
 
