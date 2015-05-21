@@ -40,7 +40,7 @@ Stupid) principal.
   - This is possible with `inotify` which looks for changes inside the watch 
     directories both on client and server.
 - Encrypted and passord-less communication between client and server.
-  - `ssh` is very suitable and malleable for this job. **SOME TODO (keys)**
+  - `ssh` is very suitable and malleable for this job. **WORK IN PROGRESS**
 - Minimal bandwidth usage.
   - If we are setting up a server at home it is unlikely to have fast upload 
     speed. We have to avoid to use all available upload (and even download 
@@ -52,7 +52,8 @@ Stupid) principal.
 - Solid syncing agent.
   - `git` is designed for collaboration and has an excellent SSH support. 
 - Automatic file conflict detection and resolution. **BASIC FUNCTIONALITY**
-- Automatic backup to a maximum user defined number of backups. **TODO**
+- Automatic backup to a maximum user defined number of backups. **WORK IN 
+  PROGRESS**
 - Easily shareble directories.
   - User and groups are managed by simple text files on the server. **TODO**
 - No server-side program running.
