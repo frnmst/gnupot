@@ -39,6 +39,15 @@ if [ -f "gnupot.config" ]; then
 	source gnupot.config
 fi
 
+
+###
+##Global variables
+currentCommits=0
+
+gnupotKeepMaxCommits=$(($gnupotKeepMaxCommits*2))
+###
+
+
 # Macros.
 
 # SSH argument.
@@ -191,8 +200,31 @@ conflicts"
 function backupAndClean ()
 {
 
-	# Garbage collector for stuff older than 1d.
-	git gc --auto --prune=1d
+	commitSha=""
+
+
+	# if <number of commits for cuttent session> mod $KeepMaxBackups*2 -eq
+	# 0; then
+	# clean
+	if [ $(expr "$currentCommits" % "$gnupotKeepMaxCommits") -eq 0 ]; then
+		# Get sha of interest.
+		commitSha=$($GITCMD log -n "$gnupotKeepMaxCommits" \
+| tail -n 6 | grep commit | awk ' { print $2 } ')
+		# From man git-checkout:
+		# Create a new orphan branch, named <new_branch>, started from
+		# <start_point> and switch to it.
+		$GITCMD checkout --orphan tmp "$commitSha"
+		# Change old commit.
+		$GITCMD commit -m "Truncated history on $(date "+%s")"
+		# From man git-rebase
+		# Forward-port local commits to the updated upstream head.
+		$GITCMD rebase --onto tmp "$commitSha" master
+		# Delete tmp branch.
+		$GITCMD branch -D tmp
+		# Garbage collector for stuff older than 1d.
+		# TODO better.
+		$GITCMD gc --auto --prune=1d
+	fi
 
 	return 0
 
@@ -203,6 +235,10 @@ function sharedSyncActions ()
 {
 
 	cd "$gnupotLocalDir"
+
+	currentCommits=$(($currentCommits+1))
+
+	echo "$currentCommits $gnupotKeepMaxCommits"
 	$GITCMD add -A
 	$GITCMD commit -a -m "Commit on $(date "+%s")"
 	# Always pull from server first then check for conflicts using return
@@ -211,9 +247,9 @@ function sharedSyncActions ()
 
 	resolveConflicts "$?" "<smt>"
 
-	$GITCMD push origin master
-
 	backupAndClean
+
+	$GITCMD push origin master
 
 	# Go back to previous dir.
 	cd "$OLDPWD"
