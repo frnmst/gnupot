@@ -53,7 +53,7 @@ Stupid) principal.
   - `git` is designed for collaboration and has an excellent SSH support. 
 - Automatic file conflict detection and resolution. **BASIC FUNCTIONALITY**
 - Automatic backup to a maximum user defined number of backups.
-- Easily shareble directories.
+- Easily shareable directories.
   - User and groups are managed by simple text files on the server. **TODO**
 - No server-side program running.
   - Only programs like `inotify` and `git` needs to be installed on the 
