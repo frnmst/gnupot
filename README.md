@@ -44,7 +44,8 @@ Stupid) principal.
 - Minimal bandwidth usage.
   - If we are setting up a server at home it is unlikely to have fast upload 
     speed. We have to avoid to use all available upload (and even download 
-    bandwidth) on server side (especially). **TODO**
+    bandwidth) on server side (especially). ?This is achieved using `trickle`?
+    **TODO**
 - Desktop notifications.
   - When an event is originated (either on client or on server) user must be 
     notified. The command `notify-send` is perfect for this because of its 
@@ -106,6 +107,7 @@ $ ./gnupot
   - Client only.
 - git 2.4.1-1 (git) [Program that syncs file and does versioning control].
   - Server and client.
+- ?trickle?
 
 ##Contact
 
