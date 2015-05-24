@@ -52,8 +52,7 @@ Stupid) principal.
 - Solid syncing agent.
   - `git` is designed for collaboration and has an excellent SSH support. 
 - Automatic file conflict detection and resolution. **BASIC FUNCTIONALITY**
-- Automatic backup to a maximum user defined number of backups. **WORK IN 
-  PROGRESS**
+- Automatic backup to a maximum user defined number of backups.
 - Easily shareble directories.
   - User and groups are managed by simple text files on the server. **TODO**
 - No server-side program running.
