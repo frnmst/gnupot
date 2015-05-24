@@ -58,6 +58,9 @@ Stupid) principal.
 - No server-side program running.
   - Only programs like `inotify` and `git` needs to be installed on the 
     server.
+- Very simple setup.
+  - Stupid setup which initializes local and remote repositories. This setups 
+    also writes user configuration. **TODO**
 
 ###WARNING
 

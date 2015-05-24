@@ -93,8 +93,7 @@ function syncNotify ()
 
 }
 
-# Get relative path for local files.
-# TODO better.
+# Get relative path for local or remote changed files.
 function getRelativePath ()
 {
 
@@ -191,6 +190,7 @@ function getCommitNumber ()
 function sharedSyncActions ()
 {
 
+	# Do all git operations in the correct directory.
 	cd "$gnupotLocalDir"
 
 	$GITCMD add -A
