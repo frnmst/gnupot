@@ -41,7 +41,7 @@ fi
 
 # Macros.
 
-# SSH argument.
+# SSH arguments.
 # TODO: Add -i <public key> as explicit parameter.
 SSHARGS="-C -S "$gnupotSSHMasterSocketPath""
 
@@ -112,7 +112,6 @@ function getRelativePath ()
 
 }
 
-# LOOK AT https://gist.github.com/hofmannsven/6814451
 # Resolve conflict function.
 # WARING: AT THIS MOMENT THIS FUNCTION WORKS BUT IT'S VERY BASIC.
 # CONFLICTING FILES ARE MERGED.
@@ -208,6 +207,7 @@ function sharedSyncActions ()
 	# receive.denyNonFastForwards true
 	backupAndClean "$currentCommits"
 
+	# Update commit number.
 	echo $(($currentCommits+1)) > "$gnupotCommitNumberFilePath"
 
 	# Go back to previous dir.
