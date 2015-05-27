@@ -1,4 +1,6 @@
 # GNUpot configuration file.
+# This is an example configuration file. You can edit it and change name to 
+# gnupot.config
 
 # Required parameters.
 gnupotServer="<addr or hostname>"
