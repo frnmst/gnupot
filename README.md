@@ -75,8 +75,8 @@ $ ./config.sh
 ```
 - Be sure to have an ssh server up and running.
 - Be able to connect to that server with private/public keys (i.e. passwordless).
-~~- On the server: `git init --bare --shared <repo name>`
-- On the client: `git clone <remote user>@<server>:<repo name> <local dir>`~~
+- ~~On the server: `git init --bare --shared <repo name>`~~
+- ~~On the client: `git clone <remote user>@<server>:<repo name> <local dir>`~~
 - Install the packets described below.
 
 Once you have completed all the previous points you can actually run the 
