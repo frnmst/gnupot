@@ -39,7 +39,7 @@ Server=""
 ServerUsername=""
 RemoteDir="GNUpot"
 LocalDir=""$HOME"/GNUpot"
-maxCommitsNum="128"
+KeepMaxCommits="128"
 LocalHome="$HOME"
 RemoteHome=""
 # Optional variables.
@@ -62,7 +62,7 @@ function getConfig ()
 "Remote user name:"			2 1 ""			2 35 50 0 \
 "Remote directory path:"		3 1 "$RemoteDir"  	3 35 50 0 \
 "Local directory full path:"		4 1 "$LocalDir"	4 35 50 0 \
-"Backups to keep (0 = keep all):"	5 1 "$maxCommitsNum" 	5 35 50 0 \
+"Backups to keep (0 = keep all):"	5 1 "$KeepMaxCommits" 	5 35 50 0 \
 "Local home full path:"			6 1 "$LocalHome"	6 35 50 0 \
 "Remote home full path:"		7 1 "$RemoteHome"	7 35 50 0 \
 "Time to wait for changes (s):"		8 1 "$TimeToWaitForOtherChanges" \
@@ -87,7 +87,7 @@ function strTok ()
 {
 
 	IFS=' ' read \
-Server ServerUserName RemoteDir LocalDir maxCommitsNum LocalHome RemoteHome \
+Server ServerUsername RemoteDir LocalDir KeepMaxCommits LocalHome RemoteHome \
 TimeToWaitForOtherChanges SSHMasterSocketPath SSHMasterSocketTime \
 DefaultNotificationTime LockFilePath CommitNumberFilePath \
 <<< $options
@@ -124,10 +124,10 @@ function summary ()
 $(echo -en "Required settings\n\
 =================\n\
 Server:\t"$Server"\n\
-Remote user:\t"$ServerUserName"\n\
+Remote user:\t"$ServerUsername"\n\
 Remote destination directory:\t"$RemoteDir"\n\
 Local destination directory:\t"$LocalDir"\n\
-Number of backups (0 means keep all commits):\t"$maxCommitsNum"\n\
+Number of backups (0 means keep all commits):\t"$KeepMaxCommits"\n\
 Local home full path:\t"$LocalHome"\n\
 Remote home full path:\t"$RemoteHome"\n\n\
 Optional settings\n\
@@ -153,7 +153,7 @@ function errorMsg ()
 
 		dialog --clear --stdout --help-button \
 --backtitle "GNUpot setup" --title "ERROR" \
---msgbox "Errors encoutered ("$err"). Restart configuration.\
+--msgbox "Errors encoutered ($err). Restart configuration.\
 " 25 90
 
 	return 0
@@ -164,20 +164,32 @@ function testInfo ()
 {
 
 	# Test ssh with all options (including key).
-	if [ $(ssh "$ServerUserName"@"$Server" "exit" 2>&-; echo "$?") \
+	if [ $(ssh "$ServerUsername"@"$Server" "exit" 2>&-; echo "$?") \
 -ne 0 ]; then
 		errorMsg "SSH"
 		return 1
 	fi
 
-	# mkdir -p local and remote
+	# Check if remote programs exist.
+	CHKCMD="which git && which inotifywait"
+	if [ $(ssh "$ServerUsername"@"$Server" \
+"$CHKCMD" 1>&- 2>&-; echo "$?") -ne 0 ]; then
+		errorMsg "git and/or inotifywait missing on server."
+		return 1
+	fi
+
 	return 0
 
 }
 
-function checkExecutables ()
+function initRepo ()
 {
 
+	ssh "$ServerUsername"@"$Server" \
+"mkdir -p "$RemoteDir" && cd "$RemoteDir" && git init --bare --shared && \
+git config --system receive.denyNonFastForwards true"
+
+	git clone "$ServerUsername"@"$Server":"$RemoteDir" "$LocalDir"
 
 	return 0
 
@@ -186,8 +198,24 @@ function checkExecutables ()
 function writeConfigFile ()
 {
 
+echo -en "\
+gnupotServer=\""$Server"\"\n\
+gnupotServerUsername=\""$ServerUsername"\"\n\
+gnupotRemoteDir=\""$RemoteDir"\"\n\
+gnupotLocalDir=\""$LocalDir"\"\n\
+gnupotKeepMaxCommits=\""$KeepMaxCommits"\"\n\
+gnupotLocalHome=\""$LocalHome"\"\n\
+gnupotRemoteHome=\""$RemoteHome"\"\n\
+gnupotTimeToWaitForOtherChanges=\""$TimeToWaitForOtherChanges"\"\n\
+gnupotSSHMasterSocketPath=\""$SSHMasterSocketPath"\"\n\
+gnupotSSHMasterSocketTime=\""$SSHMasterSocketTime"\"\n\
+gnupotDefaultNotificationTime=\""$DefaultNotificationTime"\"\n\
+gnupotLockFilePath=\""$LockFilePath"\"\n\
+gnupotCommitNumberFilePath=\""$CommitNumberFilePath"\"\n\
+" > "gnupot.config"
 
 	return 0
+
 }
 
 
@@ -207,8 +235,7 @@ function main ()
 		fi
 	done
 
-	checkExecutables
-
+	initRepo
 	writeConfigFile
 
 	return 0
