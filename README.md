@@ -112,7 +112,7 @@ $ ./gnupot
   
 ##Tests
 
-Tested on [Parabola GNU/Linux-libre[(https://www.parabola.nu/), [Arch 
+Tested on [Parabola GNU/Linux-libre](https://www.parabola.nu/), [Arch 
 Linux](https://www.archlinux.org/) and [Manjaro 
 Linux](https://manjaro.github.io/).
 
