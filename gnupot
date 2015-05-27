@@ -133,7 +133,6 @@ conflicts"
 }
 
 # Clean useless files and keep maximum user defined number of backups.
-# TODO
 function backupAndClean ()
 {
 

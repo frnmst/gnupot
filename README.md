@@ -1,6 +1,5 @@
 GNUpot
 ======
-
 Yet another libre Dropbox clone (only for the right aspects) written in bash. 
 
 ##Purpose of this project
@@ -61,7 +60,7 @@ Stupid) principal.
     server.
 - Very simple setup.
   - Stupid setup which initializes local and remote repositories. This setups 
-    also writes user configuration. **TODO**
+    also writes user configuration. **WORK IN PROGRESS**
 
 ###WARNING
 
@@ -105,9 +104,17 @@ $ ./gnupot
   installed on your system.
   #dunst () [Lightweight notification server; it displays notifications.]
   - Client only.
-- git 2.4.1-1 (git) [Program that syncs file and does versioning control].
+- git 2.4.1-1 (git) [Program that syncs file and does versioning control.]
   - Server and client.
 - ?trickle?
+- dialog 1:1.2_20150513-1 (dialog) [Display user friendly dialog messages 
+  during the setup.]
+  
+##Tests
+
+Tested on [Parabola GNU/Linux-libre[(https://www.parabola.nu/), [Arch 
+Linux](https://www.archlinux.org/) and [Manjaro 
+Linux](https://manjaro.github.io/).
 
 ##Contact
 
