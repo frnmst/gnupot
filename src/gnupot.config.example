@@ -1,6 +1,6 @@
 # GNUpot configuration file.
 # This is an example configuration file. You can edit it and change name to 
-# gnupot.config
+# gnupot.config and place it in $HOME/.config/gnupot
 
 # Required parameters.
 gnupotServer="<addr or hostname>"

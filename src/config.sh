@@ -51,8 +51,8 @@ TimeToWaitForOtherChanges="5"
 SSHMasterSocketPath="/tmp/gnupotSSHMasterSocket"
 SSHMasterSocketTime="120"
 DefaultNotificationTime="2000"
-LockFilePath="$HOME/.lockfile"
-CommitNumberFilePath="$HOME/.commitNums"
+LockFilePath="$HOME/.config/gnupot/.lockfile"
+CommitNumberFilePath="$HOME/.config/gnupot/.commitNums"
 
 
 function errorMsg ()
@@ -102,10 +102,6 @@ function displayForm ()
 10 35 $action 0 \
 "Event notification time:"		11 1 "$DefaultNotificationTime" \
 11 35 $action 0 \
-"Lock file path:"			12 1 "$LockFilePath" \
-12 35 $action 0 \
-"Commit number file path:"		13 1 "$CommitNumberFilePath" \
-13 35 $action 0 \
 )
 	retval="$?"
 	echo "$opts"
@@ -130,7 +126,7 @@ function strTok ()
 	IFS=' ' read \
 Server ServerUsername RemoteDir LocalDir KeepMaxCommits LocalHome RemoteHome \
 TimeToWaitForOtherChanges SSHMasterSocketPath SSHMasterSocketTime \
-DefaultNotificationTime LockFilePath CommitNumberFilePath \
+DefaultNotificationTime \
 <<< $options
 
 	return 0
@@ -147,7 +143,7 @@ function verifyConfig ()
 		i=$(($i+1))
 	done
 
-	if [ $i -lt 13 ]; then
+	if [ $i -lt 11 ]; then
 		return 1
 	fi
 
@@ -160,7 +156,6 @@ function summary ()
 
 	displayForm "GNUpot setup summary" "Are the displayed values \
 correct?" "0"
-
 	if [ "$?" -ne 0 ]; then
 		return 1
 	fi
@@ -178,6 +173,20 @@ function testInfo ()
 	if [ $(ssh "$ServerUsername"@"$Server" \
 "$CHKCMD" 1>&- 2>&-; echo "$?") -ne 0 ]; then
 		errorMsg "SSH problem or git and/or inotifywait missing on server."
+		return 1
+	fi
+
+	return 0
+
+}
+
+function initConfigDir ()
+{
+
+	# (in gnupot.sh also) here.
+	mkdir -p ""$HOME"/.config/gnupot"
+	if [ "$?" -ne 0 ]; then
+		errorMsg "Cannot create configuration directory."
 		return 1
 	fi
 
@@ -224,7 +233,7 @@ gnupotSSHMasterSocketTime=\""$SSHMasterSocketTime"\"\n\
 gnupotDefaultNotificationTime=\""$DefaultNotificationTime"\"\n\
 gnupotLockFilePath=\""$LockFilePath"\"\n\
 gnupotCommitNumberFilePath=\""$CommitNumberFilePath"\"\n\
-" > "gnupot.config"
+" > ""$HOME"/.config/gnupot/gnupot.config"
 
 	return 0
 
@@ -251,8 +260,11 @@ function main ()
 			main
 			return 0
 		fi
-		# mkdir -p ~/.config/gnupot and edit config file locations
-		# (in gnupot.sh also) here.
+		initConfigDir
+		if [ ! "$?" -eq 0 ]; then
+			main
+			return 0
+		fi
 		initRepo
 		if [ ! "$?" -eq 0 ]; then
 			main

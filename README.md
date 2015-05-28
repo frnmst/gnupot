@@ -68,18 +68,23 @@ Stupid) principal.
 $ git clone https://github.com/frnmst/gnupot.git
 $ cd gnupot
 ```
-- Run the setup like this: `./setup`
-- Be sure to have an ssh server up and running.
-- Be able to connect to that server with private/public keys (i.e. passwordless).
-- Install the packets described below.
+You have two possibilities for the setup of GNUpot:
+- run the setup: `./setup`
+- **or** copy srv/gnupot.config.example to ~/.config/gnupot/gnupot.config and 
+  edit it to your needs.
+After that you must:
+- be sure to have an SSH server up and running.
+- be able to connect to that server with private/public keys (these must be
+  passwordless).
+- install the packages described below.
 
-Once you have completed all the previous points you can actually run the 
+Once you have completed **all** the previous points you can actually run the 
 program:
 ```
 $ ./gnupot
 ```
 
-###Packets to install (dependencies)
+###Packages to install (dependencies)
 
 - bash 4.3.033-1
   - Server and client.

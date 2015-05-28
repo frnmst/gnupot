@@ -35,8 +35,11 @@ PATH="$PATH":/usr/bin
 [ "${FLOCKER}" != "$0" ] && exec env FLOCKER="$0" flock -en "$0" "$0" "$@" || :
 
 # Load configuration.
-if [ -f "gnupot.config" ]; then
-	source gnupot.config
+if [ -f ""$HOME"/.config/gnupot/gnupot.config" ]; then
+	source ""$HOME"/.config/gnupot/gnupot.config"
+else
+	echo -en "Cannot read configuration file\n"
+	exit 1
 fi
 
 # Macros.
