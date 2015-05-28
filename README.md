@@ -59,8 +59,8 @@ Stupid) principal.
   - Only programs like `inotify` and `git` needs to be installed on the 
     server.
 - Very simple setup.
-  - Stupid setup which initializes local and remote repositories. This setups 
-    also writes user configuration. **WORK IN PROGRESS**
+  - Stupid setup, using `dialog`, which initializes local and remote repositories.
+    User configuration is also written. **WORK IN PROGRESS**
 
 ###WARNING
 
