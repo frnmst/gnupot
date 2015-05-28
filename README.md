@@ -60,7 +60,7 @@ Stupid) principal.
     server.
 - Very simple setup.
   - Stupid setup, using `dialog`, which initializes local and remote repositories.
-    User configuration is also written. **WORK IN PROGRESS**
+    User configuration is also written. **BASIC FUNCTIONALITY**
 
 ###WARNING
 
