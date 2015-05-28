@@ -251,6 +251,8 @@ function main ()
 			main
 			return 0
 		fi
+		# mkdir -p ~/.config/gnupot and edit config file locations
+		# (in gnupot.sh also) here.
 		initRepo
 		if [ ! "$?" -eq 0 ]; then
 			main
