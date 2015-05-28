@@ -31,13 +31,13 @@ PATH="$PATH":/usr/bin
 [ "${FLOCKER}" != "$0" ] && exec env FLOCKER="$0" flock -en "$0" "$0" "$@" || :
 
 
-BACKTITLE="GNUpot_setup"
 # Macros.
-DIALOG="dialog --clear --stdout --help-button --backtitle $BACKTITLE"
+HELPFILE="README.md"
+BACKTITLE="GNUpot_setup"
+DIALOG="dialog --clear --stdout --hfile $HELPFILE --backtitle $BACKTITLE"
 
 # Variables.
 options=""
-endSetup="0"
 # Required variables.
 Server=""
 ServerUsername=""
@@ -55,32 +55,57 @@ LockFilePath="$HOME/.lockfile"
 CommitNumberFilePath="$HOME/.commitNums"
 
 
+function displayForm ()
+{
+
+	title="$1"
+	arg="$2"
+	action="$3"
+	opts=""
+	retval=""
+
+
+	opts=$($DIALOG --title "$title" \
+--form "$arg" \
+20 90 0 \
+"Server address or hostname:"		1 1 "$Server"		1 35 $action \
+0 \
+"Remote user name:"			2 1 "$ServerUsername"	2 35 $action \
+0 \
+"Remote directory path:"		3 1 "$RemoteDir"  	3 35 $action \
+0 \
+"Local directory full path:"		4 1 "$LocalDir"	4 35 $action 0 \
+"Backups to keep (0 = keep all):"	5 1 "$KeepMaxCommits" 	5 35 $action \
+0 \
+"Local home full path:"			6 1 "$LocalHome"	6 35 $action \
+0 \
+"Remote home full path:"		7 1 "$RemoteHome"	7 35 $action \
+0 \
+"Time to wait for changes (s):"		8 1 "$TimeToWaitForOtherChanges" \
+8 35 $action 0 \
+"SSH Msster Socket Path:"		9 1 "$SSHMasterSocketPath" \
+9 35 $action 0 \
+"SSH socket keepalive time (min):"	10 1 "$SSHMasterSocketTime" \
+10 35 $action 0 \
+"Event notification time:"		11 1 "$DefaultNotificationTime" \
+11 35 $action 0 \
+"Lock file path:"			12 1 "$LockFilePath" \
+12 35 $action 0 \
+"Commit number file path:"		13 1 "$CommitNumberFilePath" \
+13 35 $action 0 \
+)
+	retval="$?"
+	echo "$opts"
+
+	return "$retval"
+
+}
+
 function getConfig ()
 {
 
-	options=$($DIALOG --title "GNUpot setup" \
---form "Use arrow up and down to move between fields" \
-20 90 0 \
-"Server address or hostname:"		1 1 ""			1 35 50 0 \
-"Remote user name:"			2 1 ""			2 35 50 0 \
-"Remote directory path:"		3 1 "$RemoteDir"  	3 35 50 0 \
-"Local directory full path:"		4 1 "$LocalDir"	4 35 50 0 \
-"Backups to keep (0 = keep all):"	5 1 "$KeepMaxCommits" 	5 35 50 0 \
-"Local home full path:"			6 1 "$LocalHome"	6 35 50 0 \
-"Remote home full path:"		7 1 "$RemoteHome"	7 35 50 0 \
-"Time to wait for changes (s):"		8 1 "$TimeToWaitForOtherChanges" \
-8 35 50 0 \
-"SSH Msster Socket Path:"		9 1 "$SSHMasterSocketPath" \
-9 35 50 0 \
-"SSH socket keepalive time (min):"	10 1 "$SSHMasterSocketTime" \
-10 35 50 0 \
-"Event notification time:"		11 1 "$DefaultNotificationTime" \
-11 35 50 0 \
-"Lock file path:"			12 1 "$LockFilePath" \
-12 35 50 0 \
-"Commit number file path:"		13 1 "$CommitNumberFilePath" \
-13 35 50 0 \
-)
+	options=$(displayForm "GNUpot setup" "Use arrow up and down \
+to move between fields" "50")
 
 	return 0
 
@@ -120,27 +145,12 @@ function verifyConfig ()
 function summary ()
 {
 
-	$DIALOG --title "GNUpot setup summary" --msgbox "\
-$(echo -en "Required settings\n\
-=================\n\
-Server:\t"$Server"\n\
-Remote user:\t"$ServerUsername"\n\
-Remote destination directory:\t"$RemoteDir"\n\
-Local destination directory:\t"$LocalDir"\n\
-Number of backups (0 means keep all commits):\t"$KeepMaxCommits"\n\
-Local home full path:\t"$LocalHome"\n\
-Remote home full path:\t"$RemoteHome"\n\n\
-Optional settings\n\
-=================\n\
-Time to wait for changes:\t"$TimeToWaitForOtherChanges"\n\
-SSH Msster Socket Path:\t"$SSHMasterSocketPath"\n\
-SSH master socket keepalive time:\t"$SSHMasterSocketTime"\n\
-Event notification time:\t"$DefaultNotificationTime"\n\
-Lock file path:\t"$LockFilePath"\n\
-Commit number file path:\t"$CommitNumberFilePath"\n\n\
-You can change these settings any time by editing <somefile>.\n\
-")\
-" 25 90
+	displayForm "GNUpot setup summary" "Are the displayed values \
+correct?" "0"
+
+	if [ "$?" -ne 0 ]; then
+		return 1
+	fi
 
 	return 0
 
@@ -223,15 +233,22 @@ gnupotCommitNumberFilePath=\""$CommitNumberFilePath"\"\n\
 function main ()
 {
 
-	while [ "$endSetup" -eq 0 ]; do
+	endSetup="0"
+	infoOk="0"
+
+
+	while [ "$endSetup" -eq 0 ] && [ "$infoOk" -eq 0 ]; do
 		getConfig
 		verifyConfig
 		if [ "$?" -eq 0 ]; then
 			strTok
 			summary
-			testInfo
 			if [ "$?" -eq 0 ]; then
-				endSetup=1
+				infoOk=1
+				testInfo
+				if [ "$?" -eq 0 ]; then
+					endSetup=1
+				fi
 			fi
 		fi
 	done
