@@ -55,6 +55,19 @@ LockFilePath="$HOME/.lockfile"
 CommitNumberFilePath="$HOME/.commitNums"
 
 
+function errorMsg ()
+{
+
+	err="$1"
+
+	$DIALOG --title "ERROR" --msgbox \
+"Error(s) encoutered: $err Restart configuration.\
+" 25 90
+
+	return 0
+
+}
+
 function displayForm ()
 {
 
@@ -156,34 +169,15 @@ correct?" "0"
 
 }
 
-function errorMsg ()
-{
-
-	err="$1"
-
-	$DIALOG --title "ERROR" --msgbox \
-"Errors encoutered ($err). Restart configuration.\
-" 25 90
-
-	return 0
-
-}
-
 function testInfo ()
 {
 
 	# Test ssh with all options (including key).
-	if [ $(ssh "$ServerUsername"@"$Server" "exit" 2>&-; echo "$?") \
--ne 0 ]; then
-		errorMsg "SSH"
-		return 1
-	fi
-
 	# Check if remote programs exist.
 	CHKCMD="which git && which inotifywait"
 	if [ $(ssh "$ServerUsername"@"$Server" \
 "$CHKCMD" 1>&- 2>&-; echo "$?") -ne 0 ]; then
-		errorMsg "git and/or inotifywait missing on server."
+		errorMsg "SSH problem or git and/or inotifywait missing on server."
 		return 1
 	fi
 
@@ -195,10 +189,17 @@ function initRepo ()
 {
 
 	ssh "$ServerUsername"@"$Server" \
-"mkdir -p "$RemoteDir" && cd "$RemoteDir" && git init --bare --shared && \
-git config --system receive.denyNonFastForwards true"
+"if [ ! -d "$RemoteDir" ]; then mkdir -p "$RemoteDir" && cd "$RemoteDir" \
+&& git init --bare --shared; fi \
+&& git config --system receive.denyNonFastForwards true"
 
-	git clone "$ServerUsername"@"$Server":"$RemoteDir" "$LocalDir"
+	if [ ! -d "$LocalDir" ]; then
+		git clone "$ServerUsername"@"$Server":"$RemoteDir" "$LocalDir"
+	else
+		errorMsg "Local destination directory already exists. Delete \
+it first then restart the setup."
+		return 1
+	fi
 
 	return 0
 
@@ -229,32 +230,35 @@ gnupotCommitNumberFilePath=\""$CommitNumberFilePath"\"\n\
 
 }
 
-
 function main ()
 {
 
-	endSetup="0"
-	infoOk="0"
-
-
-	while [ "$endSetup" -eq 0 ] && [ "$infoOk" -eq 0 ]; do
+	while true; do
 		getConfig
 		verifyConfig
-		if [ "$?" -eq 0 ]; then
-			strTok
-			summary
-			if [ "$?" -eq 0 ]; then
-				infoOk=1
-				testInfo
-				if [ "$?" -eq 0 ]; then
-					endSetup=1
-				fi
-			fi
+		if [ ! "$?" -eq 0 ]; then
+			main
+			return 0
 		fi
+		strTok
+		summary
+		if [ ! "$?" -eq 0 ]; then
+			main
+			return 0
+		fi
+		testInfo
+		if [ ! "$?" -eq 0 ]; then
+			main
+			return 0
+		fi
+		initRepo
+		if [ ! "$?" -eq 0 ]; then
+			main
+			return 0
+		fi
+		writeConfigFile
+		return 0
 	done
-
-	initRepo
-	writeConfigFile
 
 	return 0
 
