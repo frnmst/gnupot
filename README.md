@@ -72,6 +72,7 @@ You have two possibilities for the setup of GNUpot:
 - run the setup: `./setup`
 - **or** copy srv/gnupot.config.example to ~/.config/gnupot/gnupot.config and 
   edit it to your needs.
+
 After that you must:
 - be sure to have an SSH server up and running.
 - be able to connect to that server with private/public keys (these must be
