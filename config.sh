@@ -31,6 +31,10 @@ PATH="$PATH":/usr/bin
 [ "${FLOCKER}" != "$0" ] && exec env FLOCKER="$0" flock -en "$0" "$0" "$@" || :
 
 
+BACKTITLE="GNUpot_setup"
+# Macros.
+DIALOG="dialog --clear --stdout --help-button --backtitle $BACKTITLE"
+
 # Variables.
 options=""
 endSetup="0"
@@ -54,8 +58,7 @@ CommitNumberFilePath="$HOME/.commitNums"
 function getConfig ()
 {
 
-	options=$(dialog --clear --stdout --help-button \
---backtitle "GNUpot setup" --title "GNUpot setup" \
+	options=$($DIALOG --title "GNUpot setup" \
 --form "Use arrow up and down to move between fields" \
 20 90 0 \
 "Server address or hostname:"		1 1 ""			1 35 50 0 \
@@ -92,8 +95,6 @@ TimeToWaitForOtherChanges SSHMasterSocketPath SSHMasterSocketTime \
 DefaultNotificationTime LockFilePath CommitNumberFilePath \
 <<< $options
 
-	SSHMasterSocketTime=""$SSHMasterSocketTime"m"
-
 	return 0
 
 }
@@ -113,14 +114,13 @@ function verifyConfig ()
 	fi
 
 	return 0
+
 }
 
 function summary ()
 {
 
-	dialog --clear --stdout --help-button \
---backtitle "GNUpot setup" --title "GNUpot setup" \
---msgbox "\
+	$DIALOG --title "GNUpot setup summary" --msgbox "\
 $(echo -en "Required settings\n\
 =================\n\
 Server:\t"$Server"\n\
@@ -151,9 +151,8 @@ function errorMsg ()
 
 	err="$1"
 
-		dialog --clear --stdout --help-button \
---backtitle "GNUpot setup" --title "ERROR" \
---msgbox "Errors encoutered ($err). Restart configuration.\
+	$DIALOG --title "ERROR" --msgbox \
+"Errors encoutered ($err). Restart configuration.\
 " 25 90
 
 	return 0
@@ -198,7 +197,9 @@ git config --system receive.denyNonFastForwards true"
 function writeConfigFile ()
 {
 
-echo -en "\
+	SSHMasterSocketTime=""$SSHMasterSocketTime"m"
+
+	echo -en "\
 gnupotServer=\""$Server"\"\n\
 gnupotServerUsername=\""$ServerUsername"\"\n\
 gnupotRemoteDir=\""$RemoteDir"\"\n\
@@ -243,3 +244,5 @@ function main ()
 }
 
 main
+
+exit 0
