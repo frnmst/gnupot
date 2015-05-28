@@ -19,10 +19,6 @@ replacement for Dropbox (and also similar services) that runs exclusively in
 our computers. All of this is done following the *K-I-S-S* (Keep It Simple, 
 Stupid) principal.
 
-**ANY HELP IN CONTRIBUTING TO THIS PROJECT IS WARMLY WELCOMED.**
-
-**LOTS OF DEVELOPMENT IS NEEDED.**
-
 ###Why the name GNUpot
 
 - **GNU** beause of the freedom associated to this program.
@@ -106,12 +102,21 @@ $ ./gnupot
 - ?trickle?
 - dialog 1:1.2_20150513-1 (dialog) [Display user friendly dialog messages 
   during the setup.]
+
+##Help
+
+**TODO**
+```
+./gnupot -h
+```
   
 ##Tests
 
 Tested on [Parabola GNU/Linux-libre](https://www.parabola.nu/), [Arch 
 Linux](https://www.archlinux.org/) and [Manjaro 
 Linux](https://manjaro.github.io/).
+
+**ANY HELP IN CONTRIBUTING TO THIS PROJECT IS WARMLY WELCOMED.**
 
 ##Contact
 

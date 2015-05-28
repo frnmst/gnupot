@@ -417,6 +417,11 @@ function main ()
 
 }
 
+if [ "$1" == "-h" ]; then
+	echo "TODO"
+	exit 1
+fi
+
 # Call main function as spawned shell (execute and return control to the
 # shell).
 main &
