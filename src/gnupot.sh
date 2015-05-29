@@ -38,7 +38,7 @@ PATH="$PATH":/usr/bin
 if [ -f ""$HOME"/.config/gnupot/gnupot.config" ]; then
 	source ""$HOME"/.config/gnupot/gnupot.config"
 else
-	echo -en "Cannot read configuration file\n"
+	echo -en "Cannot read configuration file.\n"
 	exit 1
 fi
 

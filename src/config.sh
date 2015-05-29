@@ -35,9 +35,14 @@ PATH="$PATH":/usr/bin
 HELPFILE="README.md"
 BACKTITLE="GNUpot_setup"
 DIALOG="dialog --clear --stdout --hfile $HELPFILE --backtitle $BACKTITLE"
+CHKCMD="which git && which inotifywait"
+CONFIGDIR="$HOME/.config/gnupot"
 
 # Variables.
+optNum="11"
 options=""
+
+# User variables.
 # Required variables.
 Server=""
 ServerUsername=""
@@ -51,18 +56,18 @@ TimeToWaitForOtherChanges="5"
 SSHMasterSocketPath="/tmp/gnupotSSHMasterSocket"
 SSHMasterSocketTime="120"
 DefaultNotificationTime="2000"
-LockFilePath="$HOME/.config/gnupot/.lockfile"
-CommitNumberFilePath="$HOME/.config/gnupot/.commitNums"
+LockFilePath="$CONFIGDIR/.lockfile"
+CommitNumberFilePath="$CONFIGDIR/.commitNums"
 
 
-function errorMsg ()
+function infoMsg ()
 {
 
-	err="$1"
+	msg="$1"
 
-	$DIALOG --title "ERROR" --msgbox \
-"Error(s) encoutered: $err Restart configuration.\
-" 25 90
+
+	$DIALOG --title "INFO" --msgbox \
+"$msg" 25 90
 
 	return 0
 
@@ -126,8 +131,7 @@ function strTok ()
 	IFS=' ' read \
 Server ServerUsername RemoteDir LocalDir KeepMaxCommits LocalHome RemoteHome \
 TimeToWaitForOtherChanges SSHMasterSocketPath SSHMasterSocketTime \
-DefaultNotificationTime \
-<<< $options
+DefaultNotificationTime <<< $options
 
 	return 0
 
@@ -143,7 +147,7 @@ function verifyConfig ()
 		i=$(($i+1))
 	done
 
-	if [ $i -lt 11 ]; then
+	if [ $i -lt $optNum ]; then
 		return 1
 	fi
 
@@ -169,10 +173,9 @@ function testInfo ()
 
 	# Test ssh with all options (including key).
 	# Check if remote programs exist.
-	CHKCMD="which git && which inotifywait"
 	if [ $(ssh "$ServerUsername"@"$Server" \
 "$CHKCMD" 1>&- 2>&-; echo "$?") -ne 0 ]; then
-		errorMsg "SSH problem or git and/or inotifywait missing on server."
+		infoMsg "SSH problem or git and/or inotifywait missing on server."
 		return 1
 	fi
 
@@ -183,10 +186,9 @@ function testInfo ()
 function initConfigDir ()
 {
 
-	# (in gnupot.sh also) here.
 	mkdir -p ""$HOME"/.config/gnupot"
 	if [ "$?" -ne 0 ]; then
-		errorMsg "Cannot create configuration directory."
+		infoMsg "Cannot create configuration directory."
 		return 1
 	fi
 
@@ -205,7 +207,7 @@ function initRepo ()
 	if [ ! -d "$LocalDir" ]; then
 		git clone "$ServerUsername"@"$Server":"$RemoteDir" "$LocalDir"
 	else
-		errorMsg "Local destination directory already exists. Delete \
+		infoMsg "Local destination directory already exists. Delete \
 it first then restart the setup."
 		return 1
 	fi
@@ -233,7 +235,7 @@ gnupotSSHMasterSocketTime=\""$SSHMasterSocketTime"\"\n\
 gnupotDefaultNotificationTime=\""$DefaultNotificationTime"\"\n\
 gnupotLockFilePath=\""$LockFilePath"\"\n\
 gnupotCommitNumberFilePath=\""$CommitNumberFilePath"\"\n\
-" > ""$HOME"/.config/gnupot/gnupot.config"
+" > ""$CONFIGDIR"/gnupot.config"
 
 	return 0
 
@@ -245,36 +247,20 @@ function main ()
 	while true; do
 		getConfig
 		verifyConfig
-		if [ ! "$?" -eq 0 ]; then
-			main
-			return 0
-		fi
+		if [ ! "$?" -eq 0 ]; then main return 0; fi
 		strTok
 		summary
-		if [ ! "$?" -eq 0 ]; then
-			main
-			return 0
-		fi
+		if [ ! "$?" -eq 0 ]; then main return 0; fi
 		testInfo
-		if [ ! "$?" -eq 0 ]; then
-			main
-			return 0
-		fi
+		if [ ! "$?" -eq 0 ]; then main return 0; fi
 		initConfigDir
-		if [ ! "$?" -eq 0 ]; then
-			main
-			return 0
-		fi
+		if [ ! "$?" -eq 0 ]; then main return 0; fi
 		initRepo
-		if [ ! "$?" -eq 0 ]; then
-			main
-			return 0
-		fi
+		if [ ! "$?" -eq 0 ]; then main return 0; fi
 		writeConfigFile
+		infoMsg "Setup completed."
 		return 0
 	done
-
-	return 0
 
 }
 
