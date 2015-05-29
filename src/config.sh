@@ -202,10 +202,21 @@ function initRepo ()
 	ssh "$ServerUsername"@"$Server" \
 "if [ ! -d "$RemoteDir" ]; then mkdir -p "$RemoteDir" && cd "$RemoteDir" \
 && git init --bare --shared; fi \
-&& git config --system receive.denyNonFastForwards true"
+&& git config --system receive.denyNonFastForwards true" 1>&- 2>&-
+
+	return 0
+}
+
+function cloneRepo ()
+{
 
 	if [ ! -d "$LocalDir" ]; then
-		git clone "$ServerUsername"@"$Server":"$RemoteDir" "$LocalDir"
+		git clone "$ServerUsername"@"$Server":"$RemoteDir" \
+"$LocalDir" 1>&- 2>&-
+		if [ "$?" -ne 0 ]; then
+			infomsg "Cannot clone remote repository."
+			return 1
+		fi
 	else
 		infoMsg "Local destination directory already exists. Delete \
 it first then restart the setup."
@@ -256,6 +267,7 @@ function main ()
 		initConfigDir
 		if [ ! "$?" -eq 0 ]; then main return 0; fi
 		initRepo
+		cloneRepo
 		if [ ! "$?" -eq 0 ]; then main return 0; fi
 		writeConfigFile
 		infoMsg "Setup completed."
