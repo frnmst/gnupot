@@ -48,7 +48,7 @@ Server=""
 ServerUsername=""
 RemoteDir="GNUpot"
 LocalDir=""$HOME"/GNUpot"
-KeepMaxCommits="128"
+KeepMaxCommits="1024"
 LocalHome="$HOME"
 RemoteHome=""
 # Optional variables.
