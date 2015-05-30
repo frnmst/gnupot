@@ -143,13 +143,8 @@ function verifyConfig ()
 	i=0
 
 
-	for option in $options; do
-		i=$(($i+1))
-	done
-
-	if [ $i -lt $optNum ]; then
-		return 1
-	fi
+	for option in $options; do i=$(($i+1)); done
+	if [ $i -lt $optNum ]; then return 1; fi
 
 	return 0
 
@@ -160,19 +155,15 @@ function summary ()
 
 	displayForm "GNUpot setup summary" "Are the displayed values \
 correct?" "0"
-	if [ "$?" -ne 0 ]; then
-		return 1
-	fi
 
-	return 0
+	return "$?"
 
 }
 
 function testInfo ()
 {
 
-	# Test ssh with all options (including key).
-	# Check if remote programs exist.
+	# Check if ssh works and if remote programs exist.
 	if [ $(ssh "$ServerUsername"@"$Server" \
 "$CHKCMD" 1>&- 2>&-; echo "$?") -ne 0 ]; then
 		infoMsg "SSH problem or git and/or inotifywait missing on server."
