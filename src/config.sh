@@ -198,6 +198,23 @@ function initRepo ()
 	return 0
 }
 
+# Make a fake commit to avoid problems at the first pull of a new repository.
+function makeFirstCommit ()
+{
+
+	cd "$LocalDir"
+	if [ ! -f ".firstCommit" ]; then
+		echo "" > .firstCommit
+		git add -A 1>&- 2>&-
+		git commit -a -m "First commit." 1>&- 2>&-
+		git push origin master 1>&- 2>&-
+	fi
+	cd "$OLDPWD"
+
+	return 0
+
+}
+
 function cloneRepo ()
 {
 
@@ -208,6 +225,7 @@ function cloneRepo ()
 			infomsg "Cannot clone remote repository."
 			return 1
 		fi
+		makeFirstCommit
 	else
 		infoMsg "Local destination directory already exists. Delete \
 it first then restart the setup."

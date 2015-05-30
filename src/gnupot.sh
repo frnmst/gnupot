@@ -401,6 +401,7 @@ function main ()
 	syncC &
 	cliPid="$!"
 
+	# Wait for server and client threads to exit.
 	wait "$srvPid" "$cliPid"
 
 	notifyCmd "GNUpot stopped." "$gnupotDefaultNotificationTime"
