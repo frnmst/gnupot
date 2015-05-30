@@ -383,21 +383,6 @@ function sigHandler ()
 
 }
 
-# Clean before exiting.
-function clean ()
-{
-
-	srvPid="$1"
-	cliPid="$2"
-
-
-	# Wait for client and server threads before exiting.
-	wait "$srvPid" "$cliPid"
-
-	return 0
-
-}
-
 # Main function that runs in background.
 function main ()
 {
@@ -416,7 +401,7 @@ function main ()
 	syncC &
 	cliPid="$!"
 
-	clean "$srvPid" "$cliPid"
+	wait "$srvPid" "$cliPid"
 
 	notifyCmd "GNUpot stopped." "$gnupotDefaultNotificationTime"
 
