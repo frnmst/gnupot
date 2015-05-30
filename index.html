@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="description" content="GNUpot : Yet another libre Dropbox clone (only for the right aspects) written in bash.">
+
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>GNUpot</title>
+  </head>
+
+  <body>
+
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/frnmst/gnupot">View on GitHub</a>
+
+          <h1 id="project_title">GNUpot</h1>
+          <h2 id="project_tagline">Yet another libre Dropbox clone (only for the right aspects) written in bash.</h2>
+
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/frnmst/gnupot/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/frnmst/gnupot/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <h1>
+<a id="gnupot" class="anchor" href="#gnupot" aria-hidden="true"><span class="octicon octicon-link"></span></a>GNUpot</h1>
+
+<p>Yet another libre Dropbox clone (only for the right aspects) written in bash. </p>
+
+<h2>
+<a id="purpose-of-this-project" class="anchor" href="#purpose-of-this-project" aria-hidden="true"><span class="octicon octicon-link"></span></a>Purpose of this project</h2>
+
+<p>Lots of us using Dropbox (or similar) like its functionalities. However 
+these services have some defects:</p>
+
+<ul>
+<li>Your data could be anywhere in the world.
+
+<ul>
+<li>This means you don't have full control over your own files.</li>
+</ul>
+</li>
+<li>Size limits
+
+<ul>
+<li>Usually of a few Gigabytes.</li>
+</ul>
+</li>
+<li>Clients used to access these servces are usually proprietary.</li>
+<li>These program are also heavy (in terms of disk,  memory and processor usage).</li>
+<li>What are you going to do if those <em>owners</em> close the services?</li>
+</ul>
+
+<p>The aim of this project is to have a completely free (as in freedom) 
+replacement for Dropbox (and also similar services) that runs exclusively in 
+our computers. All of this is done following the <em>K-I-S-S</em> (Keep It Simple, 
+Stupid) principal.</p>
+
+<h3>
+<a id="why-the-name-gnupot" class="anchor" href="#why-the-name-gnupot" aria-hidden="true"><span class="octicon octicon-link"></span></a>Why the name GNUpot</h3>
+
+<ul>
+<li>
+<strong>GNU</strong> beause of the freedom associated to this program.</li>
+<li>
+<strong>pot</strong> because it gives the idea of some type of container.</li>
+</ul>
+
+<h2>
+<a id="ideas-behind-the-project" class="anchor" href="#ideas-behind-the-project" aria-hidden="true"><span class="octicon octicon-link"></span></a>Ideas behind the project</h2>
+
+<ul>
+<li>Simple.
+
+<ul>
+<li>Use of <code>bash</code> as scripting language makes the program overall very 
+integrated with a GNU/Linux system (as well as other UNIX-like systems). </li>
+<li>Programming and manteinance should also be trivial this way.</li>
+</ul>
+</li>
+<li>When some kind of change is made, this is sent automatically to the server 
+(or to the client).
+
+<ul>
+<li>This is possible with <code>inotify</code> which looks for changes inside the watch 
+directories both on client and server.</li>
+</ul>
+</li>
+<li>Encrypted and passord-less communication between client and server.
+
+<ul>
+<li>
+<code>ssh</code> is very suitable and malleable for this job. <strong>WORK IN PROGRESS</strong>
+</li>
+</ul>
+</li>
+<li>Minimal bandwidth usage.
+
+<ul>
+<li>If we are setting up a server at home it is unlikely to have fast upload 
+speed. We have to avoid to use all available upload (and even download 
+bandwidth) on server side (especially). ?This is achieved using <code>trickle</code>?
+<strong>TODO</strong>
+</li>
+</ul>
+</li>
+<li>Desktop notifications.
+
+<ul>
+<li>When an event is originated (either on client or on server) user must be 
+notified. The command <code>notify-send</code> is perfect for this because of its 
+simplicity.</li>
+</ul>
+</li>
+<li>Solid syncing agent.
+
+<ul>
+<li>
+<code>git</code> is designed for collaboration and has an excellent SSH support. </li>
+</ul>
+</li>
+<li>Automatic file conflict detection and resolution. <strong>BASIC FUNCTIONALITY</strong>
+</li>
+<li>Automatic backup to a maximum user defined number of backups.</li>
+<li>Easily shareable directories.
+
+<ul>
+<li>User and groups are managed by simple text files on the server. <strong>TODO</strong>
+</li>
+</ul>
+</li>
+<li>No server-side program running.
+
+<ul>
+<li>Only programs like <code>inotify</code> and <code>git</code> needs to be installed on the 
+server.</li>
+</ul>
+</li>
+<li>Very simple setup.
+
+<ul>
+<li>Stupid setup, using <code>dialog</code>, which initializes local and remote repositories.
+User configuration is also written.</li>
+</ul>
+</li>
+</ul>
+
+<h3>
+<a id="warning" class="anchor" href="#warning" aria-hidden="true"><span class="octicon octicon-link"></span></a>WARNING</h3>
+
+<p><strong>THIS IS A WORK IN PROGESS. DON'T EXPECT THAT IT WORKS OUT OF THE BOX.</strong></p>
+
+<h2>
+<a id="howto" class="anchor" href="#howto" aria-hidden="true"><span class="octicon octicon-link"></span></a>Howto</h2>
+
+<pre><code>$ git clone https://github.com/frnmst/gnupot.git
+$ cd gnupot
+</code></pre>
+
+<p>You have <strong>two possibilities</strong> for the setup of GNUpot:</p>
+
+<ul>
+<li>run the setup: <code>./setup</code>
+</li>
+<li>
+<strong>OR</strong> copy <code>srv/gnupot.config.example</code> to <code>~/.config/gnupot/gnupot.config</code> 
+and edit it to your needs. Manually initialize a shared repository on the 
+server and clone it on the client.</li>
+</ul>
+
+<p>After that you must:</p>
+
+<ul>
+<li>be sure to have an SSH server up and running.</li>
+<li>be able to connect to that server with private/public keys (these must be
+passwordless).</li>
+<li>install the packages described below.</li>
+</ul>
+
+<p>Once you have completed <strong>all</strong> the previous points you can actually run the 
+program:</p>
+
+<pre><code>$ ./gnupot
+</code></pre>
+
+<h3>
+<a id="packages-to-install-dependencies" class="anchor" href="#packages-to-install-dependencies" aria-hidden="true"><span class="octicon octicon-link"></span></a>Packages to install (dependencies)</h3>
+
+<ul>
+<li>bash 4.3.033-1
+
+<ul>
+<li>Server and client.</li>
+</ul>
+</li>
+<li>openssh 6.8p1-2
+
+<ul>
+<li>Server and client.</li>
+</ul>
+</li>
+<li>inotify-tools 3.14-4 (inotifywait) [Tells the script that some changes have 
+been made to a certain file.]
+
+<ul>
+<li>Server and client.</li>
+</ul>
+</li>
+<li>util-linux 2.26.1-3 (flock) [Locks script and avoids contemporary local and
+remote sync.]
+
+<ul>
+<li>Client only.</li>
+</ul>
+</li>
+<li>libnotify 0.7.6-1 (notify-send) [Sends notifications to notification server.]
+
+<ul>
+<li>Client only.</li>
+</ul>
+</li>
+<li>#Be sure to have 1 and only 1 notify server installed. It should be already 
+installed on your system.
+#dunst () [Lightweight notification server; it displays notifications.]
+
+<ul>
+<li>Client only.</li>
+</ul>
+</li>
+<li>git 2.4.1-1 (git) [Program that syncs file and does versioning control.]
+
+<ul>
+<li>Server and client.</li>
+</ul>
+</li>
+<li>?trickle?</li>
+<li>dialog 1:1.2_20150513-1 (dialog) [Display user friendly dialog messages 
+during the setup.]</li>
+</ul>
+
+<h2>
+<a id="help" class="anchor" href="#help" aria-hidden="true"><span class="octicon octicon-link"></span></a>Help</h2>
+
+<p><strong>TODO</strong></p>
+
+<pre><code>./gnupot -h
+</code></pre>
+
+<h2>
+<a id="tests" class="anchor" href="#tests" aria-hidden="true"><span class="octicon octicon-link"></span></a>Tests</h2>
+
+<p>Tested on <a href="https://www.parabola.nu/">Parabola GNU/Linux-libre</a>, <a href="https://www.archlinux.org/">Arch 
+Linux</a> and <a href="https://manjaro.github.io/">Manjaro 
+Linux</a>.</p>
+
+<p><strong>ANY HELP IN CONTRIBUTING TO THIS PROJECT IS WARMLY WELCOMED.</strong></p>
+
+<h2>
+<a id="contact" class="anchor" href="#contact" aria-hidden="true"><span class="octicon octicon-link"></span></a>Contact</h2>
+
+<p><a href="mailto:franco.masotti@live.com">franco.masotti@live.com</a> or <a href="mailto:franco.masotti@student.unife.it">franco.masotti@student.unife.it</a></p>
+      </section>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">GNUpot maintained by <a href="https://github.com/frnmst">frnmst</a></p>
+        <p>Published with <a href="https://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
+    
+
+  </body>
+</html>
