@@ -33,7 +33,7 @@ PATH="$PATH":/usr/bin
 
 # Macros.
 HELPFILE="README.md"
-BACKTITLE="GNUpot_setup"
+BACKTITLE="GNUpot_setup._F1_for_help."
 DIALOG="dialog --clear --stdout --hfile $HELPFILE --backtitle $BACKTITLE"
 CHKCMD="which git && which inotifywait"
 CONFIGDIR="$HOME/.config/gnupot"
@@ -105,7 +105,7 @@ function displayForm ()
 9 35 $action 0 \
 "SSH socket keepalive time (min):"	10 1 "$SSHMasterSocketTime" \
 10 35 $action 0 \
-"Event notification time:"		11 1 "$DefaultNotificationTime" \
+"Event notification time (ms):"		11 1 "$DefaultNotificationTime" \
 11 35 $action 0 \
 )
 	retval="$?"
