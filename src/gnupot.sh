@@ -30,10 +30,6 @@ set -a
 # Set path.
 PATH="$PATH":/usr/bin
 
-# Flock so that script is not executed more than once.
-# See man 1 flock (examples section).
-[ "${FLOCKER}" != "$0" ] && exec env FLOCKER="$0" flock -en "$0" "$0" "$@" || :
-
 # Load configuration.
 if [ -f ""$HOME"/.config/gnupot/gnupot.config" ]; then
 	source ""$HOME"/.config/gnupot/gnupot.config"
@@ -239,7 +235,6 @@ function syncOperation ()
 	# Do the syncing.
 	sharedSyncActions
 
-	# OK.
 	notifyCmd "Done." "$gnupotDefaultNotificationTime"
 
 	return 0
@@ -383,12 +378,80 @@ function sigHandler ()
 
 }
 
+function printHelp ()
+{
+
+	echo -en "\
+GNUpot help\n\n\
+gnupot [ -h | -i | -p | -s ]\n\n\
+\t-h\tHelp.\n\
+\t-i\tStart GNUpot.\n\
+\t-p\tPrint configuration file.\n\
+\t-s\tPrint status.\n\n\
+Starting GNUpot without arguments is the same as using -i flag.\n\
+"
+
+	return 0
+
+}
+
+function printStatus ()
+{
+
+	i=0
+
+
+	echo -en "GNUpot is "
+	total="$(pgrep gnupot)"
+	for proc in $total; do i=$(($i+1)); done
+	if [ $i -lt 6 ]; then echo -en "NOT "; fi
+	echo -en "running.\n"
+
+	return 0
+
+}
+
+function parseOpts ()
+{
+
+	prgPath="$1"
+	argArray="$2"
+
+
+	# If there are no arguments, start GNUpot as if there was -i flag.
+	if [ -z "$argArray" ]; then main "$prgPath" "$argArray" & return 0; fi
+
+	# Get options from special variable $@.
+	getopts ":hips" opt "$argArray"
+	case "$opt" in
+		h ) printHelp; return 1 ;;
+		# Call main function as spawned shell (execute and return control to the
+		# shell).
+		i ) main "$prgPath" "$argArray" & ;;
+		p ) cat ""$HOME"/.config/gnupot/gnupot.config" ;;
+		s ) printStatus ;;
+		? ) printHelp; return 1 ;;
+	esac
+
+	return 0
+
+}
+
 # Main function that runs in background.
 function main ()
 {
 
+	prgPath="$1"
+	argArray="$2"
+
+
 	# Enable signal interpretation to kill all subshells
 	trap "sigHandler" SIGINT SIGTERM
+
+	# Flock so that script is not executed more than once.
+	# See man 1 flock (examples section).
+	[ "${FLOCKER}" != "$prgPath" ] && exec env FLOCKER="$prgPath" \
+flock -en "$prgPath" "$prgPath" "$argArray" || :
 
 	notifyCmd "GNUpot starting..." "$gnupotDefaultNotificationTime"
 
@@ -410,16 +473,10 @@ function main ()
 
 }
 
-if [ "$1" == "-h" ]; then
-	echo "TODO"
-	exit 1
-fi
+# Call option parser.
+parseOpts "$0" "$@"
 
-# Call main function as spawned shell (execute and return control to the
-# shell).
-main &
-
-exit 0
+exit "$?"
 
 
 # SOME IDEAS FOR A BETTER FILE CONFLICT RESOLVER FUNCTION.
