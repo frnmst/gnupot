@@ -117,7 +117,6 @@ function resolveConflicts ()
 {
 
 	returnedVal="$1"
-	action="$2"
 
 
 	if [ "$returnedVal" -eq 1 ]; then
@@ -174,8 +173,7 @@ function getCommitNumber ()
 {
 
 	if [ ! -f "$gnupotCommitNumberFilePath" ]; then
-		echo 1 > "$gnupotCommitNumberFilePath"
-		echo 1
+		echo 1 > "$gnupotCommitNumberFilePath"; echo 1
 	else
 		cat "$gnupotCommitNumberFilePath"
 	fi
@@ -196,15 +194,12 @@ function sharedSyncActions ()
 	# Always pull from server first then check for conflicts using return
 	# value.
 	$GITCMD pull origin master
-
-	resolveConflicts "$?" "<smt>"
+	resolveConflicts "$?"
 
 	currentCommits=$(getCommitNumber)
-
 	# To be able to use this: git config --system
 	# receive.denyNonFastForwards true
 	backupAndClean "$currentCommits"
-
 	# Update commit number.
 	echo $(($currentCommits+1)) > "$gnupotCommitNumberFilePath"
 
@@ -405,7 +400,7 @@ function printStatus ()
 	total="$(pgrep gnupot)"
 	for proc in $total; do i=$(($i+1)); done
 	if [ $i -lt 6 ]; then echo -en "NOT "; fi
-	echo -en "running.\n"
+	echo -en "running correctly.\n"
 
 	return 0
 
@@ -420,13 +415,12 @@ function parseOpts ()
 
 	# If there are no arguments, start GNUpot as if there was -i flag.
 	if [ -z "$argArray" ]; then main "$prgPath" "$argArray" & return 0; fi
-
 	# Get options from special variable $@.
 	getopts ":hips" opt "$argArray"
 	case "$opt" in
 		h ) printHelp; return 1 ;;
-		# Call main function as spawned shell (execute and return control to the
-		# shell).
+		# Call main function as spawned shell (execute and return
+	 	# control to the shell).
 		i ) main "$prgPath" "$argArray" & ;;
 		p ) cat ""$HOME"/.config/gnupot/gnupot.config" ;;
 		s ) printStatus ;;
