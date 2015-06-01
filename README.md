@@ -85,30 +85,34 @@ program:
 ```
 $ ./gnupot
 ```
+To download program updates (without cloning every time):
+```
+git pull origin master
+```
 
 ###Packages to install (dependencies)
 
-- bash 4.3.033-1
+- `bash` 4.3.033-1
   - Server and client.
-- openssh 6.8p1-2
+- `openssh` 6.8p1-2
   - Server and client.
-- inotify-tools 3.14-4 (inotifywait) [Tells the script that some changes have 
+- `inotify-tools` 3.14-4 (inotifywait) [Tells the script that some changes have 
   been made to a certain file.]
   - Server and client.
-- util-linux 2.26.1-3 (flock) [Locks script and avoids contemporary local and
+- `util-linux` 2.26.1-3 (flock) [Locks script and avoids contemporary local and
   remote sync.]
   - Client only.
-- libnotify 0.7.6-1 (notify-send) [Sends notifications to notification server.]
+- `libnotify` 0.7.6-1 (notify-send) [Sends notifications to notification 
+  server.]
   - Client only.
-- #Be sure to have 1 and only 1 notify server installed. It should be already 
-  installed on your system.
-  #dunst () [Lightweight notification server; it displays notifications.]
-  - Client only.
-- git 2.4.1-1 (git) [Program that syncs file and does versioning control.]
+- `git` 2.4.1-1 (git) [Program that syncs file and does versioning control.]
   - Server and client.
-- ?trickle?
-- dialog 1:1.2_20150513-1 (dialog) [Display user friendly dialog messages 
+- `?trickle?` [Traffic shaper.]
+- `dialog` 1:1.2_20150513-1 (dialog) [Display user friendly dialog messages 
   during the setup.]
+- Be sure to have 1 and only 1 notify server installed. It should be already 
+  installed on your system.
+  - Client only.
 
 ##Help
 
