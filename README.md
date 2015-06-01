@@ -116,9 +116,25 @@ git pull origin master
 
 ##Help
 
-**TODO**
 ```
-./gnupot -h
+$ ./gnupot -h
+GNUpot help
+
+./gnupot [ -h | -i | -l | -k | -p | -s ]
+
+        -h      Help.
+        -i      Start GNUpot.
+        -l      Show GNUpot license.
+        -k      Kill GNUpot.
+        -p      Print configuration file.
+        -s      Print status.
+
+Starting GNUpot without arguments is the same as using -i flag.
+
+GNUpot  Copyright (C) 2015  frnmst (Franco Masotti)
+This program comes with ABSOLUTELY NO WARRANTY; for details type `./gnupot -l'.
+This is free software, and you are welcome to redistribute it 
+under certain conditions; type `./gnupot -l' for details.
 ```
   
 ##Tests

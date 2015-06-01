@@ -435,7 +435,7 @@ function parseOpts ()
 		k ) killall -q gnupot ;;
 		p ) cat ""$HOME"/.config/gnupot/gnupot.config" ;;
 		s ) printStatus ;;
-		? ) printHelp "prgPath"; return 1 ;;
+		? ) printHelp "$prgPath"; return 1 ;;
 	esac
 
 	return 0
