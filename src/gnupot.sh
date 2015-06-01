@@ -416,32 +416,6 @@ function printStatus ()
 
 }
 
-function parseOpts ()
-{
-
-	prgPath="$1"
-	argArray="$2"
-
-	# If there are no arguments, start GNUpot as if there was -i flag.
-	if [ -z "$argArray" ]; then main "$prgPath" "$argArray" & return 0; fi
-	# Get options from special variable $@.
-	getopts ":hilkps" opt "$argArray"
-	case "$opt" in
-		h ) printHelp "$prgPath"; return 1 ;;
-		# Call main function as spawned shell (execute and return
-	 	# control to the shell).
-		i ) main "$prgPath" "$argArray" & ;;
-		l ) less "LICENSE" ;;
-		k ) killall -q gnupot ;;
-		p ) cat ""$HOME"/.config/gnupot/gnupot.config" ;;
-		s ) printStatus ;;
-		? ) printHelp "$prgPath"; return 1 ;;
-	esac
-
-	return 0
-
-}
-
 # Main function that runs in background.
 function main ()
 {
@@ -473,6 +447,32 @@ flock -en "$prgPath" "$prgPath" "$argArray" || :
 	wait "$srvPid" "$cliPid"
 
 	notifyCmd "GNUpot stopped." "$gnupotDefaultNotificationTime"
+
+	return 0
+
+}
+
+function parseOpts ()
+{
+
+	prgPath="$1"
+	argArray="$2"
+
+	# If there are no arguments, start GNUpot as if there was -i flag.
+	if [ -z "$argArray" ]; then main "$prgPath" "$argArray" & return 0; fi
+	# Get options from special variable $@.
+	getopts ":hilkps" opt "$argArray"
+	case "$opt" in
+		h ) printHelp "$prgPath"; return 1 ;;
+		# Call main function as spawned shell (execute and return
+	 	# control to the shell).
+		i ) main "$prgPath" "$argArray" & ;;
+		l ) less "LICENSE" ;;
+		k ) killall -s SIGINT -q gnupot ;;
+		p ) cat ""$HOME"/.config/gnupot/gnupot.config" ;;
+		s ) printStatus ;;
+		? ) printHelp "$prgPath"; return 1 ;;
+	esac
 
 	return 0
 
