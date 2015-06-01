@@ -376,14 +376,24 @@ function sigHandler ()
 function printHelp ()
 {
 
+	prgPath="$1"
+
+
 	echo -en "\
 GNUpot help\n\n\
-gnupot [ -h | -i | -p | -s ]\n\n\
+"$prgPath" [ -h | -i | -l | -k | -p | -s ]\n\n\
 \t-h\tHelp.\n\
 \t-i\tStart GNUpot.\n\
+\t-l\tShow GNUpot license.\n\
+\t-k\tKill GNUpot.\n\
 \t-p\tPrint configuration file.\n\
 \t-s\tPrint status.\n\n\
-Starting GNUpot without arguments is the same as using -i flag.\n\
+Starting GNUpot without arguments is the same as using -i flag.\n\n\
+GNUpot  Copyright (C) 2015  frnmst (Franco Masotti)\n\
+This program comes with ABSOLUTELY NO WARRANTY; for details type \
+\`"$prgPath" -l'.\n\
+This is free software, and you are welcome to redistribute it \n\
+under certain conditions; type \`"$prgPath" -l' for details.\n\
 "
 
 	return 0
@@ -412,19 +422,20 @@ function parseOpts ()
 	prgPath="$1"
 	argArray="$2"
 
-
 	# If there are no arguments, start GNUpot as if there was -i flag.
 	if [ -z "$argArray" ]; then main "$prgPath" "$argArray" & return 0; fi
 	# Get options from special variable $@.
-	getopts ":hips" opt "$argArray"
+	getopts ":hilkps" opt "$argArray"
 	case "$opt" in
-		h ) printHelp; return 1 ;;
+		h ) printHelp "$prgPath"; return 1 ;;
 		# Call main function as spawned shell (execute and return
 	 	# control to the shell).
 		i ) main "$prgPath" "$argArray" & ;;
+		l ) less "LICENSE" ;;
+		k ) killall -q gnupot ;;
 		p ) cat ""$HOME"/.config/gnupot/gnupot.config" ;;
 		s ) printStatus ;;
-		? ) printHelp; return 1 ;;
+		? ) printHelp "prgPath"; return 1 ;;
 	esac
 
 	return 0
