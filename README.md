@@ -92,23 +92,25 @@ git pull origin master
 
 ###Packages to install (dependencies)
 
-- `bash` 4.3.033-1
+`<packet name> <executable> <comment>`
+
+- `bash` 4.3.033-1 (`bash`)
   - Server and client.
-- `openssh` 6.8p1-2
+- `openssh` 6.8p1-2 (`ssh`)
   - Server and client.
-- `inotify-tools` 3.14-4 (inotifywait) [Tells the script that some changes have 
-  been made to a certain file.]
+- `inotify-tools` 3.14-4 (`inotifywait`) [Tells the script that some changes 
+  have been made to a certain file.]
   - Server and client.
-- `util-linux` 2.26.1-3 (flock) [Locks script and avoids contemporary local and
-  remote sync.]
+- `util-linux` 2.26.1-3 (`flock`) [Locks script and avoids contemporary local 
+  and remote sync.]
   - Client only.
-- `libnotify` 0.7.6-1 (notify-send) [Sends notifications to notification 
+- `libnotify` 0.7.6-1 (`notify-send`) [Sends notifications to notification 
   server.]
   - Client only.
-- `git` 2.4.1-1 (git) [Program that syncs file and does versioning control.]
+- `git` 2.4.1-1 (`git`) [Program that syncs file and does versioning control.]
   - Server and client.
-- `?trickle?` [Traffic shaper.]
-- `dialog` 1:1.2_20150513-1 (dialog) [Display user friendly dialog messages 
+- `?trickle?` (`trickle`) [Traffic shaper.]
+- `dialog` 1:1.2_20150513-1 (`dialog`) [Display user friendly dialog messages 
   during the setup.]
 - Be sure to have 1 and only 1 notify server installed. It should be already 
   installed on your system.
@@ -120,21 +122,25 @@ git pull origin master
 $ ./gnupot -h
 GNUpot help
 
-./gnupot [ -h | -i | -l | -k | -p | -s ]
+SYNOPSIS
+        ./gnupot [ -h | -i | -l | -k | -p | -s ]
 
-        -h      Help.
-        -i      Start GNUpot.
-        -l      Show GNUpot license.
-        -k      Kill GNUpot.
-        -p      Print configuration file.
-        -s      Print status.
+                -h      Help.
+                -i      Start GNUpot.
+                -l      Show GNUpot license.
+                -k      Kill GNUpot.
+                -p      Print configuration file.
+                -s      Print status.
 
-Starting GNUpot without arguments is the same as using -i flag.
+RETURN VALUES
+        0       No error occurred.
+        1       Some error occurred.
 
-GNUpot  Copyright (C) 2015  frnmst (Franco Masotti)
-This program comes with ABSOLUTELY NO WARRANTY; for details type `./gnupot -l'.
-This is free software, and you are welcome to redistribute it 
-under certain conditions; type `./gnupot -l' for details.
+COPYRIGHT
+        GNUpot  Copyright (C) 2015  frnmst (Franco Masotti)
+        This program comes with ABSOLUTELY NO WARRANTY; for details type `./gnupot -l'.
+        This is free software, and you are welcome to redistribute it 
+        under certain conditions; type `./gnupot -l' for details.
 ```
   
 ##Tests

@@ -40,6 +40,9 @@ fi
 
 # Macros.
 
+# List of installed programs that GNUpot uses.
+PROGRAMS="bash ssh inotifywait flock notify-send git"
+
 # SSH arguments.
 # TODO: Add -i <public key> as explicit parameter.
 SSHARGS="-C -S "$gnupotSSHMasterSocketPath""
@@ -64,7 +67,7 @@ GIT_SSH_COMMAND="ssh $SSHARGS"
 
 
 # General notification function.
-function notifyCmd ()
+function notifyCmd
 {
 
 	msg="$1"
@@ -77,7 +80,7 @@ function notifyCmd ()
 
 }
 
-function syncNotify ()
+function syncNotify
 {
 
 	path="$1"
@@ -93,7 +96,7 @@ function syncNotify ()
 }
 
 # Get relative path for local or remote changed files.
-function getRelativePath ()
+function getRelativePath
 {
 
 	fullPath="$1"
@@ -113,7 +116,7 @@ function getRelativePath ()
 # Resolve conflict function.
 # WARING: AT THIS MOMENT THIS FUNCTION WORKS BUT IT'S VERY BASIC.
 # CONFLICTING FILES ARE MERGED.
-function resolveConflicts ()
+function resolveConflicts
 {
 
 	returnedVal="$1"
@@ -131,7 +134,7 @@ conflicts"
 }
 
 # Clean useless files and keep maximum user defined number of backups.
-function backupAndClean ()
+function backupAndClean
 {
 
 	currentCommits="$1"
@@ -169,7 +172,7 @@ function backupAndClean ()
 
 }
 
-function getCommitNumber ()
+function getCommitNumber
 {
 
 	if [ ! -f "$gnupotCommitNumberFilePath" ]; then
@@ -182,12 +185,8 @@ function getCommitNumber ()
 
 }
 
-# Both client and server threads execute this function.
-function sharedSyncActions ()
+function gitSyncOperations
 {
-
-	# Do all git operations in the correct directory.
-	cd "$gnupotLocalDir"
 
 	$GITCMD add -A
 	$GITCMD commit -a -m "Commit on $(date "+%s")"
@@ -196,8 +195,21 @@ function sharedSyncActions ()
 	$GITCMD pull origin master
 	resolveConflicts "$?"
 
+	return 0
+
+}
+
+# Both client and server threads execute this function.
+function sharedSyncActions
+{
+
+	# Do all git operations in the correct directory.
+	cd "$gnupotLocalDir"
+
+	gitSyncOperations
+
 	currentCommits=$(getCommitNumber)
-	# To be able to use this: git config --system
+	# To be able to use this: git config --system \
 	# receive.denyNonFastForwards true
 	backupAndClean "$currentCommits"
 	# Update commit number.
@@ -212,7 +224,7 @@ function sharedSyncActions ()
 
 # Main file syncronization function.
 # This is executed inside a critical section.
-function syncOperation ()
+function syncOperation
 {
 
 	source="$1"
@@ -237,7 +249,7 @@ function syncOperation ()
 }
 
 # Kill program if local and/or remote directories do not exist.
-function checkDirExistence ()
+function checkDirExistence
 {
 
 	input="$1"
@@ -254,7 +266,7 @@ function checkDirExistence ()
 
 }
 
-function checkServerDirExistence ()
+function checkServerDirExistence
 {
 
 	# Check if remote directory exists.
@@ -266,7 +278,7 @@ then echo 1; else echo 0; fi")
 
 }
 
-function checkClientDirExistence ()
+function checkClientDirExistence
 {
 
 	# Check if local directory exists.
@@ -278,7 +290,7 @@ then echo 1; else echo 0; fi)
 
 }
 
-function callSync ()
+function callSync
 {
 
 	source="$1"
@@ -317,7 +329,7 @@ function callSync ()
 }
 
 # Server sync thread.
-function syncS ()
+function syncS
 {
 
 	# return/exit when signal{s} is/are received.
@@ -340,7 +352,7 @@ function syncS ()
 }
 
 # Client sync thread.
-function syncC ()
+function syncC
 {
 
 	trap "return 0" SIGINT SIGTERM
@@ -358,7 +370,7 @@ function syncC ()
 }
 
 # Signal handler function.
-function sigHandler ()
+function sigHandler
 {
 
 	echo -en "GNUpot killed\n" 1>&2
@@ -373,7 +385,7 @@ function sigHandler ()
 
 }
 
-function printHelp ()
+function printHelp
 {
 
 	prgPath="$1"
@@ -381,43 +393,58 @@ function printHelp ()
 
 	echo -en "\
 GNUpot help\n\n\
-"$prgPath" [ -h | -i | -l | -k | -p | -s ]\n\n\
-\t-h\tHelp.\n\
-\t-i\tStart GNUpot.\n\
-\t-l\tShow GNUpot license.\n\
-\t-k\tKill GNUpot.\n\
-\t-p\tPrint configuration file.\n\
-\t-s\tPrint status.\n\n\
-Starting GNUpot without arguments is the same as using -i flag.\n\n\
-GNUpot  Copyright (C) 2015  frnmst (Franco Masotti)\n\
-This program comes with ABSOLUTELY NO WARRANTY; for details type \
+SYNOPSIS\n\
+\t"$prgPath" [ -h | -i | -l | -k | -p | -s ]\n\n\
+\t\t-h\tHelp.\n\
+\t\t-i\tStart GNUpot.\n\
+\t\t-l\tShow GNUpot license.\n\
+\t\t-k\tKill GNUpot.\n\
+\t\t-p\tPrint configuration file.\n\
+\t\t-s\tPrint status.\n\n\
+RETURN VALUES\n\
+\t0\tNo error occurred.\n\
+\t1\tSome error occurred.\n\n\
+COPYRIGHT\n\
+\tGNUpot  Copyright (C) 2015  frnmst (Franco Masotti)\n\
+\tThis program comes with ABSOLUTELY NO WARRANTY; for details type \
 \`"$prgPath" -l'.\n\
-This is free software, and you are welcome to redistribute it \n\
-under certain conditions; type \`"$prgPath" -l' for details.\n\
-"
+\tThis is free software, and you are welcome to redistribute it \n\
+\tunder certain conditions; type \`"$prgPath" -l' for details.\n\
+" 1>&2
 
 	return 0
 
 }
 
-function printStatus ()
+function printStatus
 {
 
 	i=0
 
 
-	echo -en "GNUpot is "
+	echo -en "GNUpot is " 1>&2
 	total="$(pgrep gnupot)"
 	for proc in $total; do i=$(($i+1)); done
-	if [ $i -lt 6 ]; then echo -en "NOT "; fi
-	echo -en "running correctly.\n"
+	if [ $i -lt 6 ]; then echo -en "NOT " 1>&2; fi
+	echo -en "running correctly.\n" 1>&2
 
 	return 0
 
 }
 
+# Check if all necessary programs are installed.
+function checkExecutables
+{
+
+	which $PROGRAMS 1>&- 2>&-
+
+	return "$?"
+
+}
+
+
 # Main function that runs in background.
-function main ()
+function main
 {
 
 	prgPath="$1"
@@ -436,6 +463,8 @@ flock -en "$prgPath" "$prgPath" "$argArray" || :
 
 	echo 0 > "$gnupotLockFilePath"
 
+	#sharedSyncActions
+
 	# Listen from server and send to client.
 	syncS &
 	srvPid="$!"
@@ -452,7 +481,7 @@ flock -en "$prgPath" "$prgPath" "$argArray" || :
 
 }
 
-function parseOpts ()
+function parseOpts
 {
 
 	prgPath="$1"
@@ -477,6 +506,10 @@ function parseOpts ()
 	return 0
 
 }
+
+checkExecutables
+if [ "$?" -ne 0 ]; then echo -en "Missing programs. Check: $PROGRAMS.\n" 1>&2 \
+&& exit 1; fi
 
 # Call option parser.
 parseOpts "$0" "$@"
