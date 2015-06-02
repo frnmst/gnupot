@@ -58,13 +58,6 @@ Stupid) principal.
   - Stupid setup, using `dialog`, which initializes local and remote repositories.
     User configuration is also written.
 
-###WARNING AND DISCLAMER
-
-**THIS IS A WORK IN PROGESS. IT IS NOT READY YET FOR PRODUCTION USE.**
-
-**AS THE LICENSE STATES THIS PROGRAM COMES WITH ABSOLUTELY NO WARRANY, SO
-  I'M NOT RESPONSABLE FOR ANY DATA LOSS.**
-
 ##Howto
 
 ```
@@ -153,6 +146,13 @@ Linux](https://www.archlinux.org/) and [Manjaro
 Linux](https://manjaro.github.io/).
 
 **ANY HELP IN CONTRIBUTING TO THIS PROJECT IS WARMLY WELCOMED.**
+
+##WARNING AND DISCLAMER
+
+**THIS IS A WORK IN PROGESS. IT IS NOT READY YET FOR PRODUCTION USE.**
+
+**AS THE LICENSE STATES THIS PROGRAM COMES WITH ABSOLUTELY NO WARRANY, SO
+  I'M NOT RESPONSABLE FOR ANY DATA LOSS.**
 
 ##Contact
 
