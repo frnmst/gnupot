@@ -60,13 +60,15 @@ Stupid) principal.
 
 ##Howto
 
+###Setup
+
 ```
 $ git clone https://github.com/frnmst/gnupot.git
 $ cd gnupot
 ```
 You have **two possibilities** for the setup of GNUpot:
 - run the setup: `./setup`
-- **OR** copy `srv/gnupot.config.example` to `~/.config/gnupot/gnupot.config` 
+- **OR** copy `src/gnupot.config.example` to `~/.config/gnupot/gnupot.config` 
   and edit it to your needs. Manually initialize a shared repository on the 
   server and clone it on the client.
 
