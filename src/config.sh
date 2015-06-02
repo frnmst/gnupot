@@ -46,6 +46,7 @@ options=""
 # Required variables.
 Server=""
 ServerUsername=""
+PublicKey=""$HOME"/.ssh/id_rsa_gnupot.pub"
 RemoteDir="GNUpot"
 LocalDir=""$HOME"/GNUpot"
 KeepMaxCommits="1024"
@@ -60,7 +61,7 @@ LockFilePath="$CONFIGDIR/.lockfile"
 CommitNumberFilePath="$CONFIGDIR/.commitNums"
 
 
-function infoMsg ()
+function infoMsg
 {
 
 	msg="$1"
@@ -73,7 +74,7 @@ function infoMsg ()
 
 }
 
-function displayForm ()
+function displayForm
 {
 
 	title="$1"
@@ -115,7 +116,7 @@ function displayForm ()
 
 }
 
-function getConfig ()
+function getConfig
 {
 
 	options=$(displayForm "GNUpot setup" "Use arrow up and down \
@@ -125,7 +126,7 @@ to move between fields" "50")
 
 }
 
-function strTok ()
+function strTok
 {
 
 	IFS=' ' read \
@@ -137,7 +138,7 @@ DefaultNotificationTime <<< $options
 
 }
 
-function verifyConfig ()
+function verifyConfig
 {
 
 	i=0
@@ -150,7 +151,7 @@ function verifyConfig ()
 
 }
 
-function summary ()
+function summary
 {
 
 	displayForm "GNUpot setup summary" "Are the displayed values \
@@ -160,7 +161,7 @@ correct?" "0"
 
 }
 
-function testInfo ()
+function testInfo
 {
 
 	# Check if ssh works and if remote programs exist.
@@ -174,7 +175,7 @@ function testInfo ()
 
 }
 
-function initConfigDir ()
+function initConfigDir
 {
 
 	mkdir -p ""$HOME"/.config/gnupot"
@@ -187,7 +188,7 @@ function initConfigDir ()
 
 }
 
-function initRepo ()
+function initRepo
 {
 
 	ssh "$ServerUsername"@"$Server" \
@@ -199,7 +200,7 @@ function initRepo ()
 }
 
 # Make a fake commit to avoid problems at the first pull of a new repository.
-function makeFirstCommit ()
+function makeFirstCommit
 {
 
 	cd "$LocalDir"
@@ -215,7 +216,7 @@ function makeFirstCommit ()
 
 }
 
-function cloneRepo ()
+function cloneRepo
 {
 
 	if [ ! -d "$LocalDir" ]; then
@@ -236,7 +237,7 @@ it first then restart the setup."
 
 }
 
-function writeConfigFile ()
+function writeConfigFile
 {
 
 	SSHMasterSocketTime=""$SSHMasterSocketTime"m"
@@ -261,7 +262,7 @@ gnupotCommitNumberFilePath=\""$CommitNumberFilePath"\"\n\
 
 }
 
-function main ()
+function main
 {
 
 	while true; do
