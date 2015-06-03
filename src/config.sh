@@ -42,7 +42,7 @@ CONFIGDIR="$HOME/.config/gnupot"
 optNum="12"
 options=""
 
-if [ -f "src/setupVariables.conf" ]; then source src/setupVariables.conf; fi
+if [ -f "src/configVariables.conf" ]; then source src/configVariables.conf; fi
 
 
 function infoMsg
@@ -79,7 +79,7 @@ function displayForm
 0 \
 "Local directory full path:"		4 1 "$LocalDir"		4 35 $action \
 0 \
-"Local public key path:"		5 1 "$PublicKey"  	5 35 $action \
+"Local public key path:"		5 1 "$PublicKeyPath"	5 35 $action \
 0 \
 "Backups to keep (0 = keep all):"	6 1 "$KeepMaxCommits" 	6 35 $action \
 0 \
@@ -117,9 +117,9 @@ function strTok
 {
 
 	IFS=' ' read \
-Server ServerUsername RemoteDir LocalDir KeepMaxCommits LocalHome RemoteHome \
-TimeToWaitForOtherChanges SSHMasterSocketPath SSHMasterSocketTime \
-DefaultNotificationTime <<< $options
+Server ServerUsername RemoteDir LocalDir PublicKeyPath KeepMaxCommits \
+LocalHome RemoteHome TimeToWaitForOtherChanges SSHMasterSocketPath \
+SSHMasterSocketTime DefaultNotificationTime <<< $options
 
 	return 0
 
@@ -227,19 +227,18 @@ it first then restart the setup."
 function writeConfigFile
 {
 
-	SSHMasterSocketTime=""$SSHMasterSocketTime"m"
-
 	echo -en "\
 gnupotServer=\""$Server"\"\n\
 gnupotServerUsername=\""$ServerUsername"\"\n\
 gnupotRemoteDir=\""$RemoteDir"\"\n\
 gnupotLocalDir=\""$LocalDir"\"\n\
+gnupotPublicKeyPath=\""$PublicKeyPath"\"\n\
 gnupotKeepMaxCommits=\""$KeepMaxCommits"\"\n\
 gnupotLocalHome=\""$LocalHome"\"\n\
 gnupotRemoteHome=\""$RemoteHome"\"\n\
 gnupotTimeToWaitForOtherChanges=\""$TimeToWaitForOtherChanges"\"\n\
 gnupotSSHMasterSocketPath=\""$SSHMasterSocketPath"\"\n\
-gnupotSSHMasterSocketTime=\""$SSHMasterSocketTime"\"\n\
+gnupotSSHMasterSocketTime=\""$SSHMasterSocketTime"m\"\n\
 gnupotDefaultNotificationTime=\""$DefaultNotificationTime"\"\n\
 gnupotLockFilePath=\""$LockFilePath"\"\n\
 gnupotCommitNumberFilePath=\""$CommitNumberFilePath"\"\n\
