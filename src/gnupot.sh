@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #
-# gnupot
+# gnupot.sh
 #
 # Copyright (C) 2015 frnmst (Franco Masotti) <franco.masotti@live.com>
 #                                            <franco.masotti@student.unife.it>
@@ -42,6 +42,8 @@ fi
 
 # List of installed programs that GNUpot uses.
 PROGRAMS="bash ssh inotifywait flock notify-send git"
+
+USERDATA="by "$USER"@"$HOSTNAME"."
 
 # SSH arguments.
 # TODO: Add -i <public key> as explicit parameter.
@@ -125,8 +127,8 @@ function resolveConflicts
 	if [ "$returnedVal" -eq 1 ]; then
 		notifyCmd "Resolving file conflicts." \
 "$gnupotDefaultNotificationTime"
-		$GITCMD commit -a -m "Commit on $(date "+%s"). Handled \
-conflicts"
+		$GITCMD commit -a -m "Commit on $(date "+%s") $USERDATA \
+Handled conflicts"
 	fi
 
 	return 0
@@ -153,7 +155,8 @@ function backupAndClean
 		# <start_point> and switch to it.
 		$GITCMD checkout --orphan tmp "$commitSha"
 		# Change old commit.
-		$GITCMD commit -m "Truncated history on $(date "+%s")"
+		$GITCMD commit -m "Truncated history on $(date "+%s") \
+$USERDATA"
 		# From man git-rebase
 		# Forward-port local commits to the updated upstream head.
 		$GITCMD rebase --onto tmp "$commitSha" master
@@ -189,7 +192,7 @@ function gitSyncOperations
 {
 
 	$GITCMD add -A
-	$GITCMD commit -a -m "Commit on $(date "+%s")"
+	$GITCMD commit -a -m "Commit on $(date "+%s") $USERDATA"
 	# Always pull from server first then check for conflicts using return
 	# value.
 	$GITCMD pull origin master
@@ -233,11 +236,7 @@ function syncOperation
 
 	sleep "$gnupotTimeToWaitForOtherChanges"
 
-	if [ "$source" == "server" ]; then
-		syncNotify "$path" "$gnupotRemoteDir" "server"
-	else
-		syncNotify "$path" "$gnupotLocalDir" "client"
-	fi
+	syncNotify "$path" "$gnupotRemoteDir" "$source"
 
 	# Do the syncing.
 	sharedSyncActions
@@ -341,12 +340,10 @@ function syncS
 	checkServerDirExistence
 
 	while true; do
-
 		# Listen for changes on server
 		path=$(ssh $SSHCONNECTCMDARGS "$INOTIFYWAITCMD" \
 "$gnupotRemoteDir" | awk ' { print $1 $3 } ')
 		callSync "server"
-
 	done
 
 }
@@ -360,11 +357,9 @@ function syncC
 	checkClientDirExistence
 
 	while true; do
-
 		path=$($INOTIFYWAITCMD --exclude .git "$gnupotLocalDir" \
 | awk ' { print $1 $3 } ')
 		callSync "client"
-
 	done
 
 }
@@ -441,7 +436,6 @@ function checkExecutables
 	return "$?"
 
 }
-
 
 # Main function that runs in background.
 function main

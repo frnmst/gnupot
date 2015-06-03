@@ -39,26 +39,10 @@ CHKCMD="which git && which inotifywait"
 CONFIGDIR="$HOME/.config/gnupot"
 
 # Variables.
-optNum="11"
+optNum="12"
 options=""
 
-# User variables.
-# Required variables.
-Server=""
-ServerUsername=""
-PublicKey=""$HOME"/.ssh/id_rsa_gnupot.pub"
-RemoteDir="GNUpot"
-LocalDir=""$HOME"/GNUpot"
-KeepMaxCommits="1024"
-LocalHome="$HOME"
-RemoteHome=""
-# Optional variables.
-TimeToWaitForOtherChanges="5"
-SSHMasterSocketPath="/tmp/gnupotSSHMasterSocket"
-SSHMasterSocketTime="120"
-DefaultNotificationTime="2000"
-LockFilePath="$CONFIGDIR/.lockfile"
-CommitNumberFilePath="$CONFIGDIR/.commitNums"
+if [ -f "src/setupVariables.conf" ]; then source src/setupVariables.conf; fi
 
 
 function infoMsg
@@ -93,21 +77,24 @@ function displayForm
 0 \
 "Remote directory path:"		3 1 "$RemoteDir"  	3 35 $action \
 0 \
-"Local directory full path:"		4 1 "$LocalDir"	4 35 $action 0 \
-"Backups to keep (0 = keep all):"	5 1 "$KeepMaxCommits" 	5 35 $action \
+"Local directory full path:"		4 1 "$LocalDir"		4 35 $action \
 0 \
-"Local home full path:"			6 1 "$LocalHome"	6 35 $action \
+"Local public key path:"		5 1 "$PublicKey"  	5 35 $action \
 0 \
-"Remote home full path:"		7 1 "$RemoteHome"	7 35 $action \
+"Backups to keep (0 = keep all):"	6 1 "$KeepMaxCommits" 	6 35 $action \
 0 \
-"Time to wait for changes (s):"		8 1 "$TimeToWaitForOtherChanges" \
-8 35 $action 0 \
-"SSH Msster Socket Path:"		9 1 "$SSHMasterSocketPath" \
+"Local home full path:"			7 1 "$LocalHome"	7 35 $action \
+0 \
+"Remote home full path:"		8 1 "$RemoteHome"	8 35 $action \
+0 \
+"Time to wait for changes (s):"		9 1 "$TimeToWaitForOtherChanges" \
 9 35 $action 0 \
-"SSH socket keepalive time (min):"	10 1 "$SSHMasterSocketTime" \
+"SSH Msster Socket Path:"		10 1 "$SSHMasterSocketPath" \
 10 35 $action 0 \
-"Event notification time (ms):"		11 1 "$DefaultNotificationTime" \
+"SSH socket keepalive time (min):"	11 1 "$SSHMasterSocketTime" \
 11 35 $action 0 \
+"Event notification time (ms):"		12 1 "$DefaultNotificationTime" \
+12 35 $action 0 \
 )
 	retval="$?"
 	echo "$opts"
