@@ -396,6 +396,8 @@ SYNOPSIS\n\
 \t\t-k\tKill GNUpot.\n\
 \t\t-p\tPrint configuration file.\n\
 \t\t-s\tPrint status.\n\n\
+CONFIGURATION FILE\n\
+\tConfiguration file is found in ~/.config/gnupot/gnupot.config.\n\n\
 RETURN VALUES\n\
 \t0\tNo error occurred.\n\
 \t1\tSome error occurred.\n\n\
