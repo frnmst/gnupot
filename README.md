@@ -35,7 +35,7 @@ Stupid) principal.
   - This is possible with `inotify` which looks for changes inside the watch 
     directories both on client and server.
 - Encrypted and passord-less communication between client and server.
-  - `ssh` is very suitable and malleable for this job. **WORK IN PROGRESS**
+  - `ssh` is very suitable and malleable for this job.
 - Minimal bandwidth usage.
   - If we are setting up a server at home it is unlikely to have fast upload 
     speed. We have to avoid to use all available upload (and even download 
@@ -62,33 +62,72 @@ Stupid) principal.
 
 ###Setup
 
+To install GNUpot
+1. you must download it first of all:
+
 ```
 $ git clone https://github.com/frnmst/gnupot.git
 $ cd gnupot
 ```
-You have **two possibilities** for the setup of GNUpot:
-- run the setup: `./setup`
-- **OR** copy `src/gnupot.config.example` to `~/.config/gnupot/gnupot.config` 
-  and edit it to your needs. Manually initialize a shared repository on the 
-  server and clone it on the client.
 
-After that you must:
-- be sure to have an SSH server up and running.
-- be able to connect to that server with private/public keys (these must be
-  passwordless).
-- install the packages described below.
+2. install **all** the packages described at the end of the readme.
 
-Once you have completed **all** the previous points you can actually run the 
+There are various ways to proceed.
+
+####The easy way (recommended)
+
+1. On the server (as **root** user or with **sudo**):
+  * add a new user (gnupot in the example) and set its password. I advise you 
+    to select a strong password:
+```
+# useradd -m -G wheel -s /bin/bash gnupot
+# passwd gnupot
+```
+  * add the following entry at the end of `/etc/ssh/sshd_config`. This will 
+    enable password authentication so that you can easily add new clients:
+```
+Match User gnupot
+	PasswordAuthentication yes
+```
+  * restart ssh daemon (if you don't have **Systemd** check your manuals):
+```
+# systemctl restart sshd
+
+```
+You should now be able to login in your server like this:
+```
+ssh gnupot@<yourServerAddressOrHostname>
+```
+
+2. On the client:
+  - run `./setup` and answer to all the questions.
+
+####The difficult way
+
+1. If you can't login to the server **or** you want to use a different user 
+   instead of your usual one, go to 
+   [step 1](github.com/frnmst/gnupot/README.md).
+
+2. copy `src/gnupot.config.example` to `~/.config/gnupot/gnupot.config` 
+   and edit it to your needs.
+
+3. Manually initialize a shared repository on the server and clone it on the 
+   client.
+ 
+##Start GNUpot
+
+Once you have completed the previous points you can actually run the 
 program:
 ```
 $ ./gnupot
 ```
+
 To download program updates (without cloning every time):
 ```
 git pull origin master
 ```
 
-###Packages to install (dependencies)
+##Packages to install (dependencies)
 
 `<packet name> <executable> <comment>`
 
@@ -129,6 +168,9 @@ SYNOPSIS
                 -k      Kill GNUpot.
                 -p      Print configuration file.
                 -s      Print status.
+
+CONFIGURATION FILE
+        Configuration file is found in ~/.config/gnupot/gnupot.config.
 
 RETURN VALUES
         0       No error occurred.

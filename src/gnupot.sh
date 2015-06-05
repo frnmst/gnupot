@@ -30,43 +30,65 @@ set -a
 # Set path.
 PATH="$PATH":/usr/bin
 
-# Load configuration.
-if [ -f ""$HOME"/.config/gnupot/gnupot.config" ]; then
-	source ""$HOME"/.config/gnupot/gnupot.config"
-else
-	echo -en "Cannot read configuration file.\n"
-	exit 1
-fi
-
-# Macros.
-
+# Macros. Some of these are declared here (but empty) just to have global
+# scope.
+CONFIGFILEPATH=""$HOME"/.config/gnupot/gnupot.config"
 # List of installed programs that GNUpot uses.
 PROGRAMS="bash ssh inotifywait flock notify-send git"
-
 USERDATA="by "$USER"@"$HOSTNAME"."
-
-# SSH arguments.
-# TODO: Add -i <public key> as explicit parameter.
-SSHARGS="-C -S "$gnupotSSHMasterSocketPath""
-
-# Used for general ssh commands
-SSHCONNECTCMDARGS="$SSHARGS "$gnupotServerUsername"@"$gnupotServer""
-
-# Open master socket so that further connection will result faster
-# (using multiplexing to avoid re-authentication).
-SSHMASTERSOCKCMDARGS="-M -o \
-ControlPersist="$gnupotSSHMasterSocketTime" \
-$SSHCONNECTCMDARGS exit"
-
+SSHARGS=""
+SSHCONNECTCMDARGS=""
+SSHMASTERSOCKCMDARGS=""
 # inotifywait command macro: recursive, quiet, listen only to certain events.
 INOTIFYWAITCMD="inotifywait -r -q -e modify -e attrib \
 -e move -e move_self -e create -e delete -e delete_self"
-
 GITCMD="git"
+GIT_SSH_COMMAND=""
 
-# git environment variable for ssh.
-GIT_SSH_COMMAND="ssh $SSHARGS"
 
+function setGloblVars
+{
+
+	# SSH arguments.
+	SSHARGS="-o PasswordAuthentication=no -i "$gnupotSSHKeyPath" -C -S \
+"$gnupotSSHMasterSocketPath""
+
+	# Used for general ssh commands
+	SSHCONNECTCMDARGS="$SSHARGS "$gnupotServerUsername"@"$gnupotServer""
+
+	# Open master socket so that further connection will result faster
+	# (using multiplexing to avoid re-authentication).
+	SSHMASTERSOCKCMDARGS="-M -o \
+	ControlPersist="$gnupotSSHMasterSocketTime" \
+$SSHCONNECTCMDARGS exit"
+
+	# git environment variable for ssh.
+	GIT_SSH_COMMAND="ssh $SSHARGS"
+
+	return 0
+
+}
+
+function loadConfig
+{
+
+	errMsg="Cannot read configuration file."
+
+
+	if [ -f "$CONFIGFILEPATH" ]; then
+		source "$CONFIGFILEPATH" 2>&-
+		if [ "$?" -ne 0 ]; then echo $errMsg; exit 1; fi
+	else
+		echo $errMsg; exit 1
+	fi
+
+	# Parsing here TODO.
+
+	setGloblVars
+
+	return 0
+
+}
 
 # General notification function.
 function notifyCmd
@@ -232,11 +254,14 @@ function syncOperation
 
 	source="$1"
 	path="$2"
+	rootDir=""
 
 
 	sleep "$gnupotTimeToWaitForOtherChanges"
 
-	syncNotify "$path" "$gnupotRemoteDir" "$source"
+	if [ "$source" == "server" ]; then rootDir="$gnupotRemoteDir"; else \
+rootDir="$gnupotLocalDir"; fi
+	syncNotify "$path" "$rootDir" "$source"
 
 	# Do the syncing.
 	sharedSyncActions
@@ -503,9 +528,12 @@ function parseOpts
 
 }
 
+# Load configuration.
+loadConfig
+
 checkExecutables
-if [ "$?" -ne 0 ]; then echo -en "Missing programs. Check: $PROGRAMS.\n" 1>&2 \
-&& exit 1; fi
+if [ "$?" -ne 0 ]; then echo -en "Missing programs. Check: $PROGRAMS.\n" \
+1>&2; exit 1; fi
 
 # Call option parser.
 parseOpts "$0" "$@"

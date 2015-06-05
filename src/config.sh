@@ -30,19 +30,24 @@ PATH="$PATH":/usr/bin
 # See man 1 flock (examples section).
 [ "${FLOCKER}" != "$0" ] && exec env FLOCKER="$0" flock -en "$0" "$0" "$@" || :
 
+# This avoid problems with git ssh variable.
+set -a
 
 # Macros.
 HELPFILE="README.md"
 BACKTITLE="GNUpot_setup._F1_for_help."
-DIALOG="dialog --clear --stdout --hfile $HELPFILE --backtitle $BACKTITLE"
+DIALOGIBOX="dialog --stdout --hfile $HELPFILE --backtitle $BACKTITLE"
+DIALOG="$DIALOGIBOX --clear"
 CHKCMD="which git && which inotifywait"
 CONFIGDIR="$HOME/.config/gnupot"
+VARIABLESOURCEFILEPATH="src/configVariables.conf"
+GIT_SSH_COMMAND=""
+
+if [ -f "$VARIABLESOURCEFILEPATH" ]; then source "$VARIABLESOURCEFILEPATH"; fi
 
 # Variables.
 optNum="12"
 options=""
-
-if [ -f "src/configVariables.conf" ]; then source src/configVariables.conf; fi
 
 
 function infoMsg
@@ -52,6 +57,19 @@ function infoMsg
 
 
 	$DIALOG --title "INFO" --msgbox \
+"$msg" 25 90
+
+	return 0
+
+}
+
+function infoBox
+{
+
+	msg="$1"
+
+
+	$DIALOGIBOX --title "INFO" --infobox \
 "$msg" 25 90
 
 	return 0
@@ -79,7 +97,7 @@ function displayForm
 0 \
 "Local directory full path:"		4 1 "$LocalDir"		4 35 $action \
 0 \
-"Local public key path:"		5 1 "$PublicKeyPath"	5 35 $action \
+"Local public key path:"		5 1 "$SSHKeyPath"	5 35 $action \
 0 \
 "Backups to keep (0 = keep all):"	6 1 "$KeepMaxCommits" 	6 35 $action \
 0 \
@@ -117,7 +135,7 @@ function strTok
 {
 
 	IFS=' ' read \
-Server ServerUsername RemoteDir LocalDir PublicKeyPath KeepMaxCommits \
+Server ServerUsername RemoteDir LocalDir SSHKeyPath KeepMaxCommits \
 LocalHome RemoteHome TimeToWaitForOtherChanges SSHMasterSocketPath \
 SSHMasterSocketTime DefaultNotificationTime <<< $options
 
@@ -148,14 +166,37 @@ correct?" "0"
 
 }
 
+function genSSHKey
+{
+
+	if [ ! -f "$SSHKeyPath" ]; then
+		infoBox "Generating SSH keys. Please wait."
+		ssh-keygen -t rsa -b "$RSAKeyBits" -C \
+"gnupot:$USER@$HOSTNAME:$(date -I)" -f "$SSHKeyPath" -N "" -q
+	fi
+	infoBox "Insert "$ServerUsername" password:"
+	ssh-copy-id -i ""$SSHKeyPath".pub" "$ServerUsername"@"$Server"
+
+	# Check if ssh works and if remote programs exist.
+	ssh -o PasswordAuthentication=no -i "$SSHKeyPath" \
+"$ServerUsername"@"$Server" "$CHKCMD" 1>&- 2>&-
+
+	return "$?"
+
+}
+
 function testInfo
 {
 
-	# Check if ssh works and if remote programs exist.
-	if [ $(ssh "$ServerUsername"@"$Server" \
-"$CHKCMD" 1>&- 2>&-; echo "$?") -ne 0 ]; then
-		infoMsg "SSH problem or git and/or inotifywait missing on server."
-		return 1
+	# Check if ssh and remote programs already work.
+	if [ $(ssh -o PasswordAuthentication=no -i "$SSHKeyPath" \
+"$ServerUsername"@"$Server" "$CHKCMD" 1>&- 2>&-; echo "$?") -ne 0 ]; then
+		genSSHKey
+		if [ "$?" -ne 0 ]; then
+			infoMsg "SSH problem or git and/or inotifywait \
+missing on server."
+			return 1
+		fi
 	fi
 
 	return 0
@@ -178,7 +219,7 @@ function initConfigDir
 function initRepo
 {
 
-	ssh "$ServerUsername"@"$Server" \
+	ssh -i $SSHKeyPath $ServerUsername@$Server \
 "if [ ! -d "$RemoteDir" ]; then mkdir -p "$RemoteDir" && cd "$RemoteDir" \
 && git init --bare --shared; fi \
 && git config --system receive.denyNonFastForwards true" 1>&- 2>&-
@@ -206,11 +247,15 @@ function makeFirstCommit
 function cloneRepo
 {
 
+	GIT_SSH_COMMAND="ssh -i $SSHKeyPath"
+
+
 	if [ ! -d "$LocalDir" ]; then
+		infoBox "Cloning remote repository. This may take a while."
 		git clone "$ServerUsername"@"$Server":"$RemoteDir" \
 "$LocalDir" 1>&- 2>&-
 		if [ "$?" -ne 0 ]; then
-			infomsg "Cannot clone remote repository."
+			infoMsg "Cannot clone remote repository."
 			return 1
 		fi
 		makeFirstCommit
@@ -232,7 +277,7 @@ gnupotServer=\""$Server"\"\n\
 gnupotServerUsername=\""$ServerUsername"\"\n\
 gnupotRemoteDir=\""$RemoteDir"\"\n\
 gnupotLocalDir=\""$LocalDir"\"\n\
-gnupotPublicKeyPath=\""$PublicKeyPath"\"\n\
+gnupotSSHKeyPath=\""$SSHKeyPath"\"\n\
 gnupotKeepMaxCommits=\""$KeepMaxCommits"\"\n\
 gnupotLocalHome=\""$LocalHome"\"\n\
 gnupotRemoteHome=\""$RemoteHome"\"\n\
@@ -258,9 +303,9 @@ function main
 		strTok
 		summary
 		if [ ! "$?" -eq 0 ]; then main return 0; fi
-		testInfo
-		if [ ! "$?" -eq 0 ]; then main return 0; fi
 		initConfigDir
+		if [ ! "$?" -eq 0 ]; then main return 0; fi
+		testInfo
 		if [ ! "$?" -eq 0 ]; then main return 0; fi
 		initRepo
 		cloneRepo
