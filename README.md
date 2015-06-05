@@ -104,7 +104,7 @@ $ ssh gnupot@<yourServerAddressOrHostname>
 ####The difficult way
 
 1. If you can't login to the server **or** you want to use a different user 
-   instead of your usual one, go to [step 1](#The easy way (recommended)).
+   instead of your usual one, go to [step 1](#the-easy-way-recommended).
 
 2. copy `src/gnupot.config.example` to `~/.config/gnupot/gnupot.config` 
    and edit it to your needs.
