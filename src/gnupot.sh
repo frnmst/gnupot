@@ -458,6 +458,18 @@ function printStatus
 function checkExecutables
 {
 
+	gitVer=""
+	gitVer0=""
+	gitVer1=""
+	# Garbage variable.
+	trash=""
+
+
+	# Check if git supports GIT_SSH_COMMAND environment variaible.
+	gitVer="$(git --version | awk ' { print $3 } ')"
+	IFS="." read gitVer0 gitVer1 trash <<< "$gitVer"
+	if [ "$gitVer0$gitVer1" -le 23 ]; then return 1; fi
+
 	which $PROGRAMS 1>&- 2>&-
 
 	return "$?"
@@ -532,8 +544,8 @@ function parseOpts
 loadConfig
 
 checkExecutables
-if [ "$?" -ne 0 ]; then echo -en "Missing programs. Check: $PROGRAMS.\n" \
-1>&2; exit 1; fi
+if [ "$?" -ne 0 ]; then echo -en "Missing programs or unsupported. Check: \
+$PROGRAMS.\n" 1>&2; exit 1; fi
 
 # Call option parser.
 parseOpts "$0" "$@"

@@ -134,10 +134,19 @@ to move between fields" "50")
 function strTok
 {
 
-	IFS=' ' read \
-Server ServerUsername RemoteDir LocalDir SSHKeyPath KeepMaxCommits \
-LocalHome RemoteHome TimeToWaitForOtherChanges SSHMasterSocketPath \
-SSHMasterSocketTime DefaultNotificationTime <<< "$options"
+	FORMVARIABLES="Server ServerUsername RemoteDir LocalDir SSHKeyPath \
+KeepMaxCommits LocalHome RemoteHome TimeToWaitForOtherChanges \
+SSHMasterSocketPath SSHMasterSocketTime DefaultNotificationTime"
+
+	# Control bash version to avoid IFS bug. bash 4.2 (and lower?) has this
+	# bug. If bash is <=4.2 spaces must be avoided in form fields.
+	bashVersion="${BASH_VERSINFO[0]}${BASH_VERSINFO[1]}"
+	if [ "$bashVersion" -le 42 ];then
+		options="$(echo $options | tr " " ";")"
+		IFS=";" read $FORMVARIABLES <<< "$options"
+	else
+		IFS=' ' read $FORMVARIABLES <<< $options
+	fi
 
 	return 0
 
