@@ -65,7 +65,7 @@ Stupid) principal.
 To install GNUpot
 1. you must download it first of all:
 
-```
+```shell
 $ git clone https://github.com/frnmst/gnupot.git
 $ cd gnupot
 ```
@@ -92,11 +92,10 @@ Match User gnupot
   * restart ssh daemon (if you don't have **Systemd** check your manuals):
 ```
 # systemctl restart sshd
-
 ```
 You should now be able to login in your server like this:
-```
-ssh gnupot@<yourServerAddressOrHostname>
+```shell
+$ ssh gnupot@<yourServerAddressOrHostname>
 ```
 
 2. On the client:
@@ -105,8 +104,7 @@ ssh gnupot@<yourServerAddressOrHostname>
 ####The difficult way
 
 1. If you can't login to the server **or** you want to use a different user 
-   instead of your usual one, go to 
-   [step 1](github.com/frnmst/gnupot/README.md).
+   instead of your usual one, go to [step 1](#The easy way (recommended)).
 
 2. copy `src/gnupot.config.example` to `~/.config/gnupot/gnupot.config` 
    and edit it to your needs.
@@ -118,13 +116,13 @@ ssh gnupot@<yourServerAddressOrHostname>
 
 Once you have completed the previous points you can actually run the 
 program:
-```
+```shell
 $ ./gnupot
 ```
 
 To download program updates (without cloning every time):
-```
-git pull origin master
+```shell
+$ git pull origin master
 ```
 
 ##Packages to install (dependencies)
