@@ -107,7 +107,7 @@ function displayForm
 0 \
 "Time to wait for changes (s):"		9 1 "$TimeToWaitForOtherChanges" \
 9 35 $action 0 \
-"SSH Msster Socket Path:"		10 1 "$SSHMasterSocketPath" \
+"SSH Master Socket Path:"		10 1 "$SSHMasterSocketPath" \
 10 35 $action 0 \
 "SSH socket keepalive time (min):"	11 1 "$SSHMasterSocketTime" \
 11 35 $action 0 \
@@ -137,7 +137,7 @@ function strTok
 	IFS=' ' read \
 Server ServerUsername RemoteDir LocalDir SSHKeyPath KeepMaxCommits \
 LocalHome RemoteHome TimeToWaitForOtherChanges SSHMasterSocketPath \
-SSHMasterSocketTime DefaultNotificationTime <<< $options
+SSHMasterSocketTime DefaultNotificationTime <<< "$options"
 
 	return 0
 
