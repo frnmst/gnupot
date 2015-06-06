@@ -33,6 +33,8 @@ PATH="$PATH":/usr/bin
 # Macros. Some of these are declared here (but empty) just to have global
 # scope.
 CONFIGFILEPATH=""$HOME"/.config/gnupot/gnupot.config"
+# List of trapped signals.
+SIGNALS="SIGABRT SIGCHLD SIGHUP SIGINT SIGQUIT SIGTERM SIGTSTP"
 # List of installed programs that GNUpot uses.
 PROGRAMS="bash ssh inotifywait flock notify-send git"
 USERDATA="by "$USER"@"$HOSTNAME"."
@@ -357,7 +359,7 @@ function syncS
 {
 
 	# return/exit when signal{s} is/are received.
-	trap "return 0" SIGINT SIGTERM
+	trap "exit" $SIGNALS
 
 	# Open master ssh socket.
 	ssh $SSHMASTERSOCKCMDARGS 2>&-
@@ -377,7 +379,7 @@ function syncS
 function syncC
 {
 
-	trap "return 0" SIGINT SIGTERM
+	trap "exit" $SIGNALS
 
 	checkClientDirExistence
 
@@ -485,7 +487,7 @@ function main
 
 
 	# Enable signal interpretation to kill all subshells
-	trap "sigHandler" SIGINT SIGTERM
+	trap "sigHandler" $SIGNALS
 
 	# Flock so that script is not executed more than once.
 	# See man 1 flock (examples section).

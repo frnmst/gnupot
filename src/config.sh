@@ -53,24 +53,17 @@ options=""
 function infoMsg
 {
 
-	msg="$1"
+	# --msgbox or --infobox
+	type="$1"
+	msg="$2"
 
-
-	$DIALOG --title "INFO" --msgbox \
+	if [ "$type" == "msgbox" ]; then
+		$DIALOG --title "INFO" --"$type" \
 "$msg" 25 90
-
-	return 0
-
-}
-
-function infoBox
-{
-
-	msg="$1"
-
-
-	$DIALOGIBOX --title "INFO" --infobox \
+	else
+		$DIALOGIBOX --title "INFO" --"$type" \
 "$msg" 25 90
+	fi
 
 	return 0
 
@@ -179,11 +172,13 @@ function genSSHKey
 {
 
 	if [ ! -f "$SSHKeyPath" ]; then
-		infoBox "Generating SSH keys. Please wait."
+		infoMsg "infobox" "Generating SSH keys. Please wait."
 		ssh-keygen -t rsa -b "$RSAKeyBits" -C \
 "gnupot:$USER@$HOSTNAME:$(date -I)" -f "$SSHKeyPath" -N "" -q
 	fi
-	infoBox "Insert "$ServerUsername" password:"
+	infoMsg "infobox" "You will now be prompted for "$ServerUsername"'s \
+password..."
+	sleep 5
 	ssh-copy-id -i ""$SSHKeyPath".pub" "$ServerUsername"@"$Server"
 
 	# Check if ssh works and if remote programs exist.
@@ -202,8 +197,8 @@ function testInfo
 "$ServerUsername"@"$Server" "$CHKCMD" 1>&- 2>&-; echo "$?") -ne 0 ]; then
 		genSSHKey
 		if [ "$?" -ne 0 ]; then
-			infoMsg "SSH problem or git and/or inotifywait \
-missing on server."
+			infoMsg "msgbox" "SSH problem or git and/or \
+inotifywaitmissing on server."
 			return 1
 		fi
 	fi
@@ -217,7 +212,7 @@ function initConfigDir
 
 	mkdir -p ""$HOME"/.config/gnupot"
 	if [ "$?" -ne 0 ]; then
-		infoMsg "Cannot create configuration directory."
+		infoMsg "msgbox" "Cannot create configuration directory."
 		return 1
 	fi
 
@@ -242,7 +237,7 @@ function makeFirstCommit
 
 	cd "$LocalDir"
 	if [ ! -f ".firstCommit" ]; then
-		echo "" > .firstCommit
+		touch .firstCommit
 		git add -A 1>&- 2>&-
 		git commit -a -m "First commit." 1>&- 2>&-
 		git push origin master 1>&- 2>&-
@@ -253,6 +248,16 @@ function makeFirstCommit
 
 }
 
+# Set committer information.
+function setGitCommitterInfo
+{
+
+	git config user.name "$gitCommitterName"
+	git config user.email "$gitCommitterEmail"
+
+	return 0
+
+}
 function cloneRepo
 {
 
@@ -260,17 +265,19 @@ function cloneRepo
 
 
 	if [ ! -d "$LocalDir" ]; then
-		infoBox "Cloning remote repository. This may take a while."
+		infoMsg "infobox" "Cloning remote repository. This may take \
+a while."
 		git clone "$ServerUsername"@"$Server":"$RemoteDir" \
 "$LocalDir" 1>&- 2>&-
 		if [ "$?" -ne 0 ]; then
-			infoMsg "Cannot clone remote repository."
+			infoMsg "msgbox" "Cannot clone remote repository."
 			return 1
 		fi
 		makeFirstCommit
+		setGitCommitterInfo
 	else
-		infoMsg "Local destination directory already exists. Delete \
-it first then restart the setup."
+		infoMsg "msgbox" "Local destination directory already exists. \
+Delete it first then restart the setup."
 		return 1
 	fi
 
@@ -320,7 +327,7 @@ function main
 		cloneRepo
 		if [ ! "$?" -eq 0 ]; then main return 0; fi
 		writeConfigFile
-		infoMsg "Setup completed."
+		infoMsg "msgbox" "Setup completed."
 		return 0
 	done
 

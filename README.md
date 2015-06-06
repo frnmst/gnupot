@@ -57,6 +57,8 @@ Stupid) principal.
 - Very simple setup.
   - Stupid setup, using `dialog`, which initializes local and remote repositories.
     User configuration is also written.
+- Not (yet?) cross platform (intended as OS not architecture), but (nearly) 
+  cross distro (see [below](#tests)).
 
 ##Howto
 
@@ -143,7 +145,8 @@ $ git pull origin master
   server.]
   - Client only.
 - `git` 2.4.1-1 (`git`) [Program that syncs file and does versioning control.]
-  - Server and client.
+  - Server and client. **It must be version >= 2.3 because of GIT_SSH_COMMAND 
+    variable which is absent in previous releases.**
 - `?trickle?` (`trickle`) [Traffic shaper.]
 - `dialog` 1:1.2_20150513-1 (`dialog`) [Display user friendly dialog messages 
   during the setup.]
@@ -183,11 +186,29 @@ COPYRIGHT
   
 ##Tests
 
-Tested on [Parabola GNU/Linux-libre](https://www.parabola.nu/), [Arch 
-Linux](https://www.archlinux.org/) and [Manjaro 
-Linux](https://manjaro.github.io/).
+Successful tests on:
+- [Parabola GNU/Linux-libre](https://www.parabola.nu/)
+  - Client.
+- [Arch Linux](https://www.archlinux.org/)
+  - Server.
+- [Manjaro Linux](https://manjaro.github.io/)
+  - Client.
 
-**ANY HELP IN CONTRIBUTING TO THIS PROJECT IS WARMLY WELCOMED.**
+Still unsuccessful:
+- Lubuntu 12.04. I have an HD with that system that i didn't use in a 
+  while (some years). Unfortunately GNUpot's setup didn't even start. At this 
+  moment however not all problems have been solved. These include:
+  - older versions of `flock` do not permit using the "boilerplate" listed in 
+    the manual (of newer versions).
+  - when quitting GNUpot `inotifywait` hangs untill another event occurs.
+  - GNUpot doesen't recognize `SIGINT` for an unknown reason.
+  - `which` doesen't work as intended.
+
+By isolating those problems you can safely run GNUpot on Lubuntu, and by time 
+these problems should be solved.
+
+Unknown:
+- All other distros.
 
 ##WARNING AND DISCLAMER
 
@@ -199,3 +220,5 @@ Linux](https://manjaro.github.io/).
 ##Contact
 
 franco.masotti@live.com or franco.masotti@student.unife.it
+
+**ANY HELP IN CONTRIBUTING TO THIS PROJECT IS WARMLY WELCOMED.**
