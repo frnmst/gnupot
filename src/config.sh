@@ -252,8 +252,10 @@ function makeFirstCommit
 function setGitCommitterInfo
 {
 
+	cd "$LocalDir"
 	git config user.name "$gitCommitterName"
 	git config user.email "$gitCommitterEmail"
+	cd "$OLDPWD"
 
 	return 0
 
