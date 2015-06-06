@@ -428,6 +428,10 @@ CONFIGURATION FILE\n\
 RETURN VALUES\n\
 \t0\tNo error occurred.\n\
 \t1\tSome error occurred.\n\n\
+CONTACT\n\
+\tReport bugs to: franco.masotti@live.com or \
+franco.masotti@student.unife.it\n\
+\tGNUpot home page: <https://github.com/frnmst/gnupot>\n\n\
 COPYRIGHT\n\
 \tGNUpot  Copyright (C) 2015  frnmst (Franco Masotti)\n\
 \tThis program comes with ABSOLUTELY NO WARRANTY; for details type \

@@ -177,6 +177,10 @@ RETURN VALUES
         0       No error occurred.
         1       Some error occurred.
 
+CONTACT
+        Report bugs to: franco.masotti@live.com or franco.masotti@student.unife.it
+        GNUpot home page: <https://github.com/frnmst/gnupot>
+
 COPYRIGHT
         GNUpot  Copyright (C) 2015  frnmst (Franco Masotti)
         This program comes with ABSOLUTELY NO WARRANTY; for details type `./gnupot -l'.
