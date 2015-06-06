@@ -498,6 +498,7 @@ flock -en "$prgPath" "$prgPath" "$argArray" || :
 
 	echo 0 > "$gnupotLockFilePath"
 
+	# First of all, pull from server
 	#sharedSyncActions
 
 	# Listen from server and send to client.
