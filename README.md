@@ -143,13 +143,13 @@ $ git pull origin master
 - `util-linux` 2.26.1-3 (`flock`) [Locks script and avoids contemporary local 
   and remote sync.]
   - Client only.
-- `libnotify` 0.7.6-1 (`notify-send`) [Sends notifications to notification 
-  server.]
+- `libnotify` **or** `libnotify-bin` 0.7.6-1 (`notify-send`) [Sends 
+  notifications to notification server.]
   - Client only.
 - `git` 2.4.1-1 (`git`) [Program that syncs file and does versioning control.]
   - Server and client. **It must be version >= 2.3 because of GIT_SSH_COMMAND 
     variable which is absent in previous releases.**
-- `?trickle?` (`trickle`) [Traffic shaper.]
+- (DON'T INSTALL `?trickle?` (`trickle`) [Traffic shaper.])
 - `dialog` 1:1.2_20150513-1 (`dialog`) [Display user friendly dialog messages 
   during the setup.]
 - Be sure to have 1 and only 1 notify server installed. It should be already 
