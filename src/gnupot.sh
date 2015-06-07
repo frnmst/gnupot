@@ -92,6 +92,22 @@ function loadConfig
 
 }
 
+# Modified version of flock's boilterplate. This version is able to run also
+# on older versions of flock. See man 1 flock (examples section).
+function lockOnFile
+{
+	prgPath="$1"
+	argArray="$2"
+
+
+	# Lock on configuration file path istead of this file (gnupot.sh).
+	[ "${FLOCKER}" != "$prgPath" ] && exec env FLOCKER="$prgPath" \
+flock -en "$CONFIGFILEPATH" "$prgPath" "$argArray" || :
+
+	return 0
+
+}
+
 # General notification function.
 function notifyCmd
 {
@@ -495,10 +511,7 @@ function main
 	# Enable signal interpretation to kill all subshells
 	trap "sigHandler" $SIGNALS
 
-	# Flock so that script is not executed more than once.
-	# See man 1 flock (examples section).
-	[ "${FLOCKER}" != "$prgPath" ] && exec env FLOCKER="$prgPath" \
-flock -en "$prgPath" "$prgPath" "$argArray" || :
+	lockOnFile "$prgPath" "$argArray"
 
 	notifyCmd "GNUpot starting..." "$gnupotDefaultNotificationTime"
 

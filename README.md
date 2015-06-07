@@ -30,6 +30,8 @@ Stupid) principal.
   - Use of `bash` as scripting language makes the program overall very 
     integrated with a GNU/Linux system (as well as other UNIX-like systems). 
   - Programming and manteinance should also be trivial this way.
+  - No root privileges required.
+  - Runs in background.
 - When some kind of change is made, this is sent automatically to the server 
   (or to the client).
   - This is possible with `inotify` which looks for changes inside the watch 
@@ -202,8 +204,6 @@ Still unsuccessful:
 - Lubuntu 12.04. I have an HD with that system that i didn't use in a 
   while (some years). Unfortunately GNUpot's setup didn't even start. At this 
   moment however not all problems have been solved. These include:
-  - older versions of `flock` do not permit using the "boilerplate" listed in 
-    the manual (of newer versions).
   - when quitting GNUpot `inotifywait` hangs untill another event occurs.
   - GNUpot doesen't recognize `SIGINT` for an unknown reason.
 

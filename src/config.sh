@@ -26,10 +26,6 @@
 # Set path.
 PATH="$PATH":/usr/bin
 
-# Flock so that script is not executed more than once.
-# See man 1 flock (examples section).
-[ "${FLOCKER}" != "$0" ] && exec env FLOCKER="$0" flock -en "$0" "$0" "$@" || :
-
 # This avoid problems with git ssh variable.
 set -a
 
@@ -43,7 +39,13 @@ CONFIGDIR="$HOME/.config/gnupot"
 VARIABLESOURCEFILEPATH="src/configVariables.conf"
 GIT_SSH_COMMAND=""
 
-if [ -f "$VARIABLESOURCEFILEPATH" ]; then source "$VARIABLESOURCEFILEPATH"; fi
+if [ -f "$VARIABLESOURCEFILEPATH" ]; then source "$VARIABLESOURCEFILEPATH"
+else echo -en "Cannot start setup. No variables file found.\n"; fi
+
+# Flock so that script is not executed more than once.
+# See man 1 flock (examples section).
+[ "${FLOCKER}" != "$0" ] && exec env FLOCKER="$0" flock -en \
+"$VARIABLESOURCEFILEPATH" "$0" "$@" || :
 
 # Variables.
 optNum="12"
@@ -275,8 +277,8 @@ a while."
 			infoMsg "msgbox" "Cannot clone remote repository."
 			return 1
 		fi
-		makeFirstCommit
 		setGitCommitterInfo
+		makeFirstCommit
 	else
 		infoMsg "msgbox" "Local destination directory already exists. \
 Delete it first then restart the setup."
