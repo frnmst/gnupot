@@ -476,7 +476,9 @@ function checkExecutables
 	IFS="." read gitVer0 gitVer1 trash <<< "$gitVer"
 	if [ "$gitVer0$gitVer1" -le 23 ]; then return 1; fi
 
-	which $PROGRAMS 1>&- 2>&-
+	# Redirect which stderr and stdout to /dev/null (see bash
+	# redirection).
+	which $PROGRAMS &>/dev/null
 
 	return "$?"
 

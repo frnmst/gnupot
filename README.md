@@ -206,7 +206,6 @@ Still unsuccessful:
     the manual (of newer versions).
   - when quitting GNUpot `inotifywait` hangs untill another event occurs.
   - GNUpot doesen't recognize `SIGINT` for an unknown reason.
-  - `which` doesen't work as intended.
 
 By isolating those problems you can safely run GNUpot on Lubuntu, and by time 
 these problems should be solved.
