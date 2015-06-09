@@ -11,7 +11,7 @@ these services have some defects:
 - Size limits
   - Usually of a few Gigabytes.
 - Clients used to access these servces are usually proprietary.
-- These program are also heavy (in terms of disk,  memory and processor usage).
+- These programs are also heavy (in terms of disk, memory and processor usage).
 - What are you going to do if those *owners* close the services?
 
 The aim of this project is to have a completely free (as in freedom) 
@@ -28,8 +28,8 @@ Stupid) principal.
 
 - Simple.
   - Use of `bash` as scripting language makes the program overall very 
-    integrated with a GNU/Linux system (as well as other UNIX-like systems). 
-  - Programming and manteinance should also be trivial this way.
+    integrated with a GNU/Linux system (as well as other UNIX-like systems).  
+    Programming and manteinance should also be trivial this way.
   - No root privileges required.
   - Runs in background.
 - When some kind of change is made, this is sent automatically to the server 
@@ -47,7 +47,7 @@ Stupid) principal.
   - When an event is originated (either on client or on server) user must be 
     notified. The command `notify-send` is perfect for this because of its 
     simplicity.
-- Solid syncing agent.
+- Solid file and syncing agent.
   - `git` is designed for collaboration and has an excellent SSH support. 
 - Automatic file conflict detection and resolution. **BASIC FUNCTIONALITY**
 - Automatic backup to a maximum user defined number of backups.
@@ -58,9 +58,12 @@ Stupid) principal.
     server.
 - Very simple setup.
   - Stupid setup, using `dialog`, which initializes local and remote repositories.
-    User configuration is also written.
+    User configuration file is also written locally.
 - Not (yet?) cross platform (intended as OS not architecture), but (nearly) 
   cross distro (see [below](#tests)).
+  - It works both on system with a GUI as well as headless ones (servers, 
+    embedded, etc...). In the second case notifications are (obviously) not 
+    shown.
 
 ##Howto
 

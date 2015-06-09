@@ -79,9 +79,9 @@ function loadConfig
 
 	if [ -f "$CONFIGFILEPATH" ]; then
 		source "$CONFIGFILEPATH" 2>&-
-		if [ "$?" -ne 0 ]; then echo $errMsg; exit 1; fi
+		if [ "$?" -ne 0 ]; then echo $errMsg 1>&2; exit 1; fi
 	else
-		echo $errMsg; exit 1
+		echo $errMsg 1>&2; exit 1
 	fi
 
 	# Parsing here TODO.
@@ -96,6 +96,7 @@ function loadConfig
 # on older versions of flock. See man 1 flock (examples section).
 function lockOnFile
 {
+
 	prgPath="$1"
 	argArray="$2"
 
@@ -106,6 +107,39 @@ flock -en "$CONFIGFILEPATH" "$prgPath" "$argArray" || :
 
 	return 0
 
+}
+
+function busyWait
+{
+
+	notifyCmd "GNUpot is waiting for available connection." \
+"$gnupotDefaultNotificationTime"
+
+	# Do something useful here. TODO.
+
+	sleep 5
+
+	return 0
+
+}
+
+# Function that checks if connection to server is active.
+# It tries to execute the input command.
+# If it's not connected then it goes into busy waiting and tries it again
+# after a period of time.
+function execSSHCmd
+{
+
+	SSHCommand="$1"
+
+#	echo in0
+
+	while [ $($SSHCommand 2>&-; echo "$?") -eq 255 ]; do
+#		echo in1
+		busyWait
+	done
+
+	return 0
 }
 
 # General notification function.
@@ -378,7 +412,8 @@ function syncS
 	trap "exit" $SIGNALS
 
 	# Open master ssh socket.
-	ssh $SSHMASTERSOCKCMDARGS 2>&-
+#	ssh $SSHMASTERSOCKCMDARGS 2>&-
+	execSSHCmd "ssh $SSHMASTERSOCKCMDARGS"
 
 	checkServerDirExistence
 
