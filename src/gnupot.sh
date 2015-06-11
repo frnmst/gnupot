@@ -47,6 +47,8 @@ INOTIFYWAITCMD="inotifywait -r -q -e modify -e attrib \
 GITCMD="git"
 GIT_SSH_COMMAND=""
 
+# PUT IN SETUP.
+gnupotBusyWaitDefaultTime="300"
 
 function setGloblVars
 {
@@ -61,8 +63,7 @@ function setGloblVars
 	# Open master socket so that further connection will result faster
 	# (using multiplexing to avoid re-authentication).
 	SSHMASTERSOCKCMDARGS="-M -o \
-	ControlPersist="$gnupotSSHMasterSocketTime" \
-$SSHCONNECTCMDARGS exit"
+ControlPersist="$gnupotSSHMasterSocketTime" $SSHCONNECTCMDARGS exit"
 
 	# git environment variable for ssh.
 	GIT_SSH_COMMAND="ssh $SSHARGS"
@@ -109,39 +110,6 @@ flock -en "$CONFIGFILEPATH" "$prgPath" "$argArray" || :
 
 }
 
-function busyWait
-{
-
-	notifyCmd "GNUpot is waiting for available connection." \
-"$gnupotDefaultNotificationTime"
-
-	# Do something useful here. TODO.
-
-	sleep 5
-
-	return 0
-
-}
-
-# Function that checks if connection to server is active.
-# It tries to execute the input command.
-# If it's not connected then it goes into busy waiting and tries it again
-# after a period of time.
-function execSSHCmd
-{
-
-	SSHCommand="$1"
-
-#	echo in0
-
-	while [ $($SSHCommand 2>&-; echo "$?") -eq 255 ]; do
-#		echo in1
-		busyWait
-	done
-
-	return 0
-}
-
 # General notification function.
 function notifyCmd
 {
@@ -184,6 +152,48 @@ function getRelativePath
 	tmp="${fullPath##"$srcDir"}"
 	# Remove heading slash and return value.
 	echo "${tmp:1}"
+
+	return 0
+
+}
+
+function busyWait
+{
+
+	notifyCmd "GNUpot is waiting for available connection or there is an \
+authetication problem." "$gnupotDefaultNotificationTime"
+
+	# Do something useful here. TODO.
+
+	sleep "$gnupotBusyWaitDefaultTime"
+
+	return 0
+
+}
+
+# Function that checks if connection to server is active.
+# It tries to execute the input command.
+# If it's not connected then it goes into busy waiting and tries it again
+# after a period of time.
+function execSSHCmd
+{
+
+	SSHCommand="$1"
+
+
+	# Check if remote server is reachable.
+	while [ $(ping -c 1 -s 0 -W 10 "$gnupotServer" &>/dev/null; \
+echo "$?") -ne 0 ]; do
+		busyWait
+	done
+	# Poll input command until it finishes correctly.
+	while [ $($SSHCommand &>/dev/null; echo "$?") -eq 255 ]; do
+		busyWait
+		# Recreate master socket.
+		if [ "$SSHCommand" != "createSSHMasterSocket" ]; then
+			createSSHMasterSocket &>/dev/null
+		fi
+	done
 
 	return 0
 
@@ -241,9 +251,7 @@ $USERDATA"
 		$GITCMD gc --auto --prune=1d
 
 		$GITCMD push -f origin master
-	else
-		$GITCMD push origin master
-	fi
+	else execSSHCmd "$GITCMD push origin master"; fi
 
 	return 0
 
@@ -254,9 +262,7 @@ function getCommitNumber
 
 	if [ ! -f "$gnupotCommitNumberFilePath" ]; then
 		echo 1 > "$gnupotCommitNumberFilePath"; echo 1
-	else
-		cat "$gnupotCommitNumberFilePath"
-	fi
+	else cat "$gnupotCommitNumberFilePath"; fi
 
 	return 0
 
@@ -265,11 +271,12 @@ function getCommitNumber
 function gitSyncOperations
 {
 
-	$GITCMD add -A
-	$GITCMD commit -a -m "Commit on $(date "+%s") $USERDATA"
+	$GITCMD add -A &>/dev/null
+	$GITCMD commit -m "Commit on $(date "+%F %T") \
+$USERDATA" &>/dev/null
 	# Always pull from server first then check for conflicts using return
 	# value.
-	$GITCMD pull origin master
+	execSSHCmd "$GITCMD pull origin master"
 	resolveConflicts "$?"
 
 	return 0
@@ -366,10 +373,31 @@ then echo 1; else echo 0; fi)
 
 }
 
+function acquireLockFile ()
+{
+
+	echo 1 > "$gnupotLockFilePath"
+
+	return 0
+
+}
+
+function freeLockFile ()
+{
+
+	echo 0 > "$gnupotLockFilePath"
+
+	return 0
+
+}
+
+
+
 function callSync
 {
 
 	source="$1"
+	path="$2"
 
 
 	# Check if the other thread is in the critical section.
@@ -382,8 +410,7 @@ function callSync
 	if [ $(cat "$gnupotLockFilePath") -eq 0 ]; then
 		# Open a subshell for critical section.
 		(
-			# Acquire lockfile.
-			echo 1 > "$gnupotLockFilePath"
+			acquireLockFile
 			# While not acquire lock:
 			# while [ ! flock -n 1024 ]; do :; done
 			# is the same as the following line:
@@ -392,8 +419,7 @@ function callSync
 		# End critical section.
 		) {FD}>>"$gnupotLockFilePath"
 		# Get first valid file descriptor from a bash builtin.
-		# Free lockfile.
-		echo 0 > "$gnupotLockFilePath"
+		freeLockFile
 	else
 		# Wait some time to avoid unecessary loops. This happens if
 		# there are lots of files to be transferred
@@ -401,6 +427,23 @@ function callSync
 	fi
 
 	return 0
+
+}
+
+function createSSHMasterSocket
+{
+
+	# Test if SSH socket exists. If it does delete it. Start a new socket
+	# anyway
+	if [ -S "$gnupotSSHMasterSocketPath" ]; then
+		ssh -O exit -S "$gnupotSSHMasterSocketPath" "$gnupotServer" \
+2>&-
+	fi
+
+	# Open master ssh socket.
+	ssh $SSHMASTERSOCKCMDARGS
+
+	return "$?"
 
 }
 
@@ -412,16 +455,20 @@ function syncS
 	trap "exit" $SIGNALS
 
 	# Open master ssh socket.
-#	ssh $SSHMASTERSOCKCMDARGS 2>&-
-	execSSHCmd "ssh $SSHMASTERSOCKCMDARGS"
+	execSSHCmd createSSHMasterSocket
 
-	checkServerDirExistence
+	execSSHCmd checkServerDirExistence
+
+	# First of all, pull from server. TODO in critical section.
+	#firstSync
 
 	while true; do
 		# Listen for changes on server
-		path=$(ssh $SSHCONNECTCMDARGS "$INOTIFYWAITCMD" \
-"$gnupotRemoteDir" | awk ' { print $1 $3 } ')
-		callSync "server"
+		path=$(execSSHCmd "ssh $SSHCONNECTCMDARGS $INOTIFYWAITCMD \
+"$gnupotRemoteDir" | awk ' { print $1 $3 } '")
+		callSync "server" "$path"
+		# BUG. To be corrected
+		# echo "$path"
 	done
 
 }
@@ -437,7 +484,7 @@ function syncC
 	while true; do
 		path=$($INOTIFYWAITCMD --exclude .git "$gnupotLocalDir" \
 | awk ' { print $1 $3 } ')
-		callSync "client"
+		callSync "client" "$path"
 	done
 
 }
@@ -453,6 +500,100 @@ function sigHandler
 	ssh -O exit -S "$gnupotSSHMasterSocketPath" "$gnupotServer" 2>&- &
 	# Kill all the processes of this group.
 	kill -s SIGINT 0
+
+	return 0
+
+}
+
+function printStatus
+{
+
+	i=0
+
+
+	echo -en "GNUpot is " 1>&2
+	total="$(pgrep gnupot)"
+	for proc in $total; do i=$(($i+1)); done
+	if [ $i -lt 6 ]; then echo -en "NOT " 1>&2; fi
+	echo -en "running correctly.\n" 1>&2
+
+	return 0
+
+}
+
+function checkGitVersion ()
+{
+
+	gitVer=""
+	gitVer0=""
+	gitVer1=""
+	# Garbage variable.
+	trash=""
+
+
+	# Check if git supports GIT_SSH_COMMAND environment variaible.
+	gitVer="$(git --version | awk ' { print $3 } ')"
+	IFS="." read gitVer0 gitVer1 trash <<< "$gitVer"
+	if [ "$gitVer0$gitVer1" -le 23 ]; then return 1; fi
+
+	return 0
+
+}
+
+# Check if all necessary programs are installed.
+function checkExecutables
+{
+
+	# Redirect which stderr and stdout to /dev/null (see bash
+	# redirection).
+	checkGitVersion && which $PROGRAMS &>/dev/null
+	if [ "$?" -ne 0 ]; then echo -en "Missing programs or unsupported. \
+Check: $PROGRAMS.\n" 1>&2; exit 1; fi
+
+	return 0
+
+}
+
+function firstSync
+{
+
+	cd "$gnupotLocalDir"
+	gitSyncOperations
+	$GITCMD push origin master
+	cd "$OLDPWD"
+
+	return 0
+
+}
+
+# Main function that runs in background.
+function main
+{
+
+	prgPath="$1"
+	argArray="$2"
+
+
+	# Enable signal interpretation to kill all subshells
+	trap "sigHandler" $SIGNALS
+
+	lockOnFile "$prgPath" "$argArray"
+
+	notifyCmd "GNUpot starting..." "$gnupotDefaultNotificationTime"
+
+	freeLockFile
+
+	# Listen from server and send to client.
+	syncS &
+	srvPid="$!"
+	# Listen from client and send to server.
+	syncC &
+	cliPid="$!"
+
+	# Wait for server and client threads to exit.
+	wait "$srvPid" "$cliPid"
+
+	notifyCmd "GNUpot stopped." "$gnupotDefaultNotificationTime"
 
 	return 0
 
@@ -495,82 +636,6 @@ COPYRIGHT\n\
 
 }
 
-function printStatus
-{
-
-	i=0
-
-
-	echo -en "GNUpot is " 1>&2
-	total="$(pgrep gnupot)"
-	for proc in $total; do i=$(($i+1)); done
-	if [ $i -lt 6 ]; then echo -en "NOT " 1>&2; fi
-	echo -en "running correctly.\n" 1>&2
-
-	return 0
-
-}
-
-# Check if all necessary programs are installed.
-function checkExecutables
-{
-
-	gitVer=""
-	gitVer0=""
-	gitVer1=""
-	# Garbage variable.
-	trash=""
-
-
-	# Check if git supports GIT_SSH_COMMAND environment variaible.
-	gitVer="$(git --version | awk ' { print $3 } ')"
-	IFS="." read gitVer0 gitVer1 trash <<< "$gitVer"
-	if [ "$gitVer0$gitVer1" -le 23 ]; then return 1; fi
-
-	# Redirect which stderr and stdout to /dev/null (see bash
-	# redirection).
-	which $PROGRAMS &>/dev/null
-
-	return "$?"
-
-}
-
-# Main function that runs in background.
-function main
-{
-
-	prgPath="$1"
-	argArray="$2"
-
-
-	# Enable signal interpretation to kill all subshells
-	trap "sigHandler" $SIGNALS
-
-	lockOnFile "$prgPath" "$argArray"
-
-	notifyCmd "GNUpot starting..." "$gnupotDefaultNotificationTime"
-
-	echo 0 > "$gnupotLockFilePath"
-
-	# First of all, pull from server
-	#sharedSyncActions
-
-	# Listen from server and send to client.
-	syncS &
-	srvPid="$!"
-	# Listen from client and send to server.
-	syncC &
-	cliPid="$!"
-
-	# Wait for server and client threads to exit.
-	wait "$srvPid" "$cliPid"
-
-	notifyCmd "GNUpot stopped." "$gnupotDefaultNotificationTime"
-
-	return 0
-
-}
-
 function parseOpts
 {
 
@@ -601,8 +666,6 @@ function parseOpts
 loadConfig
 
 checkExecutables
-if [ "$?" -ne 0 ]; then echo -en "Missing programs or unsupported. Check: \
-$PROGRAMS.\n" 1>&2; exit 1; fi
 
 # Call option parser.
 parseOpts "$0" "$@"
