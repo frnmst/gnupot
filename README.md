@@ -132,9 +132,17 @@ To download program updates (without cloning every time):
 $ git pull origin master
 ```
 
+##Interesting facts about gnupot
+
+- GNUpot, being based on git, you can use the usual git commands. For example 
+  to see all the commit history you can use `git log`.
+
 ##Packages to install (dependencies)
 
-`<packet name> <executable> <comment>`
+```
+<package name> <executable> <comment>
+	<where to install the package>
+```
 
 - `bash` 4.3.033-1 (`bash`)
   - Server and client.
@@ -155,6 +163,7 @@ $ git pull origin master
 - (DON'T INSTALL `?trickle?` (`trickle`) [Traffic shaper.])
 - `dialog` 1:1.2_20150513-1 (`dialog`) [Display user friendly dialog messages 
   during the setup.]
+- `glibc` (`getent`) [Get IP address from hostname.]
 - Be sure to have 1 and only 1 notify server installed. It should be already 
   installed on your system.
   - Client only.
