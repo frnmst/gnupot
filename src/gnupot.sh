@@ -42,7 +42,7 @@ setGloblVars()
 	# inotifywait command macro: recursive, quiet, listen only to certain
 	# events.
 	INOTIFYWAITCMD="inotifywait -r -q -e modify -e attrib \
-	-e move -e move_self -e create -e delete -e delete_self"
+-e move -e move_self -e create -e delete -e delete_self --format %w%f"
 	GITCMD="git"
 	# SSH arguments.
 	SSHARGS="-o PasswordAuthentication=no -i "$gnupotSSHKeyPath" -C -S \
@@ -65,7 +65,8 @@ ControlPersist="$gnupotSSHMasterSocketTime" $SSHCONNECTCMDARGS exit"
 loadConfig()
 {
 
-	local arg="$1" errMsg="Cannot read configuration file."
+	local arg="$1" fileErrMsg="Cannot read configuration file." \
+hostErrMsg="Cannot resolve host name."
 
 
 	[ -f "$CONFIGFILEPATH" ] && source "$CONFIGFILEPATH" 2>&- \
@@ -78,9 +79,11 @@ loadConfig()
 	# address, then nothing changes. Doing this avoids making unecessary
 	# DNS server requests.
 	# This does not work (yet) with IPv6 addresses.
-	[ -z "$arg" ] || [ "$arg" = "-i" ] && \
-[[ "$gnupotServer" =~ [[:alpha:]] ]] && gnupotServer=$(getent hosts \
-"$gnupotServer" | awk ' { print $1 } ')
+	if [ -z "$arg" ] || [ "$arg" = "-i" ]; then
+		[[ "$gnupotServer" =~ [[:alpha:]] ]] && gnupotServer=$(getent \
+hosts "$gnupotServer" | awk ' { print $1 } ') && [ "$?" -ne 0 ] && { echo \
+"$hostErrMsg" 2>&1; exit 1; }
+	fi
 
 	setGloblVars
 
@@ -160,6 +163,19 @@ authetication problem." "$gnupotDefaultNotificationTime"
 
 }
 
+loopSSHCmd()
+{
+
+	local SSHCommand="$1" toBeEchoed="$2"
+
+
+	if [ -n "$toBeEchoed" ]; then $SSHCommand 2>&-
+	else $SSHCommand &>/dev/null; fi
+
+	return "$?"
+
+}
+
 # Function that checks if connection to server is active.
 # It tries to execute the input command.
 # If it's not connected then it goes into busy waiting and tries it again
@@ -167,7 +183,7 @@ authetication problem." "$gnupotDefaultNotificationTime"
 execSSHCmd()
 {
 
-	local SSHCommand="$1"
+	local SSHCommand="$1" toBeEchoed="$2" retStr=""
 
 
 	# Check if remote server is reachable.
@@ -175,14 +191,18 @@ execSSHCmd()
 echo "$?") -ne 0 ]; do
 		busyWait
 	done
+
 	# Poll input command until it finishes correctly.
-	while [ $($SSHCommand &>/dev/null; echo "$?") -eq 255 ]; do
+	retStr="$(loopSSHCmd "$SSHCommand" "$toBeEchoed")"
+	while [ "$?" -eq 255 ]; do
 		busyWait
 		# Recreate master socket.
 		if [ "$SSHCommand" != "createSSHMasterSocket" ]; then
 			createSSHMasterSocket &>/dev/null
 		fi
-	done
+	done;
+
+	[ -n "$toBeEchoed" ] && echo "$retStr"
 
 	return 0
 
@@ -452,7 +472,7 @@ $INOTIFYWAITCMD "$gnupotRemoteDir"" path=""
 
 	while true; do
 		# Listen for changes on server
-		execSSHCmd "$pathCmd"
+		path=$(execSSHCmd "$pathCmd" "echoPath")
 		callSync "server" "$path"
 	done
 
@@ -462,13 +482,16 @@ $INOTIFYWAITCMD "$gnupotRemoteDir"" path=""
 syncC()
 {
 
+	local path=""
+
+
 	trap "exit" $SIGNALS
 
 	checkClientDirExistence
 
 	while true; do
-		local path=$($INOTIFYWAITCMD --exclude .git \
-"$gnupotLocalDir" | awk ' { print $1 $3 } ')
+		path=$($INOTIFYWAITCMD --exclude .git \
+"$gnupotLocalDir")
 		callSync "client" "$path"
 	done
 

@@ -132,10 +132,11 @@ To download program updates (without cloning every time):
 $ git pull origin master
 ```
 
-##Interesting facts about gnupot
+##Interesting facts about GNUpot
 
 - GNUpot, being based on git, you can use the usual git commands. For example 
-  to see all the commit history you can use `git log`.
+  to see all the commit history you can use `git log`. To see the 
+  differences from the last commit: `git show`.
 
 ##Packages to install (dependencies)
 
