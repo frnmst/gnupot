@@ -42,7 +42,7 @@ setGloblVars()
 	# inotifywait command macro: recursive, quiet, listen only to certain
 	# events.
 	INOTIFYWAITCMD="inotifywait -r -q -e modify -e attrib \
--e move -e move_self -e create -e delete -e delete_self --format %w%f"
+-e move -e move_self -e create -e delete -e delete_self --format %f"
 	GITCMD="git"
 	# SSH arguments.
 	SSHARGS="-o PasswordAuthentication=no -i "$gnupotSSHKeyPath" -C -S \
@@ -67,7 +67,6 @@ loadConfig()
 {
 
 	local arg="$1" fileErrMsg="Cannot read configuration file." \
-hostErrMsg="Cannot resolve host name."
 
 
 	[ -f "$CONFIGFILEPATH" ] && source "$CONFIGFILEPATH" 2>&- \
@@ -75,18 +74,31 @@ hostErrMsg="Cannot resolve host name."
 
 	# Parsing here TODO.
 
-	# If gnupot is started (with "-i" or <emptyArg>)then:
-	# Find server address from hostname. If original variable is an IP
-	# address, then nothing changes. Doing this avoids making unecessary
-	# DNS server requests.
-	# This does not work (yet) with IPv6 addresses.
-	if [ -z "$arg" ] || [ "$arg" = "-i" ]; then
-		[[ "$gnupotServer" =~ [[:alpha:]] ]] && gnupotServer=$(getent \
-hosts "$gnupotServer" | awk ' { print $1 } ') && [ "$?" -ne 0 ] && { echo \
-"$hostErrMsg" 2>&1; exit 1; }
-	fi
+	# If gnupot is started then find IP address from host name.
+	[ -z "$arg" ] || [ "$arg" = "-i" ] && getAddrByName
 
 	setGloblVars
+
+	return 0
+
+}
+
+# Find server address from hostname. If original variable is an IP
+# address, then nothing changes. Doing this avoids making unecessary
+# DNS server requests.
+# This does not work (yet) with IPv6 addresses.
+getAddrByName()
+{
+
+	local hostErrMsg="Cannot resolve host name."
+
+
+	if [[ "$gnupotServer" =~ [[:alpha:]] ]]; then
+		gnupotServer=$(getent hosts "$gnupotServer" | awk ' { print \
+$1 } ')
+		[ -z "$gnupotServer" ] && { echo "$hostErrMsg" \
+2>&1; exit 1; }
+	fi
 
 	return 0
 
@@ -125,27 +137,11 @@ notifyCmd()
 syncNotify()
 {
 
-	local path="$1" dir="$2" source="$3"
+	local path="$1" source="$2"
 
 
-	notifyCmd "GNUpot syncing $(getRelativePath "$path" \
-"$dir") from "$source"" "$gnupotDefaultNotificationTime"
-
-	return 0
-
-}
-
-# Get relative path for local or remote changed files.
-getRelativePath()
-{
-
-	local fullPath="$1" srcDir="$2"
-
-
-	# Get relative path of file.
-	fullPath="${fullPath##"$srcDir"}"
-	# Remove heading slash and return value.
-	echo "${fullPath:1}"
+	notifyCmd "GNUpot syncing $path from $source" \
+"$gnupotDefaultNotificationTime"
 
 	return 0
 
@@ -324,14 +320,12 @@ sharedSyncActions()
 syncOperation()
 {
 
-	local source="$1" path="$2" rootDir=""
+	local source="$1" path="$2"
 
 
 	sleep "$gnupotTimeToWaitForOtherChanges"
 
-	[ "$source" = "server" ] && rootDir="$gnupotRemoteDir" \
-|| rootDir="$gnupotLocalDir"
-	syncNotify "$path" "$rootDir" "$source"
+	syncNotify "$path" "$source"
 
 	# Do the syncing.
 	sharedSyncActions
