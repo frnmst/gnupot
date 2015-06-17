@@ -85,15 +85,16 @@ loadConfig()
 
 # Find server address from hostname. If original variable is an IP
 # address, then nothing changes. Doing this avoids making unecessary
-# DNS server requests.
-# This does not work (yet) with IPv6 addresses.
+# DNS server requests. It works for IPv6 addresses also.
 getAddrByName()
 {
 
 	local hostErrMsg="Cannot resolve host name."
 
 
-	if [[ "$gnupotServer" =~ [[:alpha:]] ]]; then
+	if [[ "$gnupotServer" =~ [[:alpha:]] ]] \
+&& [[ ! "$gnupotServer" =~ ":" ]]
+	then
 		gnupotServer=$(getent hosts "$gnupotServer" | awk ' { print \
 $1 } ')
 		[ -z "$gnupotServer" ] && { echo "$hostErrMsg" \
