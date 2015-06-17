@@ -46,7 +46,8 @@ setGloblVars()
 	GITCMD="git"
 	# SSH arguments.
 	SSHARGS="-o PasswordAuthentication=no -i "$gnupotSSHKeyPath" -C -S \
-"$gnupotSSHMasterSocketPath""
+"$gnupotSSHMasterSocketPath" -o UserKnownHostsFile=/dev/null \
+-o StrictHostKeyChecking=no"
 	# Used for general ssh commands
 	SSHCONNECTCMDARGS="$SSHARGS "$gnupotServerUsername"@"$gnupotServer""
 	# Open master socket so that further connection will result faster
@@ -70,7 +71,7 @@ hostErrMsg="Cannot resolve host name."
 
 
 	[ -f "$CONFIGFILEPATH" ] && source "$CONFIGFILEPATH" 2>&- \
-|| { echo "$errMsg" 1>&2; exit 1; }
+|| { echo "$fileErrMsg" 1>&2; exit 1; }
 
 	# Parsing here TODO.
 
@@ -114,7 +115,8 @@ notifyCmd()
 	local msg="$1" ms="$2"
 
 
-	notify-send -t "$ms" "$msg"
+	# If you are running GNUpot in a GUI then notify else do nothing.
+	[ -n "$DISPLAY" ] && notify-send -t "$ms" "$msg"
 
 	return 0
 
@@ -200,7 +202,8 @@ echo "$?") -ne 0 ]; do
 		if [ "$SSHCommand" != "createSSHMasterSocket" ]; then
 			createSSHMasterSocket &>/dev/null
 		fi
-	done;
+		retStr="$(loopSSHCmd "$SSHCommand" "$toBeEchoed")"
+	done
 
 	[ -n "$toBeEchoed" ] && echo "$retStr"
 
@@ -497,21 +500,6 @@ syncC()
 
 }
 
-# Signal handler function.
-sigHandler()
-{
-
-	echo -en "GNUpot killed\n" 1>&2
-	# Kill master ssh socket (this will kill any ssh connection associated
-	# with it). Also disable stderr output for this command with "2>&-".
-	ssh -O exit -S "$gnupotSSHMasterSocketPath" "$gnupotServer" 2>&- &
-	# Kill all the processes of this group.
-	kill -s SIGINT 0
-
-	return 0
-
-}
-
 printStatus()
 {
 
@@ -569,6 +557,21 @@ Check: $PROGRAMS.\n" 1>&2; exit 1; }
 #	return 0
 #
 #}
+
+# Signal handler function.
+sigHandler()
+{
+
+	echo -en "GNUpot killed\n" 1>&2
+	# Kill master ssh socket (this will kill any ssh connection associated
+	# with it). Also disable stderr output for this command with "2>&-".
+	ssh -O exit -S "$gnupotSSHMasterSocketPath" "$gnupotServer" 2>&- &
+	# Kill all the processes of this group.
+	kill -s SIGINT 0
+
+	return 0
+
+}
 
 # Main function that runs in background.
 main()
