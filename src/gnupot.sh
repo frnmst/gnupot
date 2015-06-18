@@ -56,8 +56,6 @@ setGloblVars()
 ControlPersist="$gnupotSSHMasterSocketTime" $SSHCONNECTCMDARGS exit"
 	# git environment variable for ssh.
 	GIT_SSH_COMMAND="ssh $SSHARGS"
-	# PUT IN SETUP.
-	gnupotBusyWaitDefaultTime="60"
 
 	return 0
 
@@ -93,8 +91,7 @@ getAddrByName()
 
 
 	if [[ "$gnupotServer" =~ [[:alpha:]] ]] \
-&& [[ ! "$gnupotServer" =~ ":" ]]
-	then
+&& [[ ! "$gnupotServer" =~ ":" ]]; then
 		gnupotServer=$(getent hosts "$gnupotServer" | awk ' { print \
 $1 } ')
 		[ -z "$gnupotServer" ] && { echo "$hostErrMsg" \
@@ -233,10 +230,11 @@ backupAndClean()
 	local currentCommits="$1" commitSha=""
 
 
-	# if <number of commits for current session> mod $KeepMaxBackups -eq 0
-	# and $KeepMaxBackups.
-	if [ $(expr "$currentCommits" % "$gnupotKeepMaxCommits") \
--eq 0 ] && [ "$gnupotKeepMaxCommits" -ne 0 ]; then
+	# if Max backups is set to 0 it means always to do a simple commit.
+	# Otherwise use mod operator to find out when to truncate history (if
+	# result is 0 it means that history must be truncated.
+	if [ "$gnupotKeepMaxCommits" -ne 0 ] \
+&& [ $(expr "$currentCommits" % "$gnupotKeepMaxCommits") -eq 0 ]; then
 		# Get sha of interest.
 		commitSha=$($GITCMD log -n "$gnupotKeepMaxCommits" \
 | tail -n 6 | grep commit | awk ' { print $2 } ')

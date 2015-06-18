@@ -32,15 +32,14 @@ set -a
 # Macros.
 HELPFILE="README.md"
 BACKTITLE="GNUpot_setup._F1_for_help."
-DIALOGIBOX="dialog --stdout --hfile $HELPFILE --backtitle $BACKTITLE"
-DIALOG="$DIALOGIBOX --clear"
+DIALOG="dialog --stdout --hfile $HELPFILE --backtitle $BACKTITLE"
 CHKCMD="which git && which inotifywait"
 CONFIGDIR="$HOME/.config/gnupot"
 VARIABLESOURCEFILEPATH="src/configVariables.conf"
 GIT_SSH_COMMAND=""
 
-if [ -f "$VARIABLESOURCEFILEPATH" ]; then source "$VARIABLESOURCEFILEPATH"
-else echo -en "Cannot start setup. No variables file found.\n"; fi
+[ -f "$VARIABLESOURCEFILEPATH" ] && source "$VARIABLESOURCEFILEPATH" \
+|| echo -en "Cannot start setup. No variables file found.\n"
 
 # Flock so that script is not executed more than once.
 # See man 1 flock (examples section).
@@ -50,40 +49,36 @@ else echo -en "Cannot start setup. No variables file found.\n"; fi
 # Variables.
 optNum="12"
 options=""
+winX="100"
+winY="25"
 
-
-function infoMsg
+infoMsg()
 {
 
 	# --msgbox or --infobox
-	type="$1"
-	msg="$2"
+	local type="$1" msg="$2"
 
 	if [ "$type" == "msgbox" ]; then
-		$DIALOG --title "INFO" --"$type" \
-"$msg" 25 90
+		$DIALOG --clear --title "INFO" --"$type" \
+"$msg" "$winY" "$winX"
 	else
-		$DIALOGIBOX --title "INFO" --"$type" \
-"$msg" 25 90
+		$DIALOG --title "INFO" --"$type" \
+"$msg" "$winY" "$winX"
 	fi
 
 	return 0
 
 }
 
-function displayForm
+displayForm()
 {
 
-	title="$1"
-	arg="$2"
-	action="$3"
-	opts=""
-	retval=""
+	local title="$1" arg="$2" action="$3" opts="" retval=""
 
 
 	opts=$($DIALOG --title "$title" \
 --form "$arg" \
-20 90 0 \
+"$winY" "$winX" 0 \
 "Server address or hostname:"		1 1 "$Server"		1 35 $action \
 0 \
 "Remote user name:"			2 1 "$ServerUsername"	2 35 $action \
@@ -92,7 +87,7 @@ function displayForm
 0 \
 "Local directory full path:"		4 1 "$LocalDir"		4 35 $action \
 0 \
-"Local public key path:"		5 1 "$SSHKeyPath"	5 35 $action \
+"Local public key full path:"		5 1 "$SSHKeyPath"	5 35 $action \
 0 \
 "Backups to keep (0 = keep all):"	6 1 "$KeepMaxCommits" 	6 35 $action \
 0 \
@@ -100,14 +95,24 @@ function displayForm
 0 \
 "Remote home full path:"		8 1 "$RemoteHome"	8 35 $action \
 0 \
-"Time to wait for changes (s):"		9 1 "$TimeToWaitForOtherChanges" \
+"git committer user name:"		9 1 "$GitCommitterUsername" \
 9 35 $action 0 \
-"SSH Master Socket Path:"		10 1 "$SSHMasterSocketPath" \
+"git committer email:"			10 1 "$GitCommitterEmail" \
 10 35 $action 0 \
-"SSH socket keepalive time (min):"	11 1 "$SSHMasterSocketTime" \
+"Time to wait for changes (s):"		11 1 "$TimeToWaitForOtherChanges" \
 11 35 $action 0 \
-"Event notification time (ms):"		12 1 "$DefaultNotificationTime" \
+"Time to wait on problem (s):"		12 1 "$BusyWaitDefaultTime" \
 12 35 $action 0 \
+"SSH Master Socket Path:"		13 1 "$SSHMasterSocketPath" \
+13 35 $action 0 \
+"SSH socket keepalive time (min):"	14 1 "$SSHMasterSocketTime" \
+14 35 $action 0 \
+"Event notification time (ms):"		15 1 "$DefaultNotificationTime" \
+15 35 $action 0 \
+"Lock file full path:"			16 1 "$LockFilePath" \
+16 35 $action 0 \
+"Commit number file full path:"		17 1 "$CommitNumberFilePath" \
+17 35 $action 0 \
 )
 	retval="$?"
 	echo "$opts"
@@ -116,26 +121,28 @@ function displayForm
 
 }
 
-function getConfig
+getConfig()
 {
 
 	options=$(displayForm "GNUpot setup" "Use arrow up and down \
-to move between fields" "50")
+to move between fields" "60")
 
 	return 0
 
 }
 
-function strTok
+strTok()
 {
 
-	FORMVARIABLES="Server ServerUsername RemoteDir LocalDir SSHKeyPath \
-KeepMaxCommits LocalHome RemoteHome TimeToWaitForOtherChanges \
-SSHMasterSocketPath SSHMasterSocketTime DefaultNotificationTime"
+	local FORMVARIABLES="Server ServerUsername RemoteDir LocalDir \
+SSHKeyPath KeepMaxCommits LocalHome RemoteHome GitCommitterUsername \
+GitCommitterEmail TimeToWaitForOtherChanges BusyWaitDefaultTime \
+SSHMasterSocketPath SSHMasterSocketTime DefaultNotificationTime \
+LockFilePath CommitNumberFilePath"
 
 	# Control bash version to avoid IFS bug. bash 4.2 (and lower?) has this
 	# bug. If bash is <=4.2 spaces must be avoided in form fields.
-	bashVersion="${BASH_VERSINFO[0]}${BASH_VERSINFO[1]}"
+	local bashVersion="${BASH_VERSINFO[0]}${BASH_VERSINFO[1]}"
 	if [ "$bashVersion" -le 42 ];then
 		options="$(echo $options | tr " " ";")"
 		IFS=";" read $FORMVARIABLES <<< "$options"
@@ -147,10 +154,10 @@ SSHMasterSocketPath SSHMasterSocketTime DefaultNotificationTime"
 
 }
 
-function verifyConfig
+verifyConfig()
 {
 
-	i=0
+	local i=0
 
 
 	for option in $options; do i=$(($i+1)); done
@@ -160,7 +167,7 @@ function verifyConfig
 
 }
 
-function summary
+summary()
 {
 
 	displayForm "GNUpot setup summary" "Are the displayed values \
@@ -170,7 +177,7 @@ correct?" "0"
 
 }
 
-function genSSHKey
+genSSHKey()
 {
 
 	if [ ! -f "$SSHKeyPath" ]; then
@@ -191,38 +198,31 @@ password..."
 
 }
 
-function testInfo
+testInfo()
 {
 
 	# Check if ssh and remote programs already work.
 	if [ $(ssh -o PasswordAuthentication=no -i "$SSHKeyPath" \
 "$ServerUsername"@"$Server" "$CHKCMD" 1>&- 2>&-; echo "$?") -ne 0 ]; then
-		genSSHKey
-		if [ "$?" -ne 0 ]; then
-			infoMsg "msgbox" "SSH problem or git and/or \
-inotifywaitmissing on server."
-			return 1
-		fi
+		genSSHKey || { infoMsg "msgbox" "SSH problem or git and/or \
+inotifywaitmissing on server."; return 1; }
 	fi
 
 	return 0
 
 }
 
-function initConfigDir
+initConfigDir()
 {
 
-	mkdir -p ""$HOME"/.config/gnupot"
-	if [ "$?" -ne 0 ]; then
-		infoMsg "msgbox" "Cannot create configuration directory."
-		return 1
-	fi
+	mkdir -p ""$HOME"/.config/gnupot" || { infoMsg "msgbox" "Cannot \
+create configuration directory."; return 1; }
 
 	return 0
 
 }
 
-function initRepo
+initRepo()
 {
 
 	ssh -i $SSHKeyPath $ServerUsername@$Server \
@@ -234,7 +234,7 @@ function initRepo
 }
 
 # Make a fake commit to avoid problems at the first pull of a new repository.
-function makeFirstCommit
+makeFirstCommit()
 {
 
 	cd "$LocalDir"
@@ -251,18 +251,19 @@ function makeFirstCommit
 }
 
 # Set committer information.
-function setGitCommitterInfo
+setGitCommitterInfo()
 {
 
 	cd "$LocalDir"
-	git config user.name "$gitCommitterName"
-	git config user.email "$gitCommitterEmail"
+	git config user.name "$GitCommitterUsername"
+	git config user.email "$GitCommitterEmail"
 	cd "$OLDPWD"
 
 	return 0
 
 }
-function cloneRepo
+
+cloneRepo()
 {
 
 	GIT_SSH_COMMAND="ssh -i $SSHKeyPath"
@@ -272,11 +273,8 @@ function cloneRepo
 		infoMsg "infobox" "Cloning remote repository. This may take \
 a while."
 		git clone "$ServerUsername"@"$Server":"$RemoteDir" \
-"$LocalDir" 1>&- 2>&-
-		if [ "$?" -ne 0 ]; then
-			infoMsg "msgbox" "Cannot clone remote repository."
-			return 1
-		fi
+"$LocalDir" 1>&- 2>&- || { infoMsg "msgbox" "Cannot clone remote \
+repository."; return 1; }
 		setGitCommitterInfo
 		makeFirstCommit
 	else
@@ -289,7 +287,7 @@ Delete it first then restart the setup."
 
 }
 
-function writeConfigFile
+writeConfigFile()
 {
 
 	echo -en "\
@@ -301,7 +299,10 @@ gnupotSSHKeyPath=\""$SSHKeyPath"\"\n\
 gnupotKeepMaxCommits=\""$KeepMaxCommits"\"\n\
 gnupotLocalHome=\""$LocalHome"\"\n\
 gnupotRemoteHome=\""$RemoteHome"\"\n\
+gnupotGitCommitterUsername=\""$GitCommitterUsername"\"\n\
+gnupotGitCommitterEmail=\""$GitCommitterEmail"\"\n\
 gnupotTimeToWaitForOtherChanges=\""$TimeToWaitForOtherChanges"\"\n\
+gnupotBusyWaitDefaultTime=\""$BusyWaitDefaultTime"\"\n\
 gnupotSSHMasterSocketPath=\""$SSHMasterSocketPath"\"\n\
 gnupotSSHMasterSocketTime=\""$SSHMasterSocketTime"m\"\n\
 gnupotDefaultNotificationTime=\""$DefaultNotificationTime"\"\n\
@@ -313,7 +314,7 @@ gnupotCommitNumberFilePath=\""$CommitNumberFilePath"\"\n\
 
 }
 
-function main
+main()
 {
 
 	while true; do
