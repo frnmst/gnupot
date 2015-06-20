@@ -75,7 +75,6 @@ displayForm()
 
 	local title="$1" arg="$2" action="$3" opts="" retval=""
 
-
 	opts=$($DIALOG --title "$title" \
 --form "$arg" \
 "$winY" "$winX" 0 \
@@ -101,18 +100,20 @@ displayForm()
 10 35 $action 0 \
 "Time to wait for changes (s):"		11 1 "$TimeToWaitForOtherChanges" \
 11 35 $action 0 \
-"Time to wait on problem (s):"		12 1 "$BusyWaitDefaultTime" \
+"Time to wait on problem (s):"		12 1 "$BusyWaitTime" \
 12 35 $action 0 \
 "SSH Master Socket Path:"		13 1 "$SSHMasterSocketPath" \
 13 35 $action 0 \
 "SSH socket keepalive time (min):"	14 1 "$SSHMasterSocketTime" \
 14 35 $action 0 \
-"Event notification time (ms):"		15 1 "$DefaultNotificationTime" \
+"Event notification time (ms):"		15 1 "$NotificationTime" \
 15 35 $action 0 \
-"Lock file full path:"			16 1 "$LockFilePath" \
+"DNS hostname update time (s):"		16 1 "$DNSUpdateTime" \
 16 35 $action 0 \
-"Commit number file full path:"		17 1 "$CommitNumberFilePath" \
+"Lock file full path:"			17 1 "$LockFilePath" \
 17 35 $action 0 \
+"Commit number file full path:"		18 1 "$CommitNumberFilePath" \
+18 35 $action 0 \
 )
 	retval="$?"
 	echo "$opts"
@@ -136,9 +137,9 @@ strTok()
 
 	local FORMVARIABLES="Server ServerUsername RemoteDir LocalDir \
 SSHKeyPath KeepMaxCommits LocalHome RemoteHome GitCommitterUsername \
-GitCommitterEmail TimeToWaitForOtherChanges BusyWaitDefaultTime \
-SSHMasterSocketPath SSHMasterSocketTime DefaultNotificationTime \
-LockFilePath CommitNumberFilePath"
+GitCommitterEmail TimeToWaitForOtherChanges BusyWaitTime \
+SSHMasterSocketPath SSHMasterSocketTime NotificationTime \
+DNSUpdateTime LockFilePath CommitNumberFilePath"
 
 	# Control bash version to avoid IFS bug. bash 4.2 (and lower?) has this
 	# bug. If bash is <=4.2 spaces must be avoided in form fields.
@@ -158,7 +159,6 @@ verifyConfig()
 {
 
 	local i=0
-
 
 	for option in $options; do i=$(($i+1)); done
 	if [ $i -lt $optNum ]; then return 1; fi
@@ -268,7 +268,6 @@ cloneRepo()
 
 	GIT_SSH_COMMAND="ssh -i $SSHKeyPath"
 
-
 	if [ ! -d "$LocalDir" ]; then
 		infoMsg "infobox" "Cloning remote repository. This may take \
 a while."
@@ -302,10 +301,11 @@ gnupotRemoteHome=\""$RemoteHome"\"\n\
 gnupotGitCommitterUsername=\""$GitCommitterUsername"\"\n\
 gnupotGitCommitterEmail=\""$GitCommitterEmail"\"\n\
 gnupotTimeToWaitForOtherChanges=\""$TimeToWaitForOtherChanges"\"\n\
-gnupotBusyWaitDefaultTime=\""$BusyWaitDefaultTime"\"\n\
+gnupotBusyWaitTime=\""$BusyWaitTime"\"\n\
 gnupotSSHMasterSocketPath=\""$SSHMasterSocketPath"\"\n\
-gnupotSSHMasterSocketTime=\""$SSHMasterSocketTime"m\"\n\
-gnupotDefaultNotificationTime=\""$DefaultNotificationTime"\"\n\
+gnupotSSHMasterSocketTime=\""$SSHMasterSocketTime"\"\n\
+gnupotNotificationTime=\""$NotificationTime"\"\n\
+gnupotDNSUpdateTime=\""$DNSUpdateTime"\"\n\
 gnupotLockFilePath=\""$LockFilePath"\"\n\
 gnupotCommitNumberFilePath=\""$CommitNumberFilePath"\"\n\
 " > ""$CONFIGDIR"/gnupot.config"
