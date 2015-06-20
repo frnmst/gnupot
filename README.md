@@ -24,6 +24,14 @@ Stupid) principal.
 - **GNU** beause of the freedom associated to this program.
 - **pot** because it gives the idea of some type of container.
 
+##WARNING AND DISCLAMER
+
+**THIS IS A WORK IN PROGESS. IT IS NOT YET READY FOR PRODUCTION USE.**
+
+**AS THE LICENSE STATES, THIS PROGRAM COMES WITH ABSOLUTELY NO WARRANY. THE 
+  DEVELOPER(S) CANNOT BE HELD RESPONSABLE OR LIABLE FOR ANY DATA LOSS OR OTHER
+  DAMAGES CAUSED BY THE USE OF THIS SOFTWARE.**
+
 ##Ideas behind the project
 
 - Simple.
@@ -225,13 +233,6 @@ these problems should be solved.
 
 Unknown:
 - All other distros.
-
-##WARNING AND DISCLAMER
-
-**THIS IS A WORK IN PROGESS. IT IS NOT READY YET FOR PRODUCTION USE.**
-
-**AS THE LICENSE STATES THIS PROGRAM COMES WITH ABSOLUTELY NO WARRANY, SO
-  I'M NOT RESPONSABLE FOR ANY DATA LOSS.**
 
 ##Contact
 
