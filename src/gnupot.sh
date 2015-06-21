@@ -521,8 +521,8 @@ assignGitInfo()
 {
 
 	cd "$gnupotLocalDir"
-        git config user.name "$gnupotGitCommitterUsername"
-        git config user.email "$gnupotGitCommitterEmail"
+	git config user.name "$gnupotGitCommitterUsername"
+	git config user.email "$gnupotGitCommitterEmail"
 	cd "$OLDPWD"
 
 	return 0

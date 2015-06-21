@@ -47,7 +47,7 @@ GIT_SSH_COMMAND=""
 "$VARIABLESOURCEFILEPATH" "$0" "$@" || :
 
 # Variables.
-optNum="12"
+optNum="18"
 options=""
 winX="100"
 winY="25"
@@ -320,18 +320,20 @@ main()
 	while true; do
 		getConfig
 		verifyConfig
-		if [ ! "$?" -eq 0 ]; then main return 0; fi
+		[ ! "$?" -eq 0 ] && { main; return 0; }
 		strTok
 		summary
-		if [ ! "$?" -eq 0 ]; then main return 0; fi
+		[ ! "$?" -eq 0 ] && { main; return 0; }
 		initConfigDir
-		if [ ! "$?" -eq 0 ]; then main return 0; fi
+		[ ! "$?" -eq 0 ] && { main; return 0; }
 		testInfo
-		if [ ! "$?" -eq 0 ]; then main return 0; fi
+		[ ! "$?" -eq 0 ] && { main; return 0; }
 		initRepo
 		cloneRepo
-		if [ ! "$?" -eq 0 ]; then main return 0; fi
+		[ ! "$?" -eq 0 ] && { main; return 0; }
 		writeConfigFile
+		[ -n "$DISPLAY" ] && bash -c "notify-send -t 10000 \
+GNUpot\ setup\ completed."
 		infoMsg "msgbox" "Setup completed."
 		return 0
 	done
