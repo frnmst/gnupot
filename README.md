@@ -77,35 +77,34 @@ Stupid) principal.
 
 ###Setup
 
-To install GNUpot
-1. you must download it first of all:
-
+To install GNUpot you must download it first of all:
 ```shell
 $ git clone https://github.com/frnmst/gnupot.git
 $ cd gnupot
 ```
 
-2. install **all** the packages described at the end of the readme.
+Install **all** the [packages](#packages-to-install) described at the end of the readme.
+
 
 There are various ways to proceed.
 
 ####The easy way (recommended)
 
-1. On the server (as **root** user or with **sudo**):
-  - add a new user (gnupot in the example) and set its password. I advise you 
+On the server (as **root** user or with **sudo**):
+  - add a new user (`gnupot` in the example) and set its password. I advise you 
     to select a strong password:
 ```
 # useradd -m -G wheel -s /bin/bash gnupot
 # passwd gnupot
 ```
-2. On the server you should have `OpenSSH` up and running.
-  - Add the following entry at the end of `/etc/ssh/sshd_config`. This will 
-    enable password authentication so that you can easily add new clients:
+On the server you should have `OpenSSH` up and running.
+Add the following entry at the end of `/etc/ssh/sshd_config`. This will 
+enable password authentication so that you can easily add new clients:
 ```
 Match User gnupot
 	PasswordAuthentication yes
 ```
-3. Restart ssh daemon (if you don't have **Systemd** check your manuals):
+Restart ssh daemon (if you don't have **Systemd** check your manuals):
 ```
 # systemctl restart sshd
 ```
@@ -114,13 +113,13 @@ You should now be able to login in your server with your password:
 $ ssh gnupot@<yourServerAddressOrHostname>
 ```
 
-4. On the client:
+On the client:
   - run `./setup` and answer to *all* the questions.
 
 ####The difficult way
 
 1. If you can't login to the server **or** you want to use a different user 
-   instead of your usual one, go to [step 1](#the-easy-way-recommended).
+   instead of your usual one, go to [the first step](#the-easy-way-recommended).
 
 2. copy `src/gnupot.config.example` to `~/.config/gnupot/gnupot.config` 
    and edit it to your needs.
@@ -147,7 +146,7 @@ $ git pull origin master
   to see all the commit history you can use `git log`. To see the 
   differences from the last commit: `git show`.
 
-##Packages to install (dependencies)
+##Packages to install
 
 Key
 ```
@@ -155,6 +154,8 @@ Key
 	<where to install the package>
 ```
 Working versions >= than the ones written here should work without problems.
+
+**All** the following packages must be installed in order to use GNUpot:
 
 - `bash` 4.3.033-1 (`bash`)
   - Server and client.
