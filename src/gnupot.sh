@@ -31,6 +31,58 @@ set -a
 PATH="$PATH":/usr/bin
 CONFIGFILEPATH=""$HOME"/.config/gnupot/gnupot.config"
 
+printHelp()
+{
+
+	local prgPath="$1"
+
+	echo -en "\
+GNUpot help\n\n\
+SYNOPSIS\n\
+\t"$prgPath" [ -h | -i | -l | -k | -p | -s ]\n\n\
+\t\t-h\tHelp.\n\
+\t\t-i\tStart GNUpot.\n\
+\t\t-l\tShow GNUpot license.\n\
+\t\t-k\tKill GNUpot.\n\
+\t\t-p\tPrint configuration file.\n\
+\t\t-s\tPrint status.\n\n\
+CONFIGURATION FILE\n\
+\tConfiguration file is found in ~/.config/gnupot/gnupot.config.\n\n\
+RETURN VALUES\n\
+\t0\tNo error occurred.\n\
+\t1\tSome error occurred.\n\n\
+CONTACT\n\
+\tReport bugs to: franco.masotti@live.com or \
+franco.masotti@student.unife.it\n\
+\tGNUpot home page: <https://github.com/frnmst/gnupot>\n\n\
+COPYRIGHT\n\
+\tGNUpot  Copyright (C) 2015  frnmst (Franco Masotti)\n\
+\tThis program comes with ABSOLUTELY NO WARRANTY; for details type \
+\`"$prgPath" -l'.\n\
+\tThis is free software, and you are welcome to redistribute it \n\
+\tunder certain conditions; type \`"$prgPath" -l' for details.\n\
+" 1>&2
+
+	return 0
+
+}
+
+setUpdateableGloblVars()
+{
+
+	# Used for general ssh commands
+	SSHCONNECTCMDARGS="$SSHARGS "$gnupotServerUsername"@"$gnupotServer""
+	# Open master socket so that further connection will result faster
+	# (using multiplexing to avoid re-authentication).
+	SSHMASTERSOCKCMDARGS="-M -o \
+ControlPersist="$gnupotSSHMasterSocketTime" $SSHCONNECTCMDARGS exit"
+	# git environment variable for ssh.
+	GIT_SSH_COMMAND="ssh $SSHARGS"
+
+	return 0
+
+}
+
 setGloblVars()
 {
 
@@ -49,14 +101,7 @@ setGloblVars()
 	SSHARGS="-o PasswordAuthentication=no -i "$gnupotSSHKeyPath" -C -S \
 "$gnupotSSHMasterSocketPath" -o UserKnownHostsFile=/dev/null \
 -o StrictHostKeyChecking=no"
-	# Used for general ssh commands
-	SSHCONNECTCMDARGS="$SSHARGS "$gnupotServerUsername"@"$gnupotServer""
-	# Open master socket so that further connection will result faster
-	# (using multiplexing to avoid re-authentication).
-	SSHMASTERSOCKCMDARGS="-M -o \
-ControlPersist="$gnupotSSHMasterSocketTime" $SSHCONNECTCMDARGS exit"
-	# git environment variable for ssh.
-	GIT_SSH_COMMAND="ssh $SSHARGS"
+	setUpdateableGloblVars
 
 	return 0
 
@@ -71,31 +116,44 @@ parseConfig()
 SSHKeyPathO KeepMaxCommitsN LocalHomeO RemoteHomeO GitCommitterUsernameO \
 GitCommitterEmailO TimeToWaitForOtherChangesN BusyWaitTimeN \
 SSHMasterSocketPathO SSHMasterSocketTimeN NotificationTimeN \
-DNSUpdateTimeN LockFilePathO CommitNumberFilePathO" variable=""
+DNSUpdateTimeN LockFilePathO" variable=""
 
 	for variable in $variableList; do
-		variable="gnupot"$variable""
-		# Get last char of variable to determine type.
-		type="${variable:(-1)}"
-		# Get original variable name.
-		variable="${variable:0:(-1)}"
-		# Dereference variable.
-		variable="${!variable}"
+		# Get var name and last char of variable to determine type.
+		variable="gnupot"$variable""; type="${variable:(-1)}"
+		# Get original variable name and reference variable.
+		variable="${variable:0:(-1)}"; variable="${!variable}"
 		case "$type" in
-			# Test for non-empty positive numeric only variables.
-			N )
+			N ) # Numbers only.
 				case "$variable" in '' | *[!0-9]* )
 					parsingErrMsg ;; esac
 			;;
-			S )
+			S ) # Strings without space char.
 				case "$variable" in '' | *[' ']* )
 					parsingErrMsg ;; esac
 			;;
-			* )
+			* ) # All the other variables must be non-empty.
 				case "$variable" in '' ) parsingErrMsg ;; esac
 			;;
 		esac
 	done
+
+	return 0
+
+}
+
+# Find server address from hostname. If original variable is an IP
+# address, then nothing changes. Doing this avoids making unecessary
+# DNS server requests. It works for IPv6 addresses also.
+getAddrByName()
+{
+
+	local hostErrMsg="Cannot resolve host name."
+
+	[[ "$gnupotServerORIG" =~ [[:alpha:]] ]] \
+&& [[ ! "$gnupotServerORIG" =~ ":" ]] \
+&& gnupotServer=$(getent hosts "$gnupotServerORIG" | awk ' { print $1 } ') \
+&& [ -z "$gnupotServer" ] && { echo "$hostErrMsg" 1>&2; return 1; }
 
 	return 0
 
@@ -111,31 +169,12 @@ loadConfig()
 
 	parseConfig
 
+	# Global variable.
 	gnupotServerORIG="$gnupotServer"
 	# If gnupot is started then find IP address from host name.
-	[ -z "$arg" ] || [ "$arg" = "-i" ] && getAddrByName
+	[ -z "$arg" ] || [ "$arg" = "-i" ] && { getAddrByName || exit 1; }
 
 	setGloblVars
-
-	return 0
-
-}
-
-# Find server address from hostname. If original variable is an IP
-# address, then nothing changes. Doing this avoids making unecessary
-# DNS server requests. It works for IPv6 addresses also.
-getAddrByName()
-{
-
-	local hostErrMsg="Cannot resolve host name."
-
-	if [[ "$gnupotServerORIG" =~ [[:alpha:]] ]] \
-&& [[ ! "$gnupotServerORIG" =~ ":" ]]; then
-		gnupotServer=$(getent hosts "$gnupotServerORIG" \
-| awk ' { print $1 } ')
-		[ -z "$gnupotServer" ] && { echo "$hostErrMsg" \
-2>&1; exit 1; }
-	fi
 
 	return 0
 
@@ -187,7 +226,7 @@ busyWait()
 	notifyCmd "GNUpot is waiting for available connection or there is an \
 authetication problem." "$gnupotNotificationTime"
 
-	# Do something useful here. TODO.
+	updateDNSRecord
 
 	sleep "$gnupotBusyWaitTime"
 
@@ -200,8 +239,10 @@ loopSSHCmd()
 
 	local SSHCommand="$1" toBeEchoed="$2"
 
-	if [ -n "$toBeEchoed" ]; then $SSHCommand 2>&-
-	else $SSHCommand &>/dev/null; fi
+	# This avoids hangs on SSH commands when GNUpot is killed.
+	trap "return 0" $SIGNALS
+
+	[ -n "$toBeEchoed" ] && $SSHCommand 2>&- || $SSHCommand &>/dev/null
 
 	return "$?"
 
@@ -217,7 +258,7 @@ execSSHCmd()
 	local SSHCommand="$1" toBeEchoed="$2" retStr=""
 
 	# Check if remote server is reachable.
-	while [ $(ping -c 2 -s 0 -W 10 "$gnupotServer" &>/dev/null; \
+	while [ $(ping -c 1 -s 0 -W 30 "$gnupotServer" &>/dev/null; \
 echo "$?") -ne 0 ]; do
 		busyWait
 	done
@@ -226,10 +267,10 @@ echo "$?") -ne 0 ]; do
 	retStr="$(loopSSHCmd "$SSHCommand" "$toBeEchoed")"
 	while [ "$?" -eq 255 ]; do
 		busyWait
-		# Recreate master socket.
-		if [ "$SSHCommand" != "createSSHMasterSocket" ]; then
-			createSSHMasterSocket &>/dev/null
-		fi
+		# Recreate master socket except if input command is create
+		# master socket.
+		[ "$SSHCommand" != "createSSHMasterSocket" ] && \
+createSSHMasterSocket &>/dev/null
 		retStr="$(loopSSHCmd "$SSHCommand" "$toBeEchoed")"
 	done
 
@@ -238,6 +279,8 @@ echo "$?") -ne 0 ]; do
 	return 0
 
 }
+
+getCommitNumber() { echo "$(git rev-list HEAD --count)"; return 0; }
 
 # Resolve conflict function.
 # WARING: AT THIS MOMENT THIS FUNCTION WORKS BUT IT'S VERY BASIC.
@@ -294,17 +337,6 @@ $(date "+%F %T") $USERDATA" &>/dev/null
 
 }
 
-getCommitNumber()
-{
-
-	[ ! -f "$gnupotCommitNumberFilePath" ] \
-&& { echo 1 > "$gnupotCommitNumberFilePath"; echo 1; } \
-|| cat "$gnupotCommitNumberFilePath"
-
-	return 0
-
-}
-
 gitSyncOperations()
 {
 
@@ -331,12 +363,10 @@ sharedSyncActions()
 
 	gitSyncOperations
 
-	currentCommits=$(getCommitNumber)
+	currentCommits="$(getCommitNumber)"
 	# To be able to use this: git config --system \
 	# receive.denyNonFastForwards true
 	backupAndClean "$currentCommits"
-	# Update commit number.
-	echo $(($currentCommits+1)) > "$gnupotCommitNumberFilePath"
 
 	# Go back to previous dir.
 	cd "$OLDPWD"
@@ -359,7 +389,7 @@ syncOperation()
 	# Do the syncing.
 	sharedSyncActions
 
-	notifyCmd "Done." "$gnupotNotificationTime"
+	notifyCmd "GNUpot $path done." "$gnupotNotificationTime"
 
 	return 0
 
@@ -387,10 +417,7 @@ checkServerDirExistence()
 
 	# Check if remote directory exists.
 	dirNotExists=$(ssh $SSHCONNECTCMDARGS "if [ ! -d $gnupotRemoteDir ]; \
-then echo 1; else echo 0; fi")
-	checkDirExistence "$dirNotExists"
-
-	return 0
+then echo 1; else echo 0; fi"); checkDirExistence "$dirNotExists"; return 0
 
 }
 
@@ -399,16 +426,28 @@ checkClientDirExistence()
 
 	# Check if local directory exists.
 	dirNotExists=$(if [ ! -d "$gnupotLocalDir" ]; \
-then echo 1; else echo 0; fi)
-	checkDirExistence "$dirNotExists"
-
-	return 0
+then echo 1; else echo 0; fi); checkDirExistence "$dirNotExists"; return 0
 
 }
 
 acquireLockFile() { echo 1 > "$gnupotLockFilePath"; return 0; }
 
 freeLockFile() { echo 0 > "$gnupotLockFilePath"; return 0; }
+
+# The new address is only valid for the thread caller, i.e. Only the client
+# thread OR the server thread is updated here.
+updateDNSRecord()
+{
+
+	local tolerance=$(($gnupotDNSUpdateTime/8))
+
+	# SECONDS=seconds since the script started.
+	[ $(expr "$SECONDS" % "$gnupotDNSUpdateTime") -lt "$tolerance" ] \
+&& getAddrByName && setUpdateableGloblVars
+
+	return 0
+
+}
 
 callSync()
 {
@@ -430,6 +469,7 @@ callSync()
 			# while [ ! flock -n 1024 ]; do :; done
 			# is the same as the following line:
 			flock -x "$FD"
+			updateDNSRecord
 			syncOperation "$source" "$path"
 		# End critical section.
 		) {FD}>>"$gnupotLockFilePath"
@@ -504,19 +544,6 @@ syncC()
 
 }
 
-# Address thread. Updates host address inside a critical section.
-getAddr()
-{
-
-	trap "exit" $SIGNALS
-
-	while true; do
-		sleep "$gnupotDNSUpdateTime"
-		(flock -x "$FD"; getAddrByName) {FD}>>"$gnupotLockFilePath"
-	done
-
-}
-
 assignGitInfo()
 {
 
@@ -526,6 +553,7 @@ assignGitInfo()
 	cd "$OLDPWD"
 
 	return 0
+
 }
 
 printStatus()
@@ -536,7 +564,7 @@ printStatus()
 	echo -en "GNUpot is " 1>&2
 	local total="$(pgrep gnupot)"
 	for proc in $total; do i=$(($i+1)); done
-	[ $i -lt 6 ] && echo -en "NOT " 1>&2
+	[ "$i" -lt 6 ] && echo -en "NOT " 1>&2
 	echo -en "running correctly.\n" 1>&2
 
 	return 0
@@ -590,19 +618,14 @@ sigHandler()
 callThreads()
 {
 
-	local addrPid="" srvPid="" cliPid=""
+	local srvPid="" cliPid=""
 
-	# Get addr from hostname every x seconds.
-	getAddr &
-	addrPid="$!"
 	# Listen from server and send to client.
-	syncS &
-	srvPid="$!"
+	syncS & srvPid="$!"
 	# Listen from client and send to server.
-	syncC &
-	cliPid="$!"
+	syncC & cliPid="$!"
 
-	wait "$addrPid" "$srvPid" "$cliPid"
+	wait "$srvPid" "$cliPid"
 
 	return 0
 
@@ -636,42 +659,6 @@ main()
 
 }
 
-printHelp()
-{
-
-	local prgPath="$1"
-
-	echo -en "\
-GNUpot help\n\n\
-SYNOPSIS\n\
-\t"$prgPath" [ -h | -i | -l | -k | -p | -s ]\n\n\
-\t\t-h\tHelp.\n\
-\t\t-i\tStart GNUpot.\n\
-\t\t-l\tShow GNUpot license.\n\
-\t\t-k\tKill GNUpot.\n\
-\t\t-p\tPrint configuration file.\n\
-\t\t-s\tPrint status.\n\n\
-CONFIGURATION FILE\n\
-\tConfiguration file is found in ~/.config/gnupot/gnupot.config.\n\n\
-RETURN VALUES\n\
-\t0\tNo error occurred.\n\
-\t1\tSome error occurred.\n\n\
-CONTACT\n\
-\tReport bugs to: franco.masotti@live.com or \
-franco.masotti@student.unife.it\n\
-\tGNUpot home page: <https://github.com/frnmst/gnupot>\n\n\
-COPYRIGHT\n\
-\tGNUpot  Copyright (C) 2015  frnmst (Franco Masotti)\n\
-\tThis program comes with ABSOLUTELY NO WARRANTY; for details type \
-\`"$prgPath" -l'.\n\
-\tThis is free software, and you are welcome to redistribute it \n\
-\tunder certain conditions; type \`"$prgPath" -l' for details.\n\
-" 1>&2
-
-	return 0
-
-}
-
 parseOpts()
 {
 
@@ -697,12 +684,10 @@ parseOpts()
 
 }
 
-# Load configuration.
 loadConfig "$1"
 
 checkExecutables
 
-# Call option parser.
 parseOpts "$0" "$@"
 
 exit "$?"

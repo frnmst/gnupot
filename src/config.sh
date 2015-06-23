@@ -47,7 +47,7 @@ GIT_SSH_COMMAND=""
 "$VARIABLESOURCEFILEPATH" "$0" "$@" || :
 
 # Variables.
-optNum="18"
+optNum="17"
 options=""
 winX="100"
 winY="25"
@@ -112,8 +112,6 @@ displayForm()
 16 35 $action 0 \
 "Lock file full path:"			17 1 "$LockFilePath" \
 17 35 $action 0 \
-"Commit number file full path:"		18 1 "$CommitNumberFilePath" \
-18 35 $action 0 \
 )
 	retval="$?"
 	echo "$opts"
@@ -139,7 +137,7 @@ strTok()
 SSHKeyPath KeepMaxCommits LocalHome RemoteHome GitCommitterUsername \
 GitCommitterEmail TimeToWaitForOtherChanges BusyWaitTime \
 SSHMasterSocketPath SSHMasterSocketTime NotificationTime \
-DNSUpdateTime LockFilePath CommitNumberFilePath"
+DNSUpdateTime LockFilePath"
 
 	# Control bash version to avoid IFS bug. bash 4.2 (and lower?) has this
 	# bug. If bash is <=4.2 spaces must be avoided in form fields.
@@ -307,7 +305,6 @@ gnupotSSHMasterSocketTime=\""$SSHMasterSocketTime"\"\n\
 gnupotNotificationTime=\""$NotificationTime"\"\n\
 gnupotDNSUpdateTime=\""$DNSUpdateTime"\"\n\
 gnupotLockFilePath=\""$LockFilePath"\"\n\
-gnupotCommitNumberFilePath=\""$CommitNumberFilePath"\"\n\
 " > ""$CONFIGDIR"/gnupot.config"
 
 	return 0

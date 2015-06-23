@@ -92,29 +92,30 @@ There are various ways to proceed.
 ####The easy way (recommended)
 
 1. On the server (as **root** user or with **sudo**):
-  * add a new user (gnupot in the example) and set its password. I advise you 
+  - add a new user (gnupot in the example) and set its password. I advise you 
     to select a strong password:
 ```
 # useradd -m -G wheel -s /bin/bash gnupot
 # passwd gnupot
 ```
-  * add the following entry at the end of `/etc/ssh/sshd_config`. This will 
+2. On the server you should have `OpenSSH` up and running.
+  - Add the following entry at the end of `/etc/ssh/sshd_config`. This will 
     enable password authentication so that you can easily add new clients:
 ```
 Match User gnupot
 	PasswordAuthentication yes
 ```
-  * restart ssh daemon (if you don't have **Systemd** check your manuals):
+3. Restart ssh daemon (if you don't have **Systemd** check your manuals):
 ```
 # systemctl restart sshd
 ```
-You should now be able to login in your server like this:
+You should now be able to login in your server with your password:
 ```shell
 $ ssh gnupot@<yourServerAddressOrHostname>
 ```
 
-2. On the client:
-  - run `./setup` and answer to all the questions.
+4. On the client:
+  - run `./setup` and answer to *all* the questions.
 
 ####The difficult way
 
@@ -142,16 +143,18 @@ $ git pull origin master
 
 ##Interesting facts about GNUpot
 
-- GNUpot, being based on git, you can use the usual git commands. For example 
+- GNUpot is based on git so you can use the usual. For example 
   to see all the commit history you can use `git log`. To see the 
   differences from the last commit: `git show`.
 
 ##Packages to install (dependencies)
 
+Key
 ```
-<package name> <executable> <comment>
+<package name> <working version> <executable> <comment>
 	<where to install the package>
 ```
+Working versions >= than the ones written here should work without problems.
 
 - `bash` 4.3.033-1 (`bash`)
   - Server and client.
@@ -165,14 +168,14 @@ $ git pull origin master
   - Client only.
 - `libnotify` **or** `libnotify-bin` 0.7.6-1 (`notify-send`) [Sends 
   notifications to notification server.]
-  - Client only.
+  - Client only. If you are installing GNUpot in a headless configuration 
+    (servers, embedded systems, etc...) you don't need this package.
 - `git` 2.4.1-1 (`git`) [Program that syncs file and does versioning control.]
   - Server and client. **It must be version >= 2.3 because of GIT_SSH_COMMAND 
     variable which is absent in previous releases.**
-- (DON'T INSTALL `?trickle?` (`trickle`) [Traffic shaper.])
 - `dialog` 1:1.2_20150513-1 (`dialog`) [Display user friendly dialog messages 
   during the setup.]
-- `glibc` (`getent`) [Get IP address from hostname.]
+- `glibc` ? (`getent`) [Get IP address from hostname.]
 - Be sure to have 1 and only 1 notify server installed. It should be already 
   installed on your system.
   - Client only.
