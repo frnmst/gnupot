@@ -1,20 +1,53 @@
+#
+# gnupot.config.example
+#
+# Copyright (C) 2015 frnmst (Franco Masotti) <franco.masotti@live.com>
+#                                            <franco.masotti@student.unife.it>
+#
+# This file is part of GNUpot.
+#
+# GNUpot is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# GNUpot is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with GNUpot.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+
 # GNUpot configuration file.
 # This is an example configuration file. You can edit it and change name to 
 # gnupot.config and place it in $HOME/.config/gnupot
 
-# Required parameters.
-gnupotServer="<addr or hostname>"
+# All variables with numbers must be positive integers.
+# All variables with paths must contain full paths except $gnupotRemoteDir
+# which refers to the relative path starting from the remote home.
+
+gnupotServer="<address or hostname>"
 gnupotServerUsername="<remote username>"
 gnupotLocalDir="<full path local watch dir>"
 gnupotRemoteDir="<remote watch dir>"
 gnupotLocalHome="<full path local home dir>"
 gnupotRemoteHome="<full path remote home dir>"
-gnupotKeepMaxCommits="1024"
+gnupotGitCommitterUsername="<username>" # git committer information.
+gnupotGitCommitterEmail="<email>"
+gnupotKeepMaxCommits="0" # 0 means keep all commits.
+gnupotTimeToWaitForOtherChanges="5" # seconds
+gnupotBusyWaitTime="60" # seconds
+# The master socket should be in a directory readable and writable only by the
+# intended user. If that is not the case anyone could use the master socket to
+# connect to the server without any password nor key request whatsoever.
+gnupotSSHMasterSocketPath=""$HOME"/.config/gnupot/gnupotSSHMasterSocket"
+gnupotSSHMasterSocketTime="120" # minutes
+gnupotDefaultNotificationTime="2000" # ms
+gnupotDNSUpdateTime="43200" # seconds
+# Use shared memory (if present) to avoid writing on disk. If it's not present,
+# use a valid path. Check if "df | grep shm" has an output.
+gnupotLockFilePath="/dev/shm/.lockfile"
 
-# Other parameters.
-gnupotTimeToWaitForOtherChanges="5"
-gnupotSSHMasterSocketPath="/tmp/gnupotSSHMasterSocket"
-gnupotSSHMasterSocketTime="120m"
-gnupotDefaultNotificationTime="2000"
-gnupotLockFilePath="$HOME/.config/gnupot/.lockfile"
-gnupotCommitNumberFilePath="$HOME/.config/gnupot/.commitNums"

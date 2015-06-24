@@ -90,7 +90,6 @@ $ git pull origin master
 
 Install **all** the [packages](#packages-to-install) described at the end of the readme.
 
-
 There are various ways to proceed.
 
 ####The easy way (recommended)
@@ -135,9 +134,13 @@ On the client:
 ##Start GNUpot
 
 Once you have completed the previous points you can actually run the 
-program:
+program manually:
 ```shell
 $ ./gnupot
+```
+To stop it:
+```shell
+$ ./gnupot -k
 ```
 
 ###Autostart
@@ -148,8 +151,10 @@ adding the following lines:
 # GNUpot
 (setsid bash -c "sleep 10 && DISPLAY=:0 && ~/gnupot/gnupot") &
 ```
-GNUpot will autostart 10 seconds after Openbox starts running. Remember to set 
-the display variable correctly, otherwise the notification will not be shown.
+GNUpot will autostart 10 seconds after Openbox starts running in a separate 
+environment, thanks to `setsid`. Without adding this you may encounter 
+serious problems when killing GNUpot. Remember to set the display variable 
+correctly, otherwise the notifications will not be shown.
 
 ##Interesting facts about GNUpot
 
