@@ -83,6 +83,11 @@ $ git clone https://github.com/frnmst/gnupot.git
 $ cd gnupot
 ```
 
+To download program updates (without cloning every time):
+```shell
+$ git pull origin master
+```
+
 Install **all** the [packages](#packages-to-install) described at the end of the readme.
 
 
@@ -135,10 +140,16 @@ program:
 $ ./gnupot
 ```
 
-To download program updates (without cloning every time):
+###Autostart
+
+If you have Openbox, you can put GNUpot in `~/.config/openbox/autostart` by 
+adding the following lines:
 ```shell
-$ git pull origin master
+# GNUpot
+(setsid bash -c "sleep 10 && DISPLAY=:0 && ~/gnupot/gnupot") &
 ```
+GNUpot will autostart 10 seconds after Openbox starts running. Remember to set 
+the display variable correctly, otherwise the notification will not be shown.
 
 ##Interesting facts about GNUpot
 
@@ -176,7 +187,7 @@ Working versions >= than the ones written here should work without problems.
     variable which is absent in previous releases.**
 - `dialog` 1:1.2_20150513-1 (`dialog`) [Display user friendly dialog messages 
   during the setup.]
-- `glibc` ? (`getent`) [Get IP address from hostname.]
+- `glibc` 2.21-4 (`getent`) [Get IP address from hostname.]
 - Be sure to have 1 and only 1 notify server installed. It should be already 
   installed on your system.
   - Client only.

@@ -36,7 +36,7 @@ printHelp()
 
 	local prgPath="$1"
 
-	echo -en "\
+	printf "\
 GNUpot help\n\n\
 SYNOPSIS\n\
 \t"$prgPath" [ -h | -i | -l | -k | -p | -s ]\n\n\
@@ -88,7 +88,7 @@ setGloblVars()
 
 	gnupotSSHMasterSocketTime=""$gnupotSSHMasterSocketTime"m"
 	# List of signals to be trapped.
-	SIGNALS="SIGABRT SIGCHLD SIGHUP SIGINT SIGQUIT SIGTERM SIGTSTP"
+	SIGNALS="SIGUSR1 SIGABRT SIGCHLD SIGHUP SIGINT SIGQUIT SIGTERM SIGTSTP"
 	# List of installed programs that GNUpot uses.
 	PROGRAMS="bash ssh inotifywait flock notify-send git getent"
 	USERDATA="by "$USER"@"$HOSTNAME"."
@@ -96,7 +96,6 @@ setGloblVars()
 	# events.
 	INOTIFYWAITCMD="inotifywait -r -q -e modify -e attrib \
 -e move -e move_self -e create -e delete -e delete_self --format %f"
-	GITCMD="git"
 	# SSH arguments.
 	SSHARGS="-o PasswordAuthentication=no -i "$gnupotSSHKeyPath" -C -S \
 "$gnupotSSHMasterSocketPath" -o UserKnownHostsFile=/dev/null \
@@ -107,7 +106,7 @@ setGloblVars()
 
 }
 
-parsingErrMsg() { echo "Can't read config or parsing problem." 1>&2; exit 1; }
+parsingErrMsg() { printf "Can't read config or parsing problem." 1>&2; exit 1; }
 
 parseConfig()
 {
@@ -153,7 +152,7 @@ getAddrByName()
 	[[ "$gnupotServerORIG" =~ [[:alpha:]] ]] \
 && [[ ! "$gnupotServerORIG" =~ ":" ]] \
 && gnupotServer=$(getent hosts "$gnupotServerORIG" | awk ' { print $1 } ') \
-&& [ -z "$gnupotServer" ] && { echo "$hostErrMsg" 1>&2; return 1; }
+&& [ -z "$gnupotServer" ] && { printf "$hostErrMsg" 1>&2; return 1; }
 
 	return 0
 
@@ -164,7 +163,8 @@ loadConfig()
 
 	local arg="$1"
 
-	[ -f "$CONFIGFILEPATH" ] && source "$CONFIGFILEPATH" 2>&- \
+	# "." is the same as "source" but it is more portable.
+	[ -f "$CONFIGFILEPATH" ] && . "$CONFIGFILEPATH" 2>&- \
 || parsingErrMsg
 
 	parseConfig
@@ -259,7 +259,7 @@ execSSHCmd()
 
 	# Check if remote server is reachable.
 	while [ $(ping -c 1 -s 0 -W 30 "$gnupotServer" &>/dev/null; \
-echo "$?") -ne 0 ]; do
+printf "$?") -ne 0 ]; do
 		busyWait
 	done
 
@@ -274,13 +274,13 @@ createSSHMasterSocket &>/dev/null
 		retStr="$(loopSSHCmd "$SSHCommand" "$toBeEchoed")"
 	done
 
-	[ -n "$toBeEchoed" ] && echo "$retStr"
+	[ -n "$toBeEchoed" ] && printf "$retStr"
 
 	return 0
 
 }
 
-getCommitNumber() { echo "$(git rev-list HEAD --count)"; return 0; }
+getCommitNumber() { printf "$(git rev-list HEAD --count)"; return 0; }
 
 # Resolve conflict function.
 # WARING: AT THIS MOMENT THIS FUNCTION WORKS BUT IT'S VERY BASIC.
@@ -292,7 +292,7 @@ resolveConflicts()
 
 	[ "$returnedVal" -eq 1 ] \
 && { notifyCmd "Resolving file conflicts." "$gnupotNotificationTime"; \
-$GITCMD commit -a -m "Commit on $(date "+%F %T") $USERDATA \
+git commit -a -m "Commit on $(date "+%F %T") $USERDATA \
 Handled conflicts"; }
 
 	return 0
@@ -303,7 +303,7 @@ Handled conflicts"; }
 backupAndClean()
 {
 
-	local currentCommits="$1" commitSha=""
+	local currentCommits="$(getCommitNumber)" commitSha=""
 
 	# if Max backups is set to 0 it means always to do a simple commit.
 	# Otherwise use mod operator to find out when to truncate history (if
@@ -311,26 +311,26 @@ backupAndClean()
 	if [ "$gnupotKeepMaxCommits" -ne 0 ] \
 && [ $(expr "$currentCommits" % "$gnupotKeepMaxCommits") -eq 0 ]; then
 		# Get sha of interest.
-		commitSha=$($GITCMD log -n "$gnupotKeepMaxCommits" \
+		commitSha=$(git log -n "$gnupotKeepMaxCommits" \
 | tail -n 6 | grep commit | awk ' { print $2 } ')
 		# From man git-checkout:
 		# Create a new orphan branch, named <new_branch>, started from
 		# <start_point> and switch to it.
-		$GITCMD checkout --orphan tmp "$commitSha" &>/dev/null
+		git checkout --orphan tmp "$commitSha" &>/dev/null
 		# Change old commit.
-		$GITCMD commit -m "Truncated history on \
+		git commit -m "Truncated history on \
 $(date "+%F %T") $USERDATA" &>/dev/null
 		# From man git-rebase
 		# Forward-port local commits to the updated upstream head.
-		$GITCMD rebase --onto tmp "$commitSha" master &>/dev/null
+		git rebase --onto tmp "$commitSha" master &>/dev/null
 		# Delete tmp branch.
-		$GITCMD branch -D tmp &>/dev/null
+		git branch -D tmp &>/dev/null
 		# Garbage collector for stuff older than 1d.
 		# TODO better.
-		$GITCMD gc --auto --prune=1d &>/dev/null
-		execSSHCmd "$GITCMD push -f origin master"
+		git gc --auto --prune=1d &>/dev/null
+		execSSHCmd "git push -f origin master"
 	else
-		execSSHCmd "$GITCMD push origin master"
+		execSSHCmd "git push origin master"
 	fi
 
 	return 0
@@ -340,12 +340,12 @@ $(date "+%F %T") $USERDATA" &>/dev/null
 gitSyncOperations()
 {
 
-	$GITCMD add -A &>/dev/null
-	$GITCMD commit -m "Commit on $(date "+%F %T") \
+	git add -A &>/dev/null
+	git commit -m "Commit on $(date "+%F %T") \
 $USERDATA" &>/dev/null
 	# Always pull from server first then check for conflicts using return
 	# value.
-	execSSHCmd "$GITCMD pull origin master"
+	execSSHCmd "git pull origin master"
 	resolveConflicts "$?"
 
 	return 0
@@ -353,27 +353,8 @@ $USERDATA" &>/dev/null
 }
 
 # Both client and server threads execute this function.
-sharedSyncActions()
-{
-
-	local currentCommits=""
-
-	# Do all git operations in the correct directory.
-	cd "$gnupotLocalDir"
-
-	gitSyncOperations
-
-	currentCommits="$(getCommitNumber)"
-	# To be able to use this: git config --system \
-	# receive.denyNonFastForwards true
-	backupAndClean "$currentCommits"
-
-	# Go back to previous dir.
-	cd "$OLDPWD"
-
-	return 0
-
-}
+# To be able to clean: git config --system receive.denyNonFastForwards true
+sharedSyncActions() { gitSyncOperations; backupAndClean; return 0; }
 
 # Main file syncronization function.
 # This is executed inside a critical section.
@@ -386,8 +367,12 @@ syncOperation()
 
 	syncNotify "$path" "$source"
 
+	# Do all git operations in the correct directory.
+	cd "$gnupotLocalDir"
 	# Do the syncing.
 	sharedSyncActions
+	# Go back to previous dir.
+	cd "$OLDPWD"
 
 	notifyCmd "GNUpot $path done." "$gnupotNotificationTime"
 
@@ -403,7 +388,7 @@ checkDirExistence()
 exist."
 
 	if [ "$input" -ne 0 ]; then
-		echo -en "$errMsg\n"
+		printf "$errMsg\n"
 		notifyCmd "$errMsg" "$gnupotNotificationTime"
 		kill -s SIGINT 0
 	fi
@@ -417,7 +402,7 @@ checkServerDirExistence()
 
 	# Check if remote directory exists.
 	dirNotExists=$(ssh $SSHCONNECTCMDARGS "if [ ! -d $gnupotRemoteDir ]; \
-then echo 1; else echo 0; fi"); checkDirExistence "$dirNotExists"; return 0
+then printf 1; else printf 0; fi"); checkDirExistence "$dirNotExists"; return 0
 
 }
 
@@ -426,13 +411,13 @@ checkClientDirExistence()
 
 	# Check if local directory exists.
 	dirNotExists=$(if [ ! -d "$gnupotLocalDir" ]; \
-then echo 1; else echo 0; fi); checkDirExistence "$dirNotExists"; return 0
+then printf 1; else printf 0; fi); checkDirExistence "$dirNotExists"; return 0
 
 }
 
-acquireLockFile() { echo 1 > "$gnupotLockFilePath"; return 0; }
+acquireLockFile() { printf 1 > "$gnupotLockFilePath"; return 0; }
 
-freeLockFile() { echo 0 > "$gnupotLockFilePath"; return 0; }
+freeLockFile() { printf 0 > "$gnupotLockFilePath"; return 0; }
 
 # The new address is only valid for the thread caller, i.e. Only the client
 # thread OR the server thread is updated here.
@@ -561,11 +546,11 @@ printStatus()
 
 	local i=0 proc=""
 
-	echo -en "GNUpot is " 1>&2
+	printf "GNUpot is " 1>&2
 	local total="$(pgrep gnupot)"
 	for proc in $total; do i=$(($i+1)); done
-	[ "$i" -lt 6 ] && echo -en "NOT " 1>&2
-	echo -en "running correctly.\n" 1>&2
+	[ "$i" -lt 6 ] && printf "NOT " 1>&2
+	printf "running correctly.\n" 1>&2
 
 	return 0
 
@@ -593,7 +578,7 @@ checkExecutables()
 	# Redirect which stderr and stdout to /dev/null (see bash
 	# redirection).
 	checkGitVersion && which $PROGRAMS &>/dev/null
-	[ "$?" -ne 0 ] && { echo -en "Missing programs or unsupported. \
+	[ "$?" -ne 0 ] && { printf "Missing programs or unsupported. \
 Check: $PROGRAMS.\n" 1>&2; exit 1; }
 
 	return 0
@@ -604,11 +589,10 @@ Check: $PROGRAMS.\n" 1>&2; exit 1; }
 sigHandler()
 {
 
-	echo -en "GNUpot killed\n" 1>&2
+	printf "GNUpot killed\n" 1>&2
 	# Kill master ssh socket (this will kill any ssh connection associated
 	# with it). Also disable stderr output for this command with "2>&-".
 	ssh -O exit -S "$gnupotSSHMasterSocketPath" "$gnupotServer" 2>&- &
-	# Kill all the processes of this group.
 	kill -s SIGINT 0
 
 	return 0
@@ -624,6 +608,8 @@ callThreads()
 	syncS & srvPid="$!"
 	# Listen from client and send to server.
 	syncC & cliPid="$!"
+	# Lowest process priority for the threads.
+	renice 20 "$srvPid" "$cliPid" &>/dev/null
 
 	wait "$srvPid" "$cliPid"
 
