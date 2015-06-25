@@ -193,6 +193,7 @@ Working versions >= than the ones written here should work without problems.
 - `dialog` 1:1.2_20150513-1 (`dialog`) [Display user friendly dialog messages 
   during the setup.]
 - `glibc` 2.21-4 (`getent`) [Get IP address from hostname.]
+- `iputils` 20140519.fad11dc-1 (`ping`) [ping IP address.]
 - Be sure to have 1 and only 1 notify server installed. It should be already 
   installed on your system.
   - Client only.
