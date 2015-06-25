@@ -92,7 +92,7 @@ setGloblVars()
 	# List of signals to be trapped.
 	SIGNALS="SIGUSR1 SIGABRT SIGCHLD SIGHUP SIGINT SIGQUIT SIGTERM SIGTSTP"
 	# List of installed programs that GNUpot uses.
-	PROGRAMS="bash ssh inotifywait flock notify-send git getent"
+	PROGRAMS="bash ssh inotifywait flock notify-send git getent ping"
 	USERDATA="by "$USER"@"$HOSTNAME"."
 	# inotifywait command macro: recursive, quiet, listen only to certain
 	# events.
