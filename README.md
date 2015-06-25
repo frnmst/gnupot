@@ -192,8 +192,11 @@ Working versions >= than the ones written here should work without problems.
     variable which is absent in previous releases.**
 - `dialog` 1:1.2_20150513-1 (`dialog`) [Display user friendly dialog messages 
   during the setup.]
+  - Client only.
 - `glibc` 2.21-4 (`getent`) [Get IP address from hostname.]
+  - Client only.
 - `iputils` 20140519.fad11dc-1 (`ping`) [ping IP address.]
+  - Client only.
 - Be sure to have 1 and only 1 notify server installed. It should be already 
   installed on your system.
   - Client only.
@@ -246,7 +249,8 @@ Still unsuccessful:
 - Lubuntu 12.04. I have an HD with that system that i didn't use in a 
   while (some years). Unfortunately GNUpot's setup didn't even start. At this 
   moment however not all problems have been solved. These include:
-  - when quitting GNUpot `inotifywait` hangs untill another event occurs.
+  - ~~when quitting GNUpot `inotifywait` hangs untill another event occurs.~~ **SHOULD 
+    BE SOLVED BUT IT'S UNTESTED.**
   - GNUpot doesen't recognize `SIGINT` for an unknown reason.
 
 By isolating those problems you can safely run GNUpot on Lubuntu, and by time 
