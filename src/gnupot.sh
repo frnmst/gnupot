@@ -31,12 +31,14 @@ set -a
 PATH="$PATH":/usr/bin
 CONFIGFILEPATH=""$HOME"/.config/gnupot/gnupot.config"
 
+printStderr() { local msg="$1"; printf "$msg" >&2; return 0; }
+
 printHelp()
 {
 
 	local prgPath="$1"
 
-	printf "\
+	printStderr "\
 GNUpot help\n\n\
 SYNOPSIS\n\
 \t"$prgPath" [ -h | -i | -l | -k | -p | -s ]\n\n\
@@ -61,7 +63,7 @@ COPYRIGHT\n\
 \`"$prgPath" -l'.\n\
 \tThis is free software, and you are welcome to redistribute it \n\
 \tunder certain conditions; type \`"$prgPath" -l' for details.\n\
-" 1>&2
+"
 
 	return 0
 
@@ -106,7 +108,7 @@ setGloblVars()
 
 }
 
-parsingErrMsg() { printf "Can't read config or parsing problem." 1>&2; exit 1; }
+parsingErrMsg() { printStderr "Configuration or parsing problem.\n"; exit 1; }
 
 parseConfig()
 {
@@ -115,13 +117,13 @@ parseConfig()
 SSHKeyPathO KeepMaxCommitsN LocalHomeO RemoteHomeO GitCommitterUsernameO \
 GitCommitterEmailO TimeToWaitForOtherChangesN BusyWaitTimeN \
 SSHMasterSocketPathO SSHMasterSocketTimeN NotificationTimeN \
-DNSUpdateTimeN LockFilePathO" variable=""
+LockFilePathO" variable="" type=""
 
 	for variable in $variableList; do
 		# Get var name and last char of variable to determine type.
 		variable="gnupot"$variable""; type="${variable:(-1)}"
 		# Get original variable name and reference variable.
-		variable="${variable:0:(-1)}"; variable="${!variable}"
+		variable="${variable:0:(-1)}"; eval variable=\$"$variable"
 		case "$type" in
 			N ) # Numbers only.
 				case "$variable" in '' | *[!0-9]* )
@@ -152,7 +154,7 @@ getAddrByName()
 	[[ "$gnupotServerORIG" =~ [[:alpha:]] ]] \
 && [[ ! "$gnupotServerORIG" =~ ":" ]] \
 && gnupotServer=$(getent hosts "$gnupotServerORIG" | awk ' { print $1 } ') \
-&& [ -z "$gnupotServer" ] && { printf "$hostErrMsg" 1>&2; return 1; }
+&& [ -z "$gnupotServer" ] && { printStderr "$hostErrMsg"; return 1; }
 
 	return 0
 
@@ -185,11 +187,13 @@ loadConfig()
 lockOnFile()
 {
 
-	local prgPath="$1" argArray="$2"
+	local prgPath="$1" argArray="$2" errMsg="GNUpot is already \
+running.\n"
 
 	# Lock on configuration file path istead of this file (gnupot.sh).
-	[ "${FLOCKER}" != "$prgPath" ] && exec env FLOCKER="$prgPath" \
-flock -en "$CONFIGFILEPATH" "$prgPath" "$argArray" || :
+	[ "${FLOCKER}" != "$prgPath" ] && { FLOCKER="$prgPath" flock -en \
+"$CONFIGFILEPATH" "$prgPath" "$argArray" || printStderr "$errMsg"; \
+return 1; } || :
 
 	return 0
 
@@ -220,6 +224,11 @@ syncNotify()
 
 }
 
+# The new address is only valid for the thread caller, i.e. Only the client
+# thread OR the server thread is updated here. The update is done only when SSH
+# commands fail.
+updateDNSRecord() { { getAddrByName && setUpdateableGloblVars; }; return 0; }
+
 busyWait()
 {
 
@@ -242,7 +251,7 @@ loopSSHCmd()
 	# This avoids hangs on SSH commands when GNUpot is killed.
 	trap "return 0" $SIGNALS
 
-	[ -n "$toBeEchoed" ] && $SSHCommand 2>&- || $SSHCommand &>/dev/null
+	[ -n "$toBeEchoed" ] && $SSHCommand 2>&- || $SSHCommand 1>&- 2>&-
 
 	return "$?"
 
@@ -258,7 +267,7 @@ execSSHCmd()
 	local SSHCommand="$1" toBeEchoed="$2" retStr=""
 
 	# Check if remote server is reachable.
-	while [ $(ping -c 1 -s 0 -W 30 "$gnupotServer" &>/dev/null; \
+	while [ $(ping -c 1 -s 0 -W 30 "$gnupotServer" 1>&- 2>&-; \
 printf "$?") -ne 0 ]; do
 		busyWait
 	done
@@ -270,7 +279,7 @@ printf "$?") -ne 0 ]; do
 		# Recreate master socket except if input command is create
 		# master socket.
 		[ "$SSHCommand" != "createSSHMasterSocket" ] && \
-createSSHMasterSocket &>/dev/null
+createSSHMasterSocket 1>&- 2>&-
 		retStr="$(loopSSHCmd "$SSHCommand" "$toBeEchoed")"
 	done
 
@@ -316,18 +325,18 @@ backupAndClean()
 		# From man git-checkout:
 		# Create a new orphan branch, named <new_branch>, started from
 		# <start_point> and switch to it.
-		git checkout --orphan tmp "$commitSha" &>/dev/null
+		git checkout --orphan tmp "$commitSha" 1>&- 2>&-
 		# Change old commit.
 		git commit -m "Truncated history on \
-$(date "+%F %T") $USERDATA" &>/dev/null
+$(date "+%F %T") $USERDATA" 1>&- 2>&-
 		# From man git-rebase
 		# Forward-port local commits to the updated upstream head.
-		git rebase --onto tmp "$commitSha" master &>/dev/null
+		git rebase --onto tmp "$commitSha" master 1>&- 2>&-
 		# Delete tmp branch.
-		git branch -D tmp &>/dev/null
+		git branch -D tmp 1>&- 2>&-
 		# Garbage collector for stuff older than 1d.
 		# TODO better.
-		git gc --auto --prune=1d &>/dev/null
+		git gc --auto --prune=1d 1>&- 2>&-
 		execSSHCmd "git push -f origin master"
 	else
 		execSSHCmd "git push origin master"
@@ -340,9 +349,9 @@ $(date "+%F %T") $USERDATA" &>/dev/null
 gitSyncOperations()
 {
 
-	git add -A &>/dev/null
+	git add -A 1>&- 2>&-
 	git commit -m "Commit on $(date "+%F %T") \
-$USERDATA" &>/dev/null
+$USERDATA" 1>&- 2>&-
 	# Always pull from server first then check for conflicts using return
 	# value.
 	execSSHCmd "git pull origin master"
@@ -381,58 +390,34 @@ syncOperation()
 }
 
 # Kill program if local and/or remote directories do not exist.
-checkDirExistence()
+chkDirEx()
 {
 
 	local input="$1" errMsg="Local and/or remote directory does/do not \
 exist."
 
-	if [ "$input" -ne 0 ]; then
-		printf "$errMsg\n"
-		notifyCmd "$errMsg" "$gnupotNotificationTime"
-		kill -s SIGINT 0
-	fi
+	[ "$input" -ne 0 ] && { printStderr "$errMsg\n"; \
+notifyCmd "$errMsg" "$gnupotNotificationTime"; kill -s SIGINT 0; }
 
 	return 0
 
 }
 
-checkServerDirExistence()
+# Check if remote directory exists.
+chkSrvDirEx()
 {
 
-	# Check if remote directory exists.
-	dirNotExists=$(ssh $SSHCONNECTCMDARGS "if [ ! -d $gnupotRemoteDir ]; \
-then printf 1; else printf 0; fi"); checkDirExistence "$dirNotExists"; return 0
+	chkDirEx "$(ssh $SSHCONNECTCMDARGS "[ ! -d $gnupotRemoteDir ] \
+&& printf 1 || printf 0")"; return 0
 
 }
 
-checkClientDirExistence()
-{
-
-	# Check if local directory exists.
-	dirNotExists=$(if [ ! -d "$gnupotLocalDir" ]; \
-then printf 1; else printf 0; fi); checkDirExistence "$dirNotExists"; return 0
-
-}
+# Check if local directory exists.
+chkCliDirEx() { [ ! -d "$gnupotLocalDir" ] && chkDirEx "1"; return 0; }
 
 acquireLockFile() { printf 1 > "$gnupotLockFilePath"; return 0; }
 
 freeLockFile() { printf 0 > "$gnupotLockFilePath"; return 0; }
-
-# The new address is only valid for the thread caller, i.e. Only the client
-# thread OR the server thread is updated here.
-updateDNSRecord()
-{
-
-	local tolerance=$(($gnupotDNSUpdateTime/8))
-
-	# SECONDS=seconds since the script started.
-	[ $(expr "$SECONDS" % "$gnupotDNSUpdateTime") -lt "$tolerance" ] \
-&& getAddrByName && setUpdateableGloblVars
-
-	return 0
-
-}
 
 callSync()
 {
@@ -447,14 +432,12 @@ callSync()
 	# So there are two types of locks: one between the round
 	# brackets and the other one is made by the if clause.
 	if [ $(cat "$gnupotLockFilePath") -eq 0 ]; then
-		# Open a subshell for critical section.
-		(
+		( # Open a subshell for critical section.
 			acquireLockFile
 			# While not acquire lock:
 			# while [ ! flock -n 1024 ]; do :; done
 			# is the same as the following line:
 			flock -x "$FD"
-			updateDNSRecord
 			syncOperation "$source" "$path"
 		# End critical section.
 		) {FD}>>"$gnupotLockFilePath"
@@ -498,7 +481,7 @@ $INOTIFYWAITCMD "$gnupotRemoteDir"" path=""
 	# Open master ssh socket.
 	execSSHCmd createSSHMasterSocket
 
-	execSSHCmd checkServerDirExistence
+	execSSHCmd chkSrvDirEx
 
 	# First of all, pull or push changes while gnupot was not running.
 	callSync "server" "<ALL FILES>"
@@ -519,7 +502,7 @@ syncC()
 
 	trap "exit" $SIGNALS
 
-	checkClientDirExistence
+	chkCliDirEx
 
 	while true; do
 		path=$($INOTIFYWAITCMD --exclude .git \
@@ -546,11 +529,11 @@ printStatus()
 
 	local i=0 proc=""
 
-	printf "GNUpot is " 1>&2
+	printStderr "GNUpot is "
 	local total="$(pgrep gnupot)"
 	for proc in $total; do i=$(($i+1)); done
-	[ "$i" -lt 6 ] && printf "NOT " 1>&2
-	printf "running correctly.\n" 1>&2
+	[ "$i" -lt 6 ] && printStderr "NOT "
+	printStderr "running correctly.\n"
 
 	return 0
 
@@ -577,9 +560,9 @@ checkExecutables()
 
 	# Redirect which stderr and stdout to /dev/null (see bash
 	# redirection).
-	checkGitVersion && which $PROGRAMS &>/dev/null
-	[ "$?" -ne 0 ] && { printf "Missing programs or unsupported. \
-Check: $PROGRAMS.\n" 1>&2; exit 1; }
+	checkGitVersion && which $PROGRAMS 1>&- 2>&-
+	[ "$?" -ne 0 ] && { printStderr "Missing programs or unsupported. \
+Check: $PROGRAMS. Also check package versions.\n"; exit 1; }
 
 	return 0
 
@@ -589,7 +572,7 @@ Check: $PROGRAMS.\n" 1>&2; exit 1; }
 sigHandler()
 {
 
-	printf "GNUpot killed\n" 1>&2
+	printStderr "GNUpot killed\n"
 	# Kill master ssh socket (this will kill any ssh connection associated
 	# with it). Also disable stderr output for this command with "2>&-".
 	ssh -O exit -S "$gnupotSSHMasterSocketPath" "$gnupotServer" 2>&- &
@@ -609,7 +592,7 @@ callThreads()
 	# Listen from client and send to server.
 	syncC & cliPid="$!"
 	# Lowest process priority for the threads.
-	renice 20 "$srvPid" "$cliPid" &>/dev/null
+	renice 20 "$srvPid" "$cliPid" 1>&- 2>&-
 
 	wait "$srvPid" "$cliPid"
 
@@ -621,13 +604,8 @@ callThreads()
 main()
 {
 
-	local prgPath="$1" argArray="$2"
-
 	# Enable signal interpretation to kill all subshells
 	trap "sigHandler" $SIGNALS
-
-	# Check if another istance of GNUpot is running.
-	lockOnFile "$prgPath" "$argArray"
 
 	notifyCmd "GNUpot starting..." "$gnupotNotificationTime"
 
@@ -645,25 +623,39 @@ main()
 
 }
 
+# Check if another istance of GNUpot is running. If that is the case exit with
+# error message.
+callMain()
+{
+
+	local prgPath="$1" argArray="$2"
+
+	lockOnFile "$prgPath" "$argArray"
+	if [ "$?" -eq 0 ]; then main &
+	else exit 1; fi
+
+	exit 0
+
+}
+
 parseOpts()
 {
 
 	local prgPath="$1" argArray="$2"
 
-	# If there are no arguments, start GNUpot as if there was -i flag.
-	[ -z "$argArray" ] && { main "$prgPath" "$argArray" & return 0; }
-	# Get options from special variable $@.
+	# Get options from special variable $@. Treat no arguments as -i.
 	getopts ":hilkps" opt "$argArray"
 	case "$opt" in
 		h ) printHelp "$prgPath"; return 1 ;;
 		# Call main function as spawned shell (execute and return
 	 	# control to the shell).
-		i ) main "$prgPath" "$argArray" & ;;
+		i ) callMain "$prgPath" "$argArray" & ;;
 		l ) less "LICENSE" ;;
 		k ) killall -s SIGINT -q gnupot ;;
 		p ) cat ""$HOME"/.config/gnupot/gnupot.config" ;;
 		s ) printStatus ;;
-		? ) printHelp "$prgPath"; return 1 ;;
+		? ) [ -z "$argArray" ] && callMain "$prgPath" "$argArray" \
+|| { printHelp "$prgPath"; return 1; } ;;
 	esac
 
 	return 0
