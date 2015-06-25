@@ -164,42 +164,22 @@ correctly, otherwise the notifications will not be shown.
 
 ##Packages to install
 
-Key
-```
-<package name> <working version> <executable> <comment>
-	<where to install the package>
-```
-Working versions >= than the ones written here should work without problems.
-
 **All** the following packages must be installed in order to use GNUpot:
 
-- `bash` 4.3.033-1 (`bash`)
-  - Server and client.
-- `openssh` 6.8p1-2 (`ssh`)
-  - Server and client.
-- `inotify-tools` 3.14-4 (`inotifywait`) [Tells the script that some changes 
-  have been made to a certain file.]
-  - Server and client.
-- `util-linux` 2.26.1-3 (`flock`) [Locks script and avoids contemporary local 
-  and remote sync.]
-  - Client only.
-- `libnotify` **or** `libnotify-bin` 0.7.6-1 (`notify-send`) [Sends 
-  notifications to notification server.]
-  - Client only. If you are installing GNUpot in a headless configuration 
-    (servers, embedded systems, etc...) you don't need this package.
-- `git` 2.4.1-1 (`git`) [Program that syncs file and does versioning control.]
-  - Server and client. **It must be version >= 2.3 because of GIT_SSH_COMMAND 
-    variable which is absent in previous releases.**
-- `dialog` 1:1.2_20150513-1 (`dialog`) [Display user friendly dialog messages 
-  during the setup.]
-  - Client only.
-- `glibc` 2.21-4 (`getent`) [Get IP address from hostname.]
-  - Client only.
-- `iputils` 20140519.fad11dc-1 (`ping`) [ping IP address.]
-  - Client only.
-- Be sure to have 1 and only 1 notify server installed. It should be already 
-  installed on your system.
-  - Client only.
+| Package name | Working version | Executable | Comment | Install on client | Install on Server |
+|--------------|-----------------|------------|---------|-------------------|-------------------|
+| `bash` | 4.3.033-1 | `bash` | | **YES** | **YES** |
+| `openssh` | 6.8p1-2 | `ssh` | | **YES** | **YES** |
+| `inotify-tools` | 3.14-4 | `inotifywait` | Tells the script that some changes have been made to a certain file. | **YES** | **YES** |
+| `util-linux` | 2.26.1-3 | `flock` | Locks script and avoids contemporary local and remote sync. | **YES** | no |
+| `libnotify` **or** `libnotify-bin` | 0.7.6-1 | `notify-send` | Sends notifications to notification server. If you are in a headless configuration (servers, embedded, etc...) you don't need this package. | **YES** | no |
+| `git` | 2.4.1-1 | `git` | Program that syncs file and does versioning control. **It must be version >= 2.3 because of GIT_SSH_COMMAND variable which is absent in previous releases.** | **YES** | **YES** |
+| `dialog` | 1:1.2_20150513-1 | `dialog` | Display user friendly dialog messages during the setup. | **YES** | no |
+| `glibc` | 2.21-4 | `getent` | Get IP address from hostname. | **YES** | no |
+| `iputils` | 20140519.fad11dc-1 | `ping` | ping IP address. | **YES** | no |
+| | | | Be sure to have 1 and only 1 notify server installed. It should be already installed on your system. | **YES** | no |
+
+Working versions >= than the ones written here should work without problems.
 
 ##Help
 
