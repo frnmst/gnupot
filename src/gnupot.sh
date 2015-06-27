@@ -22,6 +22,10 @@
 # along with GNUpot.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+# The same as setsid. It changes the process group so it's not equal to the
+# parents' one. This way, even if GNUpot is killed the parent process will not
+# be affected (i.e. not killed when GNUpot is killed).
+set -m
 
 # Enable automatic export of all variables form now on.
 # This avoids putting "export" in front of every variable.
@@ -560,7 +564,7 @@ checkExecutables()
 
 	# Redirect which stderr and stdout to /dev/null (see bash
 	# redirection).
-	checkGitVersion && which $PROGRAMS 1>&- 2>&-
+	checkGitVersion && which $PROGRAMS 1>/dev/null 2>/dev/null
 	[ "$?" -ne 0 ] && { printStderr "Missing programs or unsupported. \
 Check: $PROGRAMS. Also check package versions.\n"; exit 1; }
 

@@ -149,12 +149,10 @@ If you have Openbox, you can put GNUpot in `~/.config/openbox/autostart` by
 adding the following lines:
 ```shell
 # GNUpot
-(setsid bash -c "sleep 10 && DISPLAY=:0 && ~/gnupot/gnupot") &
+(sleep 10 && DISPLAY=:0 ~/gnupot/gnupot) &
 ```
-GNUpot will autostart 10 seconds after Openbox starts running in a separate 
-environment, thanks to `setsid`. Without adding this you may encounter 
-serious problems when killing GNUpot. Remember to set the display variable 
-correctly, otherwise the notifications will not be shown.
+GNUpot will autostart 10 seconds after Openbox starts running. Remember to set 
+the display variable correctly, otherwise the notifications will not be shown.
 
 ##Interesting facts about GNUpot
 
