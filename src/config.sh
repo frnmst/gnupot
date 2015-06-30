@@ -54,11 +54,10 @@ winY="25"
 
 infoMsg()
 {
-
 	# --msgbox or --infobox
 	local type="$1" msg="$2"
 
-	if [ "$type" == "msgbox" ]; then
+	if [ "$type" = "msgbox" ]; then
 		$DIALOG --clear --title "INFO" --"$type" \
 "$msg" "$winY" "$winX"
 	else
@@ -67,12 +66,10 @@ infoMsg()
 	fi
 
 	return 0
-
 }
 
 displayForm()
 {
-
 	local title="$1" arg="$2" action="$3" opts="" retval=""
 
 	opts=$($DIALOG --title "$title" \
@@ -115,22 +112,18 @@ displayForm()
 	echo "$opts"
 
 	return "$retval"
-
 }
 
 getConfig()
 {
-
 	options=$(displayForm "GNUpot setup" "Use arrow up and down \
 to move between fields" "60")
 
 	return 0
-
 }
 
 strTok()
 {
-
 	local FORMVARIABLES="Server ServerUsername RemoteDir LocalDir \
 SSHKeyPath KeepMaxCommits LocalHome RemoteHome GitCommitterUsername \
 GitCommitterEmail TimeToWaitForOtherChanges BusyWaitTime \
@@ -148,34 +141,28 @@ LockFilePath"
 	fi
 
 	return 0
-
 }
 
 verifyConfig()
 {
-
 	local i=0
 
 	for option in $options; do i=$(($i+1)); done
 	if [ $i -lt $optNum ]; then return 1; fi
 
 	return 0
-
 }
 
 summary()
 {
-
 	displayForm "GNUpot setup summary" "Are the displayed values \
 correct?" "0"
 
 	return "$?"
-
 }
 
 genSSHKey()
 {
-
 	if [ ! -f "$SSHKeyPath" ]; then
 		infoMsg "infobox" "Generating SSH keys. Please wait."
 		ssh-keygen -t rsa -b "$RSAKeyBits" -C \
@@ -191,36 +178,29 @@ password..."
 "$ServerUsername"@"$Server" "$CHKCMD" 1>&- 2>&-
 
 	return "$?"
-
 }
 
 testInfo()
 {
-
 	# Check if ssh and remote programs already work.
-	if [ $(ssh -o PasswordAuthentication=no -i "$SSHKeyPath" \
-"$ServerUsername"@"$Server" "$CHKCMD" 1>&- 2>&-; echo "$?") -ne 0 ]; then
-		genSSHKey || { infoMsg "msgbox" "SSH problem or git and/or \
-inotifywaitmissing on server."; return 1; }
-	fi
+	[ $(ssh -o PasswordAuthentication=no -i "$SSHKeyPath" \
+"$ServerUsername"@"$Server" "$CHKCMD" 1>&- 2>&-; echo "$?") -ne 0 ] \
+&& genSSHKey || { infoMsg "msgbox" "SSH problem or git and/or \
+inotifywait missing on server."; return 1; }
 
 	return 0
-
 }
 
 initConfigDir()
 {
-
 	mkdir -p ""$HOME"/.config/gnupot" || { infoMsg "msgbox" "Cannot \
 create configuration directory."; return 1; }
 
 	return 0
-
 }
 
 initRepo()
 {
-
 	ssh -i $SSHKeyPath $ServerUsername@$Server \
 "if [ ! -d "$RemoteDir" ]; then mkdir -p "$RemoteDir" && cd "$RemoteDir" \
 && git init --bare --shared; fi \
@@ -232,36 +212,28 @@ initRepo()
 # Make a fake commit to avoid problems at the first pull of a new repository.
 makeFirstCommit()
 {
-
 	cd "$LocalDir"
-	if [ ! -f ".firstCommit" ]; then
-		touch .firstCommit
-		git add -A 1>&- 2>&-
-		git commit -a -m "First commit." 1>&- 2>&-
-		git push origin master 1>&- 2>&-
-	fi
+	[ ! -f ".firstCommit" ] && { touch .firstCommit; git add -A 1>&- \
+2>&-; git commit -a -m "First commit." 1>&- 2>&-; git push origin master \
+1>&- 2>&-; }
 	cd "$OLDPWD"
 
 	return 0
-
 }
 
 # Set committer information.
 setGitCommitterInfo()
 {
-
 	cd "$LocalDir"
 	git config user.name "$GitCommitterUsername"
 	git config user.email "$GitCommitterEmail"
 	cd "$OLDPWD"
 
 	return 0
-
 }
 
 cloneRepo()
 {
-
 	GIT_SSH_COMMAND="ssh -i $SSHKeyPath"
 
 	if [ ! -d "$LocalDir" ]; then
@@ -279,12 +251,10 @@ Delete it first then restart the setup."
 	fi
 
 	return 0
-
 }
 
 writeConfigFile()
 {
-
 	echo -en "\
 gnupotServer=\""$Server"\"\n\
 gnupotServerUsername=\""$ServerUsername"\"\n\
@@ -305,12 +275,10 @@ gnupotLockFilePath=\""$LockFilePath"\"\n\
 " > ""$CONFIGDIR"/gnupot.config"
 
 	return 0
-
 }
 
 main()
 {
-
 	while true; do
 		getConfig
 		verifyConfig
@@ -331,7 +299,6 @@ GNUpot\ setup\ completed."
 		infoMsg "msgbox" "Setup completed."
 		return 0
 	done
-
 }
 
 main

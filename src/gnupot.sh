@@ -22,14 +22,16 @@
 # along with GNUpot.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-# The same as setsid. It changes the process group so it's not equal to the
-# parents' one. This way, even if GNUpot is killed the parent process will not
-# be affected (i.e. not killed when GNUpot is killed).
-set -m
 
-# Enable automatic export of all variables form now on.
+# Save the current option settings.
+saveEnv="$(set +o)"
+
+# set -m: The same as setsid. It changes the process group so it's not equal to
+# the parents' one. This way, even if GNUpot is killed the parent process will
+# not be affected (i.e. not killed when GNUpot is killed).
+# set -a: Enable automatic export of all variables form now on.
 # This avoids putting "export" in front of every variable.
-set -a
+set -m; set -a
 
 # Set paths.
 PATH="$PATH":/usr/bin
@@ -39,7 +41,6 @@ printStderr() { local msg="$1"; printf "$msg" >&2; return 0; }
 
 printHelp()
 {
-
 	local prgPath="$1"
 
 	printStderr "\
@@ -70,12 +71,10 @@ COPYRIGHT\n\
 "
 
 	return 0
-
 }
 
 setUpdateableGloblVars()
 {
-
 	# Used for general ssh commands
 	SSHCONNECTCMDARGS="$SSHARGS "$gnupotServerUsername"@"$gnupotServer""
 	# Open master socket so that further connection will result faster
@@ -86,17 +85,17 @@ ControlPersist="$gnupotSSHMasterSocketTime" $SSHCONNECTCMDARGS exit"
 	GIT_SSH_COMMAND="ssh $SSHARGS"
 
 	return 0
-
 }
 
 setGloblVars()
 {
-
 	gnupotSSHMasterSocketTime=""$gnupotSSHMasterSocketTime"m"
 	# List of signals to be trapped.
-	SIGNALS="SIGUSR1 SIGABRT SIGCHLD SIGHUP SIGINT SIGQUIT SIGTERM SIGTSTP"
-	# List of installed programs that GNUpot uses.
-	PROGRAMS="bash ssh inotifywait flock notify-send git getent ping"
+	SIGNALS="SIGABRT SIGCHLD SIGHUP SIGINT SIGQUIT SIGTERM SIGTSTP"
+	# List of installed programs that GNUpot uses. If display variable is
+	# set notify-send is also required.
+	PROGRAMS="bash ssh inotifywait flock git getent ping"
+	[ -n "$DISPLAY" ] && PROGRAMS="$PROGRAMS notify-send"
 	USERDATA="by "$USER"@"$HOSTNAME"."
 	# inotifywait command macro: recursive, quiet, listen only to certain
 	# events.
@@ -109,14 +108,12 @@ setGloblVars()
 	setUpdateableGloblVars
 
 	return 0
-
 }
 
 parsingErrMsg() { printStderr "Configuration or parsing problem.\n"; exit 1; }
 
 parseConfig()
 {
-
         local variableList="ServerS ServerUsernameO RemoteDirO LocalDirO \
 SSHKeyPathO KeepMaxCommitsN LocalHomeO RemoteHomeO GitCommitterUsernameO \
 GitCommitterEmailO TimeToWaitForOtherChangesN BusyWaitTimeN \
@@ -144,7 +141,6 @@ LockFilePathO" variable="" type=""
 	done
 
 	return 0
-
 }
 
 # Find server address from hostname. If original variable is an IP
@@ -152,7 +148,6 @@ LockFilePathO" variable="" type=""
 # DNS server requests. It works for IPv6 addresses also.
 getAddrByName()
 {
-
 	local hostErrMsg="Cannot resolve host name."
 
 	[[ "$gnupotServerORIG" =~ [[:alpha:]] ]] \
@@ -161,12 +156,10 @@ getAddrByName()
 && [ -z "$gnupotServer" ] && { printStderr "$hostErrMsg"; return 1; }
 
 	return 0
-
 }
 
 loadConfig()
 {
-
 	local arg="$1"
 
 	# "." is the same as "source" but it is more portable.
@@ -183,49 +176,37 @@ loadConfig()
 	setGloblVars
 
 	return 0
-
 }
 
 # Modified version of flock's boilterplate. This version is able to run also
 # on older versions of flock. See man 1 flock (examples section).
 lockOnFile()
 {
-
 	local prgPath="$1" argArray="$2" errMsg="GNUpot is already \
 running.\n"
 
 	# Lock on configuration file path istead of this file (gnupot.sh).
 	[ "${FLOCKER}" != "$prgPath" ] && { FLOCKER="$prgPath" flock -en \
 "$CONFIGFILEPATH" "$prgPath" "$argArray" || printStderr "$errMsg"; \
-return 1; } || :
-
-	return 0
-
+return 1; } || return 0
 }
 
 # General notification function.
-notifyCmd()
+notify()
 {
-
 	local msg="$1" ms="$2"
 
 	# If you are running GNUpot in a GUI then notify else do nothing.
-	[ -n "$DISPLAY" ] && notify-send -t "$ms" "$msg"
-
-	return 0
-
+	[ -n "$DISPLAY" ] && notify-send -t "$ms" "$msg"; return 0
 }
 
 syncNotify()
 {
-
 	local path="$1" source="$2"
 
-	notifyCmd "GNUpot syncing $path from $source" \
-"$gnupotNotificationTime"
+	notify "GNUpot syncing $path from $source" "$gnupotNotificationTime"
 
 	return 0
-
 }
 
 # The new address is only valid for the thread caller, i.e. Only the client
@@ -235,30 +216,25 @@ updateDNSRecord() { { getAddrByName && setUpdateableGloblVars; }; return 0; }
 
 busyWait()
 {
-
-	notifyCmd "GNUpot is waiting for available connection or there is an \
-authetication problem." "$gnupotNotificationTime"
-
+	notify "GNUpot connection or auth problem. Retrying..." \
+"$gnupotNotificationTime"
 	updateDNSRecord
-
 	sleep "$gnupotBusyWaitTime"
 
 	return 0
-
 }
 
 loopSSHCmd()
 {
-
 	local SSHCommand="$1" toBeEchoed="$2"
 
 	# This avoids hangs on SSH commands when GNUpot is killed.
+	# WARN, INOTIFYWAIT HANGS ON SERVER EVEN AFTER SHUTDOWN.
 	trap "return 0" $SIGNALS
 
 	[ -n "$toBeEchoed" ] && $SSHCommand 2>&- || $SSHCommand 1>&- 2>&-
 
 	return "$?"
-
 }
 
 # Function that checks if connection to server is active.
@@ -267,7 +243,6 @@ loopSSHCmd()
 # after a period of time.
 execSSHCmd()
 {
-
 	local SSHCommand="$1" toBeEchoed="$2" retStr=""
 
 	# Check if remote server is reachable.
@@ -290,7 +265,6 @@ createSSHMasterSocket 1>&- 2>&-
 	[ -n "$toBeEchoed" ] && printf "$retStr"
 
 	return 0
-
 }
 
 getCommitNumber() { printf "$(git rev-list HEAD --count)"; return 0; }
@@ -300,29 +274,26 @@ getCommitNumber() { printf "$(git rev-list HEAD --count)"; return 0; }
 # CONFLICTING FILES ARE MERGED.
 resolveConflicts()
 {
-
 	local returnedVal="$1"
 
 	[ "$returnedVal" -eq 1 ] \
-&& { notifyCmd "Resolving file conflicts." "$gnupotNotificationTime"; \
+&& { notify "Resolving file conflicts." "$gnupotNotificationTime"; \
 git commit -a -m "Commit on $(date "+%F %T") $USERDATA \
 Handled conflicts"; }
 
 	return 0
-
 }
 
 # Clean useless files and keep maximum user defined number of backups.
 backupAndClean()
 {
-
-	local currentCommits="$(getCommitNumber)" commitSha=""
+	local commitSha=""
 
 	# if Max backups is set to 0 it means always to do a simple commit.
 	# Otherwise use mod operator to find out when to truncate history (if
 	# result is 0 it means that history must be truncated.
 	if [ "$gnupotKeepMaxCommits" -ne 0 ] \
-&& [ $(expr "$currentCommits" % "$gnupotKeepMaxCommits") -eq 0 ]; then
+&& [ $(expr "$(getCommitNumber)" % "$gnupotKeepMaxCommits") -eq 0 ]; then
 		# Get sha of interest.
 		commitSha=$(git log -n "$gnupotKeepMaxCommits" \
 | tail -n 6 | grep commit | awk ' { print $2 } ')
@@ -347,12 +318,10 @@ $(date "+%F %T") $USERDATA" 1>&- 2>&-
 	fi
 
 	return 0
-
 }
 
 gitSyncOperations()
 {
-
 	git add -A 1>&- 2>&-
 	git commit -m "Commit on $(date "+%F %T") \
 $USERDATA" 1>&- 2>&-
@@ -362,18 +331,12 @@ $USERDATA" 1>&- 2>&-
 	resolveConflicts "$?"
 
 	return 0
-
 }
-
-# Both client and server threads execute this function.
-# To be able to clean: git config --system receive.denyNonFastForwards true
-sharedSyncActions() { gitSyncOperations; backupAndClean; return 0; }
 
 # Main file syncronization function.
 # This is executed inside a critical section.
 syncOperation()
 {
-
 	local source="$1" path="$2"
 
 	sleep "$gnupotTimeToWaitForOtherChanges"
@@ -382,42 +345,48 @@ syncOperation()
 
 	# Do all git operations in the correct directory.
 	cd "$gnupotLocalDir"
-	# Do the syncing.
-	sharedSyncActions
+	# Do the syncing. To be able to clean: git config --system \
+	# receive.denyNonFastForwards true
+	gitSyncOperations; backupAndClean
 	# Go back to previous dir.
 	cd "$OLDPWD"
 
-	notifyCmd "GNUpot $path done." "$gnupotNotificationTime"
+	notify "GNUpot $path done." "$gnupotNotificationTime"
 
 	return 0
-
 }
 
 # Kill program if local and/or remote directories do not exist.
-chkDirEx()
+DirErr()
 {
+	local errMsg="Local and/or remote directory does/do not \
+exist, or no git repository."
 
-	local input="$1" errMsg="Local and/or remote directory does/do not \
-exist."
-
-	[ "$input" -ne 0 ] && { printStderr "$errMsg\n"; \
-notifyCmd "$errMsg" "$gnupotNotificationTime"; kill -s SIGINT 0; }
+	printStderr "$errMsg\n"
+	notify "$errMsg" "$gnupotNotificationTime"
+	kill -s SIGINT 0
 
 	return 0
-
 }
 
 # Check if remote directory exists.
 chkSrvDirEx()
 {
+	ssh $SSHCONNECTCMDARGS "cd $gnupotRemoteDir 2>&- && git show \
+1>&- 2>&- || exit 1" || DirErr
 
-	chkDirEx "$(ssh $SSHCONNECTCMDARGS "[ ! -d $gnupotRemoteDir ] \
-&& printf 1 || printf 0")"; return 0
-
+return 0
 }
 
 # Check if local directory exists.
-chkCliDirEx() { [ ! -d "$gnupotLocalDir" ] && chkDirEx "1"; return 0; }
+chkCliDirEx()
+{
+	cd "$gnupotLocalDir" 2>&- && { git status -s 1>&- 2>&- || DirErr; } \
+|| DirErr;
+	cd "$OLDPWD"
+
+	return 0
+}
 
 acquireLockFile() { printf 1 > "$gnupotLockFilePath"; return 0; }
 
@@ -425,7 +394,6 @@ freeLockFile() { printf 0 > "$gnupotLockFilePath"; return 0; }
 
 callSync()
 {
-
 	local source="$1" path="$2"
 
 	# Check if the other thread is in the critical section.
@@ -436,32 +404,29 @@ callSync()
 	# So there are two types of locks: one between the round
 	# brackets and the other one is made by the if clause.
 	if [ $(cat "$gnupotLockFilePath") -eq 0 ]; then
-		( # Open a subshell for critical section.
+		(	# Open a subshell for critical section.
 			acquireLockFile
 			# While not acquire lock:
-			# while [ ! flock -n 1024 ]; do :; done
-			# is the same as the following line:
+			# while [ ! flock -n 1024 ]; do :; done is same as:
 			flock -x "$FD"
 			syncOperation "$source" "$path"
-		# End critical section.
-		) {FD}>>"$gnupotLockFilePath"
+			# End critical section.
 		# Get first valid file descriptor from a bash builtin.
+		) {FD}>>"$gnupotLockFilePath"
 		freeLockFile
 	else
 		# Wait some time to avoid unecessary loops. This happens if
-		# there are lots of files to be transferred
+		# there are lots of files to be transferred.
 		sleep "$gnupotTimeToWaitForOtherChanges"
 	fi
 
 	return 0
-
 }
 
 createSSHMasterSocket()
 {
-
 	# Test if SSH socket exists. If it does delete it. Start a new socket
-	# anyway
+	# anyway.
 	[ -S "$gnupotSSHMasterSocketPath" ] \
 && ssh -O exit -S "$gnupotSSHMasterSocketPath" "$gnupotServer" 2>&-
 
@@ -469,13 +434,11 @@ createSSHMasterSocket()
 	ssh $SSHMASTERSOCKCMDARGS
 
 	return "$?"
-
 }
 
 # Server sync thread.
 syncS()
 {
-
 	local pathCmd="ssh $SSHCONNECTCMDARGS \
 $INOTIFYWAITCMD "$gnupotRemoteDir"" path=""
 
@@ -491,17 +454,15 @@ $INOTIFYWAITCMD "$gnupotRemoteDir"" path=""
 	callSync "server" "<ALL FILES>"
 
 	while true; do
-		# Listen for changes on server
+		# Listen for changes on server.
 		path=$(execSSHCmd "$pathCmd" "echoPath")
 		callSync "server" "$path"
 	done
-
 }
 
 # Client sync thread.
 syncC()
 {
-
 	local path=""
 
 	trap "exit" $SIGNALS
@@ -509,28 +470,22 @@ syncC()
 	chkCliDirEx
 
 	while true; do
-		path=$($INOTIFYWAITCMD --exclude .git \
-"$gnupotLocalDir")
+		path=$($INOTIFYWAITCMD --exclude .git "$gnupotLocalDir")
 		callSync "client" "$path"
 	done
-
 }
 
 assignGitInfo()
 {
-
-	cd "$gnupotLocalDir"
-	git config user.name "$gnupotGitCommitterUsername"
-	git config user.email "$gnupotGitCommitterEmail"
-	cd "$OLDPWD"
+	cd "$gnupotLocalDir" && { { git config user.name \
+"$gnupotGitCommitterUsername" && git config user.email \
+"$gnupotGitCommitterEmail"; }; cd "$OLDPWD"; }
 
 	return 0
-
 }
 
 printStatus()
 {
-
 	local i=0 proc=""
 
 	printStderr "GNUpot is "
@@ -540,12 +495,10 @@ printStatus()
 	printStderr "running correctly.\n"
 
 	return 0
-
 }
 
 checkGitVersion()
 {
-
 	# trash is a garbage variable.
 	local gitVer="" gitVer0="" gitVer1="" trash=""
 
@@ -555,13 +508,11 @@ checkGitVersion()
 	[ "$gitVer0$gitVer1" -le 23 ] && return 1
 
 	return 0
-
 }
 
 # Check if all necessary programs are installed.
 checkExecutables()
 {
-
 	# Redirect which stderr and stdout to /dev/null (see bash
 	# redirection).
 	checkGitVersion && which $PROGRAMS 1>/dev/null 2>/dev/null
@@ -569,13 +520,11 @@ checkExecutables()
 Check: $PROGRAMS. Also check package versions.\n"; exit 1; }
 
 	return 0
-
 }
 
 # Signal handler function.
 sigHandler()
 {
-
 	printStderr "GNUpot killed\n"
 	# Kill master ssh socket (this will kill any ssh connection associated
 	# with it). Also disable stderr output for this command with "2>&-".
@@ -583,12 +532,10 @@ sigHandler()
 	kill -s SIGINT 0
 
 	return 0
-
 }
 
 callThreads()
 {
-
 	local srvPid="" cliPid=""
 
 	# Listen from server and send to client.
@@ -597,21 +544,18 @@ callThreads()
 	syncC & cliPid="$!"
 	# Lowest process priority for the threads.
 	renice 20 "$srvPid" "$cliPid" 1>&- 2>&-
-
 	wait "$srvPid" "$cliPid"
 
 	return 0
-
 }
 
 # Main function that runs in background.
 main()
 {
-
 	# Enable signal interpretation to kill all subshells
 	trap "sigHandler" $SIGNALS
 
-	notifyCmd "GNUpot starting..." "$gnupotNotificationTime"
+	notify "GNUpot starting..." "$gnupotNotificationTime"
 
 	freeLockFile
 
@@ -621,30 +565,26 @@ main()
 	# Call threads and wait for them to exit before continuing.
 	callThreads
 
-	notifyCmd "GNUpot stopped." "$gnupotNotificationTime"
+	notify "GNUpot stopped." "$gnupotNotificationTime"
 
 	return 0
-
 }
 
 # Check if another istance of GNUpot is running. If that is the case exit with
 # error message.
 callMain()
 {
-
 	local prgPath="$1" argArray="$2"
 
+	# The following set makes the script faster.
 	lockOnFile "$prgPath" "$argArray"
-	if [ "$?" -eq 0 ]; then main &
-	else exit 1; fi
+	[ "$?" -eq 0 ] && { set +m; main & set -m; } || exit 1
 
 	exit 0
-
 }
 
 parseOpts()
 {
-
 	local prgPath="$1" argArray="$2"
 
 	# Get options from special variable $@. Treat no arguments as -i.
@@ -663,13 +603,15 @@ parseOpts()
 	esac
 
 	return 0
-
 }
 
 loadConfig "$1"
 
 checkExecutables
 
-parseOpts "$0" "$@"
+parseOpts "$0" "$@"; retval="$?"
 
-exit "$?"
+# Restore the previous option settings.
+$saveEnv
+
+exit "$retval"

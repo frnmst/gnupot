@@ -32,6 +32,8 @@ Stupid) principal.
   DEVELOPER(S) CANNOT BE HELD RESPONSABLE OR LIABLE FOR ANY DATA LOSS OR OTHER
   DAMAGES CAUSED BY THE USE OF THIS SOFTWARE.**
 
+**MIGRATING TECHNICAL INFO TO THE WIKI.**
+
 ##Ideas behind the project
 
 - Simple.
@@ -227,8 +229,7 @@ Still unsuccessful:
 - Lubuntu 12.04. I have an HD with that system that i didn't use in a 
   while (some years). Unfortunately GNUpot's setup didn't even start. At this 
   moment however not all problems have been solved. These include:
-  - ~~when quitting GNUpot `inotifywait` hangs untill another event occurs.~~ **SHOULD 
-    BE SOLVED BUT IT'S UNTESTED.**
+  - when quitting GNUpot `inotifywait` hangs untill another event occurs.
   - GNUpot doesen't recognize `SIGINT` for an unknown reason.
 
 By isolating those problems you can safely run GNUpot on Lubuntu, and by time 
