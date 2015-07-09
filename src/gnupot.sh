@@ -33,9 +33,10 @@ saveEnv="$(set +o)"
 # This avoids putting "export" in front of every variable.
 set -m; set -a
 
-# Set paths.
+# Set paths and constants.
 PATH="$PATH":/usr/bin
 CONFIGFILEPATH=""$HOME"/.config/gnupot/gnupot.config"
+procNum="3"
 
 printStderr() { local msg="$1"; printf "$msg" >&2; return 0; }
 
@@ -75,7 +76,7 @@ COPYRIGHT\n\
 
 setUpdateableGloblVars()
 {
-	# Used for general ssh commands
+	# Used for general ssh commands.
 	SSHCONNECTCMDARGS="$SSHARGS "$gnupotServerUsername"@"$gnupotServer""
 	# Open master socket so that further connection will result faster
 	# (using multiplexing to avoid re-authentication).
@@ -97,8 +98,7 @@ setGloblVars()
 	PROGRAMS="bash ssh inotifywait flock git getent ping"
 	[ -n "$DISPLAY" ] && PROGRAMS="$PROGRAMS notify-send"
 	USERDATA="by "$USER"@"$HOSTNAME"."
-	# inotifywait command macro: recursive, quiet, listen only to certain
-	# events.
+	# inotifywait args: recursive, quiet, listen only to certain events.
 	INOTIFYWAITCMD="inotifywait -r -q -e modify -e attrib \
 -e move -e move_self -e create -e delete -e delete_self --format %f"
 	# SSH arguments.
@@ -148,7 +148,7 @@ LockFilePathO" variable="" type=""
 # DNS server requests. It works for IPv6 addresses also.
 getAddrByName()
 {
-	local hostErrMsg="Cannot resolve host name."
+	local hostErrMsg="Cannot resolve host name.\n"
 
 	[[ "$gnupotServerORIG" =~ [[:alpha:]] ]] \
 && [[ ! "$gnupotServerORIG" =~ ":" ]] \
@@ -224,26 +224,13 @@ busyWait()
 	return 0
 }
 
-loopSSHCmd()
-{
-	local SSHCommand="$1" toBeEchoed="$2"
-
-	# This avoids hangs on SSH commands when GNUpot is killed.
-	# WARN, INOTIFYWAIT HANGS ON SERVER EVEN AFTER SHUTDOWN.
-	trap "return 0" $SIGNALS
-
-	[ -n "$toBeEchoed" ] && $SSHCommand 2>&- || $SSHCommand 1>&- 2>&-
-
-	return "$?"
-}
-
 # Function that checks if connection to server is active.
 # It tries to execute the input command.
 # If it's not connected then it goes into busy waiting and tries it again
-# after a period of time.
+# after a certain period of time.
 execSSHCmd()
 {
-	local SSHCommand="$1" toBeEchoed="$2" retStr=""
+	local SSHCommand="$1"
 
 	# Check if remote server is reachable.
 	while [ $(ping -c 1 -s 0 -W 30 "$gnupotServer" 1>&- 2>&-; \
@@ -252,17 +239,13 @@ printf "$?") -ne 0 ]; do
 	done
 
 	# Poll input command until it finishes correctly.
-	retStr="$(loopSSHCmd "$SSHCommand" "$toBeEchoed")"
+	$SSHCommand 1>&- 2>&-
 	while [ "$?" -eq 255 ]; do
 		busyWait
-		# Recreate master socket except if input command is create
-		# master socket.
-		[ "$SSHCommand" != "createSSHMasterSocket" ] && \
-createSSHMasterSocket 1>&- 2>&-
-		retStr="$(loopSSHCmd "$SSHCommand" "$toBeEchoed")"
+		# If command is not create msock then recreate msock.
+		[ "$SSHCommand" != "crtSSHSock" ] && crtSSHSock 1>&- 2>&-
+		$SSHCommand 1>&- 2>&-
 	done
-
-	[ -n "$toBeEchoed" ] && printf "$retStr"
 
 	return 0
 }
@@ -295,8 +278,8 @@ backupAndClean()
 	if [ "$gnupotKeepMaxCommits" -ne 0 ] \
 && [ $(expr "$(getCommitNumber)" % "$gnupotKeepMaxCommits") -eq 0 ]; then
 		# Get sha of interest.
-		commitSha=$(git log -n "$gnupotKeepMaxCommits" \
-| tail -n 6 | grep commit | awk ' { print $2 } ')
+		commitSha=$(git rev-list --max-count="$gnupotKeepMaxCommits" \
+HEAD | tail -n 1)
 		# From man git-checkout:
 		# Create a new orphan branch, named <new_branch>, started from
 		# <start_point> and switch to it.
@@ -312,6 +295,7 @@ $(date "+%F %T") $USERDATA" 1>&- 2>&-
 		# Garbage collector for stuff older than 1d.
 		# TODO better.
 		git gc --auto --prune=1d 1>&- 2>&-
+		# ?git rebase --continue #??
 		execSSHCmd "git push -f origin master"
 	else
 		execSSHCmd "git push origin master"
@@ -382,8 +366,7 @@ return 0
 chkCliDirEx()
 {
 	cd "$gnupotLocalDir" 2>&- && { git status -s 1>&- 2>&- || DirErr; } \
-|| DirErr;
-	cd "$OLDPWD"
+|| DirErr; cd "$OLDPWD"
 
 	return 0
 }
@@ -423,14 +406,11 @@ callSync()
 	return 0
 }
 
-createSSHMasterSocket()
+# If SSH socket exists delete it. Start a new socket anyway.
+# Open a new master SSH socket after.
+crtSSHSock()
 {
-	# Test if SSH socket exists. If it does delete it. Start a new socket
-	# anyway.
-	[ -S "$gnupotSSHMasterSocketPath" ] \
-&& ssh -O exit -S "$gnupotSSHMasterSocketPath" "$gnupotServer" 2>&-
-
-	# Open master ssh socket.
+	rm -rf "$gnupotSSHMasterSocketPath"
 	ssh $SSHMASTERSOCKCMDARGS
 
 	return "$?"
@@ -440,13 +420,13 @@ createSSHMasterSocket()
 syncS()
 {
 	local pathCmd="ssh $SSHCONNECTCMDARGS \
-$INOTIFYWAITCMD "$gnupotRemoteDir"" path=""
+$INOTIFYWAITCMD "$gnupotRemoteDir""
 
-	# return/exit when signal{s} is/are received.
-	trap "exit" $SIGNALS
+	# return/exit when signal{,s} is/are received.
+	trap "exit 0" $SIGNALS
 
-	# Open master ssh socket.
-	execSSHCmd createSSHMasterSocket
+	# Open/create master SSH socket.
+	execSSHCmd crtSSHSock
 
 	execSSHCmd chkSrvDirEx
 
@@ -455,8 +435,8 @@ $INOTIFYWAITCMD "$gnupotRemoteDir"" path=""
 
 	while true; do
 		# Listen for changes on server.
-		path=$(execSSHCmd "$pathCmd" "echoPath")
-		callSync "server" "$path"
+		execSSHCmd "$pathCmd"
+		callSync "server" ""
 	done
 }
 
@@ -465,7 +445,7 @@ syncC()
 {
 	local path=""
 
-	trap "exit" $SIGNALS
+	trap "exit 0" $SIGNALS
 
 	chkCliDirEx
 
@@ -486,12 +466,8 @@ assignGitInfo()
 
 printStatus()
 {
-	local i=0 proc=""
-
 	printStderr "GNUpot is "
-	local total="$(pgrep gnupot)"
-	for proc in $total; do i=$(($i+1)); done
-	[ "$i" -lt 6 ] && printStderr "NOT "
+	[ "$(pgrep -c gnupot)" -lt "$procNum" ] && printStderr "NOT "
 	printStderr "running correctly.\n"
 
 	return 0
@@ -558,16 +534,14 @@ main()
 	notify "GNUpot starting..." "$gnupotNotificationTime"
 
 	freeLockFile
-
 	# Assign git repo configuration.
 	assignGitInfo
-
 	# Call threads and wait for them to exit before continuing.
 	callThreads
 
 	notify "GNUpot stopped." "$gnupotNotificationTime"
 
-	return 0
+	exit 0
 }
 
 # Check if another istance of GNUpot is running. If that is the case exit with
@@ -580,7 +554,7 @@ callMain()
 	lockOnFile "$prgPath" "$argArray"
 	[ "$?" -eq 0 ] && { set +m; main & set -m; } || exit 1
 
-	exit 0
+	return 0
 }
 
 parseOpts()
@@ -606,11 +580,8 @@ parseOpts()
 }
 
 loadConfig "$1"
-
 checkExecutables
-
 parseOpts "$0" "$@"; retval="$?"
-
 # Restore the previous option settings.
 $saveEnv
 
