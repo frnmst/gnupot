@@ -1,6 +1,9 @@
 GNUpot
 ======
-Yet another libre Dropbox clone (only for the right aspects) written in bash. 
+Yet another libre Dropbox clone (only for the right aspects) written in bash 
+and based on git. 
+
+[GNUpot WIKI](https://github.com/frnmst/gnupot/wiki)
 
 ##Purpose of this project
 

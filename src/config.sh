@@ -183,9 +183,11 @@ password..."
 testInfo()
 {
 	# Check if ssh and remote programs already work.
-	[ $(ssh -o PasswordAuthentication=no -i "$SSHKeyPath" \
-"$ServerUsername"@"$Server" "$CHKCMD" 1>&- 2>&-; echo "$?") -ne 0 ] \
-&& genSSHKey || { infoMsg "msgbox" "SSH problem or git and/or \
+	{ ping -c 1 -s 0 -w 30 "$Server" 1>&- 2>&- \
+&& ssh -o PasswordAuthentication=no -i "$SSHKeyPath" \
+"$ServerUsername"@"$Server" "$CHKCMD" 1>&- 2>&- \
+|| genSSHKey; } \
+|| { infoMsg "msgbox" "SSH problem or git and/or \
 inotifywait missing on server."; return 1; }
 
 	return 0
@@ -201,7 +203,7 @@ create configuration directory."; return 1; }
 
 initRepo()
 {
-	ssh -i $SSHKeyPath $ServerUsername@$Server \
+	ssh -i "$SSHKeyPath" "$ServerUsername"@"$Server" \
 "if [ ! -d "$RemoteDir" ]; then mkdir -p "$RemoteDir" && cd "$RemoteDir" \
 && git init --bare --shared; fi \
 && git config --system receive.denyNonFastForwards true" 1>&- 2>&-
