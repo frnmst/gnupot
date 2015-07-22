@@ -23,6 +23,8 @@
 #
 
 
+set -x
+
 # Set path.
 PATH="$PATH":/usr/bin
 
@@ -37,10 +39,12 @@ CHKCMD="which git && which inotifywait"
 CONFIGDIR="$HOME/.config/gnupot"
 VARIABLESOURCEFILEPATH="src/configVariables.conf"
 GIT_SSH_COMMAND=""
+PROGRAMS="bash ssh inotifywait flock git getent ping"
 
-[ -f "$VARIABLESOURCEFILEPATH" ] && source "$VARIABLESOURCEFILEPATH" \
+[ -f "$VARIABLESOURCEFILEPATH" ] && . "$VARIABLESOURCEFILEPATH" \
 || echo -en "Cannot start setup. No variables file found.\n"
 
+# USE FUNCTION lockOnFile.
 # Flock so that script is not executed more than once.
 # See man 1 flock (examples section).
 [ "${FLOCKER}" != "$0" ] && exec env FLOCKER="$0" flock -en \
@@ -51,6 +55,9 @@ optNum="16"
 options=""
 winX="100"
 winY="25"
+
+# Source function file.
+. "src/functions.sh"
 
 infoMsg()
 {
@@ -75,37 +82,37 @@ displayForm()
 	opts=$($DIALOG --title "$title" \
 --form "$arg" \
 "$winY" "$winX" 0 \
-"Server address or hostname:"		1 1 "$Server"		1 35 $action \
+"Server address or hostname:"		1 1 "$gnupotServer"	1 35 $action \
 0 \
-"Remote user name:"			2 1 "$ServerUsername"	2 35 $action \
+"Remote user name:"			2 1 "$gnupotServerUsername" \
+2 35 $action 0 \
+"Remote directory path:"		3 1 "$gnupotRemoteDir"	3 35 $action \
 0 \
-"Remote directory path:"		3 1 "$RemoteDir"  	3 35 $action \
+"Local directory full path:"		4 1 "$gnupotLocalDir"	4 35 $action \
 0 \
-"Local directory full path:"		4 1 "$LocalDir"		4 35 $action \
+"Local public key full path:"		5 1 "$gnupotSSHKeyPath"	5 35 $action \
 0 \
-"Local public key full path:"		5 1 "$SSHKeyPath"	5 35 $action \
+"Backups to keep (0 = keep all):"	6 1 "$gnupotKeepMaxCommits" \
+6 35 $action 0 \
+"Local home full path:"			7 1 "$gnupotLocalHome"	7 35 $action \
 0 \
-"Backups to keep (0 = keep all):"	6 1 "$KeepMaxCommits" 	6 35 $action \
+"Remote home full path:"		8 1 "$gnupotRemoteHome"	8 35 $action \
 0 \
-"Local home full path:"			7 1 "$LocalHome"	7 35 $action \
-0 \
-"Remote home full path:"		8 1 "$RemoteHome"	8 35 $action \
-0 \
-"git committer user name:"		9 1 "$GitCommitterUsername" \
+"git committer user name:"		9 1 "$gnupotGitCommitterUsername" \
 9 35 $action 0 \
-"git committer email:"			10 1 "$GitCommitterEmail" \
+"git committer email:"			10 1 "$gnupotGitCommitterEmail" \
 10 35 $action 0 \
-"Time to wait for changes (s):"		11 1 "$TimeToWaitForOtherChanges" \
-11 35 $action 0 \
-"Time to wait on problem (s):"		12 1 "$BusyWaitTime" \
+"Time to wait for changes (s):"		11 1 \
+"$gnupotTimeToWaitForOtherChanges" 11 35 $action 0 \
+"Time to wait on problem (s):"		12 1 "$gnupotBusyWaitTime" \
 12 35 $action 0 \
-"SSH Master Socket Path:"		13 1 "$SSHMasterSocketPath" \
+"SSH Master Socket Path:"		13 1 "$gnupotSSHMasterSocketPath" \
 13 35 $action 0 \
-"SSH socket keepalive time (min):"	14 1 "$SSHMasterSocketTime" \
+"SSH socket keepalive time (min):"	14 1 "$gnupotSSHMasterSocketTime" \
 14 35 $action 0 \
-"Event notification time (ms):"		15 1 "$NotificationTime" \
+"Event notification time (ms):"		15 1 "$gnupotNotificationTime" \
 15 35 $action 0 \
-"Lock file full path:"			16 1 "$LockFilePath" \
+"Lock file full path:"			16 1 "$gnupotLockFilePath" \
 16 35 $action 0 \
 )
 	retval="$?"
@@ -124,58 +131,46 @@ to move between fields" "60")
 
 strTok()
 {
-	local FORMVARIABLES="Server ServerUsername RemoteDir LocalDir \
-SSHKeyPath KeepMaxCommits LocalHome RemoteHome GitCommitterUsername \
-GitCommitterEmail TimeToWaitForOtherChanges BusyWaitTime \
-SSHMasterSocketPath SSHMasterSocketTime NotificationTime \
-LockFilePath"
+	local FORMVARIABLES="gnupotServer gnupotServerUsername \
+gnupotRemoteDir gnupotLocalDir gnupotSSHKeyPath gnupotKeepMaxCommits \
+gnupotLocalHome gnupotRemoteHome gnupotGitCommitterUsername \
+gnupotGitCommitterEmail gnupotTimeToWaitForOtherChanges gnupotBusyWaitTime \
+gnupotSSHMasterSocketPath gnupotSSHMasterSocketTime gnupotNotificationTime \
+gnupotLockFilePath"
 
-	# Control bash version to avoid IFS bug. bash 4.2 (and lower?) has this
+	# Control bash version to avoid IFS bug. bash 4.2 (and lower) has this
 	# bug. If bash is <=4.2 spaces must be avoided in form fields.
 	local bashVersion="${BASH_VERSINFO[0]}${BASH_VERSINFO[1]}"
-	if [ "$bashVersion" -le 42 ];then
-		options="$(echo $options | tr " " ";")"
-		IFS=";" read $FORMVARIABLES <<< "$options"
-	else
-		IFS=' ' read $FORMVARIABLES <<< $options
-	fi
+	[ "$bashVersion" -le 42 ] && options="$(echo $options | tr " " ";")" \
+&& IFS=";" read $FORMVARIABLES <<< "$options" || IFS=' ' read $FORMVARIABLES \
+<<< $options
 
 	return 0
 }
 
 verifyConfig()
 {
-	local i=0
+	local i=0 option=""
 
 	for option in $options; do i=$(($i+1)); done
-	if [ $i -lt $optNum ]; then return 1; fi
-
-	return 0
-}
-
-summary()
-{
-	displayForm "GNUpot setup summary" "Are the displayed values \
-correct?" "0"
-
-	return "$?"
+	[ $i -lt $optNum ] && return 1 || return 0
 }
 
 genSSHKey()
 {
 	if [ ! -f "$SSHKeyPath" ]; then
 		infoMsg "infobox" "Generating SSH keys. Please wait."
-		ssh-keygen -t rsa -b "$RSAKeyBits" -C \
-"gnupot:$USER@$HOSTNAME:$(date -I)" -f "$SSHKeyPath" -N "" -q
+		ssh-keygen -t rsa -b "$gnupotRSAKeyBits" -C \
+"gnupot:$USER@$HOSTNAME:$(date -I)" -f "$gnupotSSHKeyPath" -N "" -q
 	fi
-	infoMsg "infobox" "You will now be prompted for "$ServerUsername"'s \
+	infoMsg "msgbox" "You will now be prompted for "$ServerUsername"'s \
 password..."
-	sleep 5
-	ssh-copy-id -i ""$SSHKeyPath".pub" "$ServerUsername"@"$Server"
+	ssh-copy-id -i ""$gnupotSSHKeyPath".pub" \
+"$gnupotServerUsername"@"$gnupotServer"
 
 	# Check if ssh works and if remote programs exist.
-	ssh -o PasswordAuthentication=no -i "$SSHKeyPath" \
-"$ServerUsername"@"$Server" "$CHKCMD" 1>&- 2>&-
+	ssh -o PasswordAuthentication=no -i "$gnupotSSHKeyPath" \
+"$gnupotServerUsername"@"$gnupotServer" "$CHKCMD" 1>&- 2>&-
 
 	return "$?"
 }
@@ -183,9 +178,9 @@ password..."
 testInfo()
 {
 	# Check if ssh and remote programs already work.
-	{ ping -c 1 -s 0 -w 30 "$Server" 1>&- 2>&- \
-&& ssh -o PasswordAuthentication=no -i "$SSHKeyPath" \
-"$ServerUsername"@"$Server" "$CHKCMD" 1>&- 2>&- \
+	{ ping -c 1 -s 0 -w 30 "$gnupotServer" 1>&- 2>&- \
+&& ssh -o PasswordAuthentication=no -i "$gnupotSSHKeyPath" \
+"$gnupotServerUsername"@"$gnupotServer" "$CHKCMD" 1>&- 2>&- \
 || genSSHKey; } \
 || { infoMsg "msgbox" "SSH problem or git and/or \
 inotifywait missing on server."; return 1; }
@@ -214,7 +209,7 @@ initRepo()
 # Make a fake commit to avoid problems at the first pull of a new repository.
 makeFirstCommit()
 {
-	cd "$LocalDir"
+	cd "$gnupotLocalDir"
 	[ ! -f ".firstCommit" ] && { touch .firstCommit; git add -A 1>&- \
 2>&-; git commit -a -m "First commit." 1>&- 2>&-; git push origin master \
 1>&- 2>&-; }
@@ -223,28 +218,18 @@ makeFirstCommit()
 	return 0
 }
 
-# Set committer information.
-setGitCommitterInfo()
-{
-	cd "$LocalDir"
-	git config user.name "$GitCommitterUsername"
-	git config user.email "$GitCommitterEmail"
-	cd "$OLDPWD"
-
-	return 0
-}
-
 cloneRepo()
 {
-	GIT_SSH_COMMAND="ssh -i $SSHKeyPath"
+	GIT_SSH_COMMAND="ssh -i $gnupotSSHKeyPath"
 
-	if [ ! -d "$LocalDir" ]; then
+	if [ ! -d "$gnupotLocalDir" ]; then
 		infoMsg "infobox" "Cloning remote repository. This may take \
 a while."
-		git clone "$ServerUsername"@"$Server":"$RemoteDir" \
-"$LocalDir" 1>&- 2>&- || { infoMsg "msgbox" "Cannot clone remote \
+		git clone \
+"$gnupotServerUsername"@"$gnupotServer":"$gnupotRemoteDir" \
+"$gnupotLocalDir" 1>&- 2>&- || { infoMsg "msgbox" "Cannot clone remote \
 repository."; return 1; }
-		setGitCommitterInfo
+		assignGitInfo
 		makeFirstCommit
 	else
 		infoMsg "msgbox" "Local destination directory already exists. \
@@ -258,22 +243,22 @@ Delete it first then restart the setup."
 writeConfigFile()
 {
 	echo -en "\
-gnupotServer=\""$Server"\"\n\
-gnupotServerUsername=\""$ServerUsername"\"\n\
-gnupotRemoteDir=\""$RemoteDir"\"\n\
-gnupotLocalDir=\""$LocalDir"\"\n\
-gnupotSSHKeyPath=\""$SSHKeyPath"\"\n\
-gnupotKeepMaxCommits=\""$KeepMaxCommits"\"\n\
-gnupotLocalHome=\""$LocalHome"\"\n\
-gnupotRemoteHome=\""$RemoteHome"\"\n\
-gnupotGitCommitterUsername=\""$GitCommitterUsername"\"\n\
-gnupotGitCommitterEmail=\""$GitCommitterEmail"\"\n\
-gnupotTimeToWaitForOtherChanges=\""$TimeToWaitForOtherChanges"\"\n\
-gnupotBusyWaitTime=\""$BusyWaitTime"\"\n\
-gnupotSSHMasterSocketPath=\""$SSHMasterSocketPath"\"\n\
-gnupotSSHMasterSocketTime=\""$SSHMasterSocketTime"\"\n\
-gnupotNotificationTime=\""$NotificationTime"\"\n\
-gnupotLockFilePath=\""$LockFilePath"\"\n\
+gnupotServer=\""$gnupotServer"\"\n\
+gnupotServerUsername=\""$gnupotServerUsername"\"\n\
+gnupotRemoteDir=\""$gnupotRemoteDir"\"\n\
+gnupotLocalDir=\""$gnupotLocalDir"\"\n\
+gnupotSSHKeyPath=\""$gnupotSSHKeyPath"\"\n\
+gnupotKeepMaxCommits=\""$gnupotKeepMaxCommits"\"\n\
+gnupotLocalHome=\""$gnupotLocalHome"\"\n\
+gnupotRemoteHome=\""$gnupotRemoteHome"\"\n\
+gnupotGitCommitterUsername=\""$gnupotGitCommitterUsername"\"\n\
+gnupotGitCommitterEmail=\""$gnupotGitCommitterEmail"\"\n\
+gnupotTimeToWaitForOtherChanges=\""$gnupotTimeToWaitForOtherChanges"\"\n\
+gnupotBusyWaitTime=\""$gnupotBusyWaitTime"\"\n\
+gnupotSSHMasterSocketPath=\""$gnupotSSHMasterSocketPath"\"\n\
+gnupotSSHMasterSocketTime=\""$gnupotSSHMasterSocketTime"\"\n\
+gnupotNotificationTime=\""$gnupotNotificationTime"\"\n\
+gnupotLockFilePath=\""$gnupotLockFilePath"\"\n\
 " > ""$CONFIGDIR"/gnupot.config"
 
 	return 0
@@ -284,17 +269,20 @@ main()
 	while true; do
 		getConfig
 		verifyConfig
-		[ ! "$?" -eq 0 ] && { main; return 0; }
+		[ "$?" -ne 0 ] && { main; return 0; }
 		strTok
-		summary
-		[ ! "$?" -eq 0 ] && { main; return 0; }
+		parseConfig
+		[ "$?" -ne 0 ] && { main; return 0; }
+		displayForm "GNUpot setup summary" "Are the displayed values \
+correct?" "0"
+		[ "$?" -ne 0 ] && { main; return 0; }
 		initConfigDir
-		[ ! "$?" -eq 0 ] && { main; return 0; }
+		[ "$?" -ne 0 ] && { main; return 0; }
 		testInfo
-		[ ! "$?" -eq 0 ] && { main; return 0; }
+		[ "$?" -ne 0 ] && { main; return 0; }
 		initRepo
 		cloneRepo
-		[ ! "$?" -eq 0 ] && { main; return 0; }
+		[ "$?" -ne 0 ] && { main; return 0; }
 		writeConfigFile
 		[ -n "$DISPLAY" ] && bash -c "notify-send -t 10000 \
 GNUpot\ setup\ completed."
@@ -303,6 +291,7 @@ GNUpot\ setup\ completed."
 	done
 }
 
+checkExecutables
 main
 
 exit 0

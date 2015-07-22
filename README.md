@@ -3,8 +3,6 @@ GNUpot
 Yet another libre Dropbox clone (only for the right aspects) written in bash 
 and based on git. 
 
-[GNUpot WIKI](https://github.com/frnmst/gnupot/wiki)
-
 ##Purpose of this project
 
 Lots of us using Dropbox (or similar) like its functionalities. However 
@@ -24,8 +22,11 @@ Stupid) principal.
 
 ###Why the name GNUpot
 
-- **GNU** beause of the freedom associated to this program.
-- **pot** because it gives the idea of some type of container.
+- *GNU* beause of the freedom associated to this program.
+- *pot* because it gives the idea of some type of container.
+
+For technical information read the 
+[GNUpot WIKI](https://github.com/frnmst/gnupot/wiki)
 
 ##WARNING AND DISCLAMER
 
