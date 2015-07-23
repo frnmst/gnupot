@@ -163,8 +163,8 @@ genSSHKey()
 		ssh-keygen -t rsa -b "$gnupotRSAKeyBits" -C \
 "gnupot:$USER@$HOSTNAME:$(date -I)" -f "$gnupotSSHKeyPath" -N "" -q
 	fi
-	infoMsg "msgbox" "You will now be prompted for "$ServerUsername"'s \
-password..."
+	infoMsg "msgbox" "You will now be prompted for \
+"$gnupotServerUsername"'s password..."
 	ssh-copy-id -i ""$gnupotSSHKeyPath".pub" \
 "$gnupotServerUsername"@"$gnupotServer"
 
@@ -198,9 +198,9 @@ create configuration directory."; return 1; }
 
 initRepo()
 {
-	ssh -i "$SSHKeyPath" "$ServerUsername"@"$Server" \
-"if [ ! -d "$RemoteDir" ]; then mkdir -p "$RemoteDir" && cd "$RemoteDir" \
-&& git init --bare --shared; fi \
+	ssh -i "$gnupotSSHKeyPath" "$gnupotServerUsername"@"$gnupotServer" \
+"if [ ! -d "$gnupotRemoteDir" ]; then mkdir -p "$gnupotRemoteDir" \
+&& cd "$gnupotRemoteDir" && git init --bare --shared; fi \
 && git config --system receive.denyNonFastForwards true" 1>&- 2>&-
 
 	return 0
@@ -210,9 +210,8 @@ initRepo()
 makeFirstCommit()
 {
 	cd "$gnupotLocalDir"
-	[ ! -f ".firstCommit" ] && { touch .firstCommit; git add -A 1>&- \
-2>&-; git commit -a -m "First commit." 1>&- 2>&-; git push origin master \
-1>&- 2>&-; }
+	git commit -m "Added user "$USER"" --allow-empty 1>&- 2>&-
+	git push origin master 1>&- 2>&-
 	cd "$OLDPWD"
 
 	return 0

@@ -93,7 +93,7 @@ setGloblVars()
 	return 0
 }
 
-parsingErrMsg() { Err "Configuration or parsing problem.\n"; return 1; }
+parsingErrMsg() { Err "Configuration or parsing problem.\n"; return 0; }
 
 parseConfig()
 {
@@ -111,19 +111,20 @@ LockFilePathO" variable="" type=""
 		case "$type" in
 			N ) # Numbers only.
 				case "$variable" in '' | *[!0-9]* )
-					parsingErrMsg ;; esac
+					parsingErrMsg; return 1 ;; esac
 			;;
 			S ) # Strings without space char.
 				case "$variable" in '' | *[' ']* )
-					parsingErrMsg ;; esac
+					parsingErrMsg; return 1 ;; esac
 			;;
 			* ) # All the other variables must be non-empty.
-				case "$variable" in '' ) parsingErrMsg ;; esac
+				case "$variable" in '' )
+					parsingErrMsg; return 1 ;; esac
 			;;
 		esac
 	done
 
-	return "$?"
+	return 0
 }
 
 # Find server address from hostname. If original variable is an IP
@@ -147,7 +148,7 @@ loadConfig()
 
 	# "." is the same as "source" but it is more portable.
 	[ -f "$CONFIGFILEPATH" ] && . "$CONFIGFILEPATH" 2>&- \
-|| parsingErrMsg
+|| { parsingErrMsg; exit 1; }
 
 	parseConfig || exit 1
 
