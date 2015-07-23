@@ -41,14 +41,10 @@ VARIABLESOURCEFILEPATH="src/configVariables.conf"
 GIT_SSH_COMMAND=""
 PROGRAMS="bash ssh inotifywait flock git getent ping"
 
+CONFIGFILEPATH="src/configVariables.conf"
+
 [ -f "$VARIABLESOURCEFILEPATH" ] && . "$VARIABLESOURCEFILEPATH" \
 || echo -en "Cannot start setup. No variables file found.\n"
-
-# USE FUNCTION lockOnFile.
-# Flock so that script is not executed more than once.
-# See man 1 flock (examples section).
-[ "${FLOCKER}" != "$0" ] && exec env FLOCKER="$0" flock -en \
-"$VARIABLESOURCEFILEPATH" "$0" "$@" || :
 
 # Variables.
 optNum="16"
@@ -58,6 +54,9 @@ winY="25"
 
 # Source function file.
 . "src/functions.sh"
+
+# Flock so that script is not executed more than once.
+lockOnFile "$0" "" || exit 1
 
 infoMsg()
 {
@@ -210,7 +209,7 @@ initRepo()
 makeFirstCommit()
 {
 	cd "$gnupotLocalDir"
-	git commit -m "Added user "$USER"" --allow-empty 1>&- 2>&-
+	git commit -m "Added user "$USER"." --allow-empty 1>&- 2>&-
 	git push origin master 1>&- 2>&-
 	cd "$OLDPWD"
 
