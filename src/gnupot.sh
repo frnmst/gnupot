@@ -39,7 +39,7 @@ CONFIGFILEPATH=""$HOME"/.config/gnupot/gnupot.config"
 procNum="3"
 
 # Source functions file.
-. "src/functions.sh"
+. ""${0%/gnupot}"/src/functions.sh"
 
 loadConfig "$1"
 checkExecutables

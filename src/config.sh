@@ -39,7 +39,7 @@ CHKCMD="which git && which inotifywait"
 CONFIGDIR="$HOME/.config/gnupot"
 VARIABLESOURCEFILEPATH="src/configVariables.conf"
 GIT_SSH_COMMAND=""
-PROGRAMS="bash ssh inotifywait flock git getent ping"
+PROGRAMS="bash ssh inotifywait flock git getent"
 
 CONFIGFILEPATH="src/configVariables.conf"
 
@@ -177,7 +177,8 @@ genSSHKey()
 testInfo()
 {
 	# Check if ssh and remote programs already work.
-	{ ping -c 1 -s 0 -w 30 "$gnupotServer" 1>&- 2>&- \
+	{ ssh "$gnupotServerUsername"@"$gnupotServer" \
+-o PasswordAuthentication=no 2>&1 | grep denied &>/dev/null \
 && ssh -o PasswordAuthentication=no -i "$gnupotSSHKeyPath" \
 "$gnupotServerUsername"@"$gnupotServer" "$CHKCMD" 1>&- 2>&- \
 || genSSHKey; } \

@@ -78,7 +78,7 @@ setGloblVars()
 	SIGNALS="SIGABRT SIGCHLD SIGHUP SIGINT SIGQUIT SIGTERM SIGTSTP"
 	# List of installed programs that GNUpot uses. If display variable is
 	# set notify-send is also required.
-	PROGRAMS="bash ssh inotifywait flock git getent ping"
+	PROGRAMS="bash ssh inotifywait flock git getent"
 	[ -n "$DISPLAY" ] && PROGRAMS="$PROGRAMS notify-send"
 	USERDATA="by "$USER"@"$HOSTNAME"."
 	# inotifywait args: recursive, quiet, listen only to certain events.
@@ -219,7 +219,8 @@ execSSHCmd()
 	# Check if server is reachable.
 	# Poll input command until it finishes correctly.
 	ssh "$gnupotServerUsername"@"$gnupotServer" \
--o PasswordAuthentication=no 2>&1 | grep denied &>/dev/null \
+-o PasswordAuthentication=no -o UserKnownHostsFile=/dev/null \
+-o StrictHostKeyChecking=no 2>&1 | grep denied &>/dev/null \
 && $SSHCommand 1>&- 2>&- || $(return 255)
 	while [ "$?" -eq 255 ]; do
 		busyWait
