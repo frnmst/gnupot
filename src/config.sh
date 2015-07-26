@@ -35,33 +35,21 @@ set -a
 HELPFILE="README.md"
 BACKTITLE="GNUpot_setup._F1_for_help."
 DIALOG="dialog --stdout --hfile $HELPFILE --backtitle $BACKTITLE"
-CHKCMD="which git && which inotifywait"
+REMOTECHKCMD="which git && which inotifywait"
 CONFIGDIR="$HOME/.config/gnupot"
-VARIABLESOURCEFILEPATH="src/configVariables.conf"
-GIT_SSH_COMMAND=""
 PROGRAMS="bash ssh inotifywait flock git getent"
-
 CONFIGFILEPATH="src/configVariables.conf"
 
-[ -f "$VARIABLESOURCEFILEPATH" ] && . "$VARIABLESOURCEFILEPATH" \
-|| echo -en "Cannot start setup. No variables file found.\n"
-
-# Variables.
-optNum="16"
 options=""
-winX="100"
-winY="25"
+optNum="16"
 
 # Source function file.
 . "src/functions.sh"
 
-# Flock so that script is not executed more than once.
-lockOnFile "$0" "" || exit 1
-
 infoMsg()
 {
 	# --msgbox or --infobox
-	local type="$1" msg="$2"
+	local type="$1" msg="$2" winX="100" winY="25"
 
 	if [ "$type" = "msgbox" ]; then
 		$DIALOG --clear --title "INFO" --"$type" \
@@ -169,7 +157,7 @@ genSSHKey()
 
 	# Check if ssh works and if remote programs exist.
 	ssh -o PasswordAuthentication=no -i "$gnupotSSHKeyPath" \
-"$gnupotServerUsername"@"$gnupotServer" "$CHKCMD" 1>&- 2>&-
+"$gnupotServerUsername"@"$gnupotServer" "$REMOTECHKCMD" 1>&- 2>&-
 
 	return "$?"
 }
@@ -180,7 +168,7 @@ testInfo()
 	{ ssh "$gnupotServerUsername"@"$gnupotServer" \
 -o PasswordAuthentication=no 2>&1 | grep denied &>/dev/null \
 && ssh -o PasswordAuthentication=no -i "$gnupotSSHKeyPath" \
-"$gnupotServerUsername"@"$gnupotServer" "$CHKCMD" 1>&- 2>&- \
+"$gnupotServerUsername"@"$gnupotServer" "$REMOTECHKCMD" 1>&- 2>&- \
 || genSSHKey; } \
 || { infoMsg "msgbox" "SSH problem or git and/or \
 inotifywait missing on server."; return 1; }
@@ -270,7 +258,8 @@ main()
 		verifyConfig
 		[ "$?" -ne 0 ] && { main; return 0; }
 		strTok
-		parseConfig
+		parseConfig || { infoMsg "msgbox" "Value/s type invalid."; \
+$(return 1); }
 		[ "$?" -ne 0 ] && { main; return 0; }
 		displayForm "GNUpot setup summary" "Are the displayed values \
 correct?" "0"
@@ -289,6 +278,13 @@ GNUpot\ setup\ completed."
 		return 0
 	done
 }
+
+# Flock so that script is not executed more than once.
+lockOnFile "$0" "" || exit 1
+
+# Load default variables.
+. "src/configVariables.conf" \
+|| { echo -en "Cannot start setup. No variables file found.\n"; exit 1; }
 
 checkExecutables
 main
