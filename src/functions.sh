@@ -63,8 +63,8 @@ setUpdateableGloblVars()
 	SSHCONNECTCMDARGS="$SSHARGS "$gnupotServerUsername"@"$gnupotServer""
 	# Open master socket so that further connection will result faster
 	# (using multiplexing to avoid re-authentication).
-	SSHMASTERSOCKCMDARGS="-M -o ControlPersist=yes $SSHCONNECTCMDARGS exit"
-#ControlPersist="$gnupotSSHMasterSocketTime" $SSHCONNECTCMDARGS exit"
+	SSHMASTERSOCKCMDARGS="-M -o \
+ControlPersist="$gnupotSSHMasterSocketTime" $SSHCONNECTCMDARGS exit"
 	# git environment variable for ssh.
 	GIT_SSH_COMMAND="ssh $SSHARGS"
 
