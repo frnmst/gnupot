@@ -218,8 +218,9 @@ execSSHCmd()
 
 	# Check if server is reachable.
 	# Poll input command until it finishes correctly.
-	ssh gnupot@192.168.0.2 -o PasswordAuthentication=no 2>&1 \
-| grep denied &>/dev/null && $SSHCommand 1>&- 2>&- || $(return 255)
+	ssh "$gnupotServerUsername"@"$gnupotServer" \
+-o PasswordAuthentication=no 2>&1 | grep denied &>/dev/null \
+&& $SSHCommand 1>&- 2>&- || $(return 255)
 	while [ "$?" -eq 255 ]; do
 		busyWait
 		# If command is not create master sock then recreate msock.
