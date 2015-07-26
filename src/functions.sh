@@ -63,8 +63,8 @@ setUpdateableGloblVars()
 	SSHCONNECTCMDARGS="$SSHARGS "$gnupotServerUsername"@"$gnupotServer""
 	# Open master socket so that further connection will result faster
 	# (using multiplexing to avoid re-authentication).
-	SSHMASTERSOCKCMDARGS="-M -o \
-ControlPersist="$gnupotSSHMasterSocketTime" $SSHCONNECTCMDARGS exit"
+	SSHMASTERSOCKCMDARGS="-M -o ControlPersist=yes $SSHCONNECTCMDARGS exit"
+#ControlPersist="$gnupotSSHMasterSocketTime" $SSHCONNECTCMDARGS exit"
 	# git environment variable for ssh.
 	GIT_SSH_COMMAND="ssh $SSHARGS"
 
@@ -216,17 +216,13 @@ execSSHCmd()
 {
 	local SSHCommand="$1"
 
-	# Check if remote server is reachable.
-	while [ $(ping -c 1 -s 0 -W 30 "$gnupotServer" 1>&- 2>&-; \
-printf "$?") -ne 0 ]; do
-		busyWait
-	done
-
+	# Check if server is reachable.
 	# Poll input command until it finishes correctly.
-	$SSHCommand 1>&- 2>&-
+	ssh gnupot@192.168.0.2 -o PasswordAuthentication=no 2>&1 \
+| grep denied &>/dev/null && $SSHCommand 1>&- 2>&- || $(return 255)
 	while [ "$?" -eq 255 ]; do
 		busyWait
-		# If command is not create msock then recreate msock.
+		# If command is not create master sock then recreate msock.
 		[ "$SSHCommand" != "crtSSHSock" ] && crtSSHSock 1>&- 2>&-
 		$SSHCommand 1>&- 2>&-
 	done
@@ -310,6 +306,9 @@ syncOperation()
 
 	syncNotify "$path" "$source"
 
+#	./traytor -c "echo click" -t "gnupot" icons/icons &
+#	pid="$!"
+
 	# Do all git operations in the correct directory.
 	cd "$gnupotLocalDir"
 	# Do the syncing. To be able to clean: git config --system \
@@ -317,6 +316,8 @@ syncOperation()
 	gitSyncOperations; backupAndClean
 	# Go back to previous dir.
 	cd "$OLDPWD"
+
+#	kill "$pid"
 
 	notify "GNUpot $path done." "$gnupotNotificationTime"
 
