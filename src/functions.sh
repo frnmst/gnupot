@@ -345,7 +345,7 @@ chkSrvDirEx()
 	ssh $SSHCONNECTCMDARGS "cd $gnupotRemoteDir 2>&- && git show \
 1>&- 2>&- || exit 1" || DirErr
 
-return 0
+	return 0
 }
 
 # Check if local directory exists.
@@ -422,6 +422,7 @@ $INOTIFYWAITCMD "$gnupotRemoteDir""
 	while true; do
 		# Listen for changes on server.
 		execSSHCmd "$pathCmd"
+		chkSrvDirEx
 		callSync "server" ""
 	done
 }
@@ -437,6 +438,7 @@ syncC()
 
 	while true; do
 		path=$($INOTIFYWAITCMD --exclude .git "$gnupotLocalDir")
+		chkCliDirEx
 		callSync "client" "$path"
 	done
 }
