@@ -498,6 +498,22 @@ sigHandler()
 	return 0
 }
 
+# Function that makes a fake commit so that inotifywait process on the server
+# is killed.
+lastCommit()
+{
+	local SSHARGS="-o PasswordAuthentication=no -i "$gnupotSSHKeyPath" -C \
+-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no" \
+GIT_SSH_COMMAND="ssh "$SSHARGS""
+
+	cd "$gnupotLocalDir"
+	git commit --allow-empty -m ""$USER"'s exit commit." 1>&- 2>&-
+	git push origin master 1>&- 2>&-
+	cd "$OLDPWD"
+
+	return 0
+}
+
 callThreads()
 {
 	local srvPid="" cliPid=""
@@ -509,6 +525,7 @@ callThreads()
 	# Lowest process priority for the threads.
 	renice 20 "$srvPid" "$cliPid" 1>&- 2>&-
 	wait "$srvPid" "$cliPid"
+	lastCommit
 
 	return 0
 }

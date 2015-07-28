@@ -23,8 +23,6 @@
 #
 
 
-set -x
-
 # Set path.
 PATH="$PATH":/usr/bin
 
