@@ -264,19 +264,20 @@ HEAD | tail -n 1)
 		# From man git-checkout:
 		# Create a new orphan branch, named <new_branch>, started from
 		# <start_point> and switch to it.
-		git checkout --orphan tmp "$commitSha" 1>&- 2>&-
+		git checkout --orphan tmp "$commitSha"
 		# Change old commit.
 		git commit -m "Truncated history on \
-$(date "+%F %T") $USERDATA" 1>&- 2>&-
-		# From man git-rebase
+$(date "+%F %T") $USERDATA"
+		# From man git-rebase:
 		# Forward-port local commits to the updated upstream head.
-		git rebase --onto tmp "$commitSha" master 1>&- 2>&-
+		git rebase --onto tmp "$commitSha" master
+		#git rebase --continue
+		git checkout master
 		# Delete tmp branch.
-		git branch -D tmp 1>&- 2>&-
+		git branch -D tmp
 		# Garbage collector for stuff older than 1d.
 		# TODO better.
-		git gc --auto --prune=1d 1>&- 2>&-
-		# ?git rebase --continue #??
+		git gc --auto --prune=1d
 		execSSHCmd "git push -f origin master"
 	else
 		execSSHCmd "git push origin master"
@@ -308,9 +309,6 @@ syncOperation()
 
 	syncNotify "$path" "$source"
 
-#	./traytor -c "echo click" -t "gnupot" icons/icons &
-#	pid="$!"
-
 	# Do all git operations in the correct directory.
 	cd "$gnupotLocalDir"
 	# Do the syncing. To be able to clean: git config --system \
@@ -318,8 +316,6 @@ syncOperation()
 	gitSyncOperations; backupAndClean
 	# Go back to previous dir.
 	cd "$OLDPWD"
-
-#	kill "$pid"
 
 	notify "GNUpot $path done." "$gnupotNotificationTime"
 
@@ -413,7 +409,7 @@ $INOTIFYWAITCMD "$gnupotRemoteDir""
 
 	# Open/create master SSH socket.
 	execSSHCmd crtSSHSock
-
+	# Check remote dir existence.
 	execSSHCmd chkSrvDirEx
 
 	# First of all, pull or push changes while gnupot was not running.
@@ -490,9 +486,7 @@ Check: $PROGRAMS. Also check package versions.\n"; exit 1; }
 sigHandler()
 {
 	Err "GNUpot killed\n"
-	# Kill master ssh socket (this will kill any ssh connection associated
-	# with it). Also disable stderr output for this command with "2>&-".
-	ssh -O exit -S "$gnupotSSHMasterSocketPath" "$gnupotServer" 2>&- &
+	# Send a signal to all the other threads so that they exit.
 	kill -s SIGINT 0
 
 	return 0
@@ -502,10 +496,6 @@ sigHandler()
 # is killed.
 lastCommit()
 {
-	local SSHARGS="-o PasswordAuthentication=no -i "$gnupotSSHKeyPath" -C \
--o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no" \
-GIT_SSH_COMMAND="ssh "$SSHARGS""
-
 	cd "$gnupotLocalDir"
 	git commit --allow-empty -m ""$USER"'s exit commit." 1>&- 2>&-
 	git push origin master 1>&- 2>&-
@@ -514,6 +504,8 @@ GIT_SSH_COMMAND="ssh "$SSHARGS""
 	return 0
 }
 
+# Function that calls client and server threads as well as removing the SSH
+# socket.
 callThreads()
 {
 	local srvPid="" cliPid=""
@@ -525,7 +517,15 @@ callThreads()
 	# Lowest process priority for the threads.
 	renice 20 "$srvPid" "$cliPid" 1>&- 2>&-
 	wait "$srvPid" "$cliPid"
+	# Make the final commit
 	lastCommit
+	# Kill master ssh socket (this will kill any ssh connection associated
+	# with it).
+	ssh -O exit -S "$gnupotSSHMasterSocketPath" "$gnupotServer" 2>&- &
+	# Remove shared socket before exiting. Not doing this means having a
+	# security breach because the socket remains opened and anyone could
+	# use it.
+	rm -rf "$gnupotSSHMasterSocketPath"
 
 	return 0
 }

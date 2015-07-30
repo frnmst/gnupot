@@ -187,7 +187,7 @@ initRepo()
 	ssh -i "$gnupotSSHKeyPath" "$gnupotServerUsername"@"$gnupotServer" \
 "if [ ! -d "$gnupotRemoteDir" ]; then mkdir -p "$gnupotRemoteDir" \
 && cd "$gnupotRemoteDir" && git init --bare --shared; fi \
-&& git config --system receive.denyNonFastForwards true" 1>&- 2>&-
+&& git config --system receive.denyNonFastForwards false" 1>&- 2>&-
 
 	return 0
 }
