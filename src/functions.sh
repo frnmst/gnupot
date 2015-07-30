@@ -64,7 +64,7 @@ setUpdateableGloblVars()
 	# Open master socket so that further connection will result faster
 	# (using multiplexing to avoid re-authentication).
 	SSHMASTERSOCKCMDARGS="-M -o \
-ControlPersist="$gnupotSSHMasterSocketTime" $SSHCONNECTCMDARGS exit"
+ControlPersist=yes $SSHCONNECTCMDARGS exit"
 	# git environment variable for ssh.
 	GIT_SSH_COMMAND="ssh $SSHARGS"
 
@@ -73,7 +73,6 @@ ControlPersist="$gnupotSSHMasterSocketTime" $SSHCONNECTCMDARGS exit"
 
 setGloblVars()
 {
-	gnupotSSHMasterSocketTime=""$gnupotSSHMasterSocketTime"m"
 	# List of signals to be trapped.
 	SIGNALS="SIGABRT SIGCHLD SIGHUP SIGINT SIGQUIT SIGTERM SIGTSTP"
 	# List of installed programs that GNUpot uses. If display variable is
@@ -100,7 +99,7 @@ parseConfig()
         local variableList="ServerS ServerUsernameO RemoteDirO LocalDirO \
 SSHKeyPathO KeepMaxCommitsN LocalHomeO RemoteHomeO GitCommitterUsernameO \
 GitCommitterEmailO TimeToWaitForOtherChangesN BusyWaitTimeN \
-SSHMasterSocketPathO SSHMasterSocketTimeN NotificationTimeN \
+SSHMasterSocketPathO NotificationTimeN \
 LockFilePathO" variable="" type=""
 
 	for variable in $variableList; do

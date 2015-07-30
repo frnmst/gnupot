@@ -39,7 +39,7 @@ PROGRAMS="bash ssh inotifywait flock git getent"
 CONFIGFILEPATH="src/configVariables.conf"
 
 options=""
-optNum="16"
+optNum="15"
 
 # Source function file.
 . "src/functions.sh"
@@ -93,12 +93,10 @@ displayForm()
 12 35 $action 0 \
 "SSH Master Socket Path:"		13 1 "$gnupotSSHMasterSocketPath" \
 13 35 $action 0 \
-"SSH socket keepalive time (min):"	14 1 "$gnupotSSHMasterSocketTime" \
+"Event notification time (ms):"		14 1 "$gnupotNotificationTime" \
 14 35 $action 0 \
-"Event notification time (ms):"		15 1 "$gnupotNotificationTime" \
+"Lock file full path:"			15 1 "$gnupotLockFilePath" \
 15 35 $action 0 \
-"Lock file full path:"			16 1 "$gnupotLockFilePath" \
-16 35 $action 0 \
 )
 	retval="$?"
 	echo "$opts"
@@ -120,7 +118,7 @@ strTok()
 gnupotRemoteDir gnupotLocalDir gnupotSSHKeyPath gnupotKeepMaxCommits \
 gnupotLocalHome gnupotRemoteHome gnupotGitCommitterUsername \
 gnupotGitCommitterEmail gnupotTimeToWaitForOtherChanges gnupotBusyWaitTime \
-gnupotSSHMasterSocketPath gnupotSSHMasterSocketTime gnupotNotificationTime \
+gnupotSSHMasterSocketPath gnupotNotificationTime \
 gnupotLockFilePath"
 
 	# Control bash version to avoid IFS bug. bash 4.2 (and lower) has this
@@ -241,7 +239,6 @@ gnupotGitCommitterEmail=\""$gnupotGitCommitterEmail"\"\n\
 gnupotTimeToWaitForOtherChanges=\""$gnupotTimeToWaitForOtherChanges"\"\n\
 gnupotBusyWaitTime=\""$gnupotBusyWaitTime"\"\n\
 gnupotSSHMasterSocketPath=\""$gnupotSSHMasterSocketPath"\"\n\
-gnupotSSHMasterSocketTime=\""$gnupotSSHMasterSocketTime"\"\n\
 gnupotNotificationTime=\""$gnupotNotificationTime"\"\n\
 gnupotLockFilePath=\""$gnupotLockFilePath"\"\n\
 " > ""$CONFIGDIR"/gnupot.config"

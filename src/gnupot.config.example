@@ -44,7 +44,6 @@ gnupotBusyWaitTime="60" # seconds
 # intended user. If that is not the case anyone could use the master socket to
 # connect to the server without any password nor key request whatsoever.
 gnupotSSHMasterSocketPath=""$HOME"/.config/gnupot/gnupotSSHMasterSocket"
-gnupotSSHMasterSocketTime="120" # minutes
 gnupotDefaultNotificationTime="2000" # ms
 # Use shared memory (if present) to avoid writing on disk. If it's not present,
 # use a valid path. Check if "df | grep shm" has an output.
