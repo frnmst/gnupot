@@ -83,8 +83,7 @@ setGloblVars()
 	USERDATA="by "$USER"@"$HOSTNAME"."
 	# inotifywait args: recursive, quiet, listen only to certain events.
 	INOTIFYWAITCMD="inotifywait -r -q -e modify -e attrib \
--e move -e move_self -e create -e delete -e delete_self --format %f
---exclude \""$gnupotFileExcludePattern"\""
+-e move -e move_self -e create -e delete -e delete_self --format %f"
 	# SSH arguments.
 	SSHARGS="-o PasswordAuthentication=no -i "$gnupotSSHKeyPath" -C -S \
 "$gnupotSSHMasterSocketPath" -o UserKnownHostsFile=/dev/null \
@@ -436,7 +435,8 @@ syncC()
 	chkCliDirEx
 
 	while true; do
-		path=$($INOTIFYWAITCMD "$gnupotLocalDir")
+		path=$($INOTIFYWAITCMD --exclude $gnupotFileExcludePattern \
+"$gnupotLocalDir")
 		chkCliDirEx
 		callSync "client" "$path"
 	done

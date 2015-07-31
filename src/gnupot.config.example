@@ -30,21 +30,39 @@
 # which refers to the relative path starting from the remote home.
 
 gnupotServer="<address or hostname>"
+
 gnupotServerUsername="<remote username>"
+
 gnupotLocalDir="<full path local watch dir>"
+
 gnupotRemoteDir="<remote watch dir>"
+
 gnupotLocalHome="<full path local home dir>"
+
 gnupotRemoteHome="<full path remote home dir>"
-gnupotGitCommitterUsername="<username>" # git committer information.
+
+# Git committer information.
+gnupotGitCommitterUsername="<username>"
+
 gnupotGitCommitterEmail="<email>"
-gnupotKeepMaxCommits="0" # 0 means keep all commits.
+
+# 0 means keep all commits.
+gnupotKeepMaxCommits="0"
+
+# Exclude pattern in POSIX regex.
+gnupotFileExcludePattern="\\.(git|swp|save)"
+
 gnupotTimeToWaitForOtherChanges="5" # seconds
+
 gnupotBusyWaitTime="60" # seconds
+
 # The master socket should be in a directory readable and writable only by the
 # intended user. If that is not the case anyone could use the master socket to
 # connect to the server without any password nor key request whatsoever.
 gnupotSSHMasterSocketPath=""$HOME"/.config/gnupot/gnupotSSHMasterSocket"
+
 gnupotDefaultNotificationTime="2000" # ms
+
 # Use shared memory (if present) to avoid writing on disk. If it's not present,
 # use a valid path. Check if "df | grep shm" has an output.
 gnupotLockFilePath="/dev/shm/.lockfile"
