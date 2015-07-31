@@ -39,7 +39,7 @@ PROGRAMS="bash ssh inotifywait flock git getent"
 CONFIGFILEPATH="src/configVariables.conf"
 
 options=""
-optNum="15"
+optNum="16"
 
 # Source function file.
 . "src/functions.sh"
@@ -79,24 +79,26 @@ displayForm()
 0 \
 "Backups to keep (0 = keep all):"	6 1 "$gnupotKeepMaxCommits" \
 6 35 $action 0 \
-"Local home full path:"			7 1 "$gnupotLocalHome"	7 35 $action \
+"Exclude file POSIX pattern:"		7 1 "$gnupotFileExcludePattern" \
+7 35 $action 0 \
+"Local home full path:"			8 1 "$gnupotLocalHome"	8 35 $action \
 0 \
-"Remote home full path:"		8 1 "$gnupotRemoteHome"	8 35 $action \
+"Remote home full path:"		9 1 "$gnupotRemoteHome"	9 35 $action \
 0 \
-"git committer user name:"		9 1 "$gnupotGitCommitterUsername" \
-9 35 $action 0 \
-"git committer email:"			10 1 "$gnupotGitCommitterEmail" \
+"git committer user name:"		10 1 "$gnupotGitCommitterUsername" \
 10 35 $action 0 \
-"Time to wait for changes (s):"		11 1 \
-"$gnupotTimeToWaitForOtherChanges" 11 35 $action 0 \
-"Time to wait on problem (s):"		12 1 "$gnupotBusyWaitTime" \
-12 35 $action 0 \
-"SSH Master Socket Path:"		13 1 "$gnupotSSHMasterSocketPath" \
+"git committer email:"			11 1 "$gnupotGitCommitterEmail" \
+11 35 $action 0 \
+"Time to wait for changes (s):"		12 1 \
+"$gnupotTimeToWaitForOtherChanges" 12 35 $action 0 \
+"Time to wait on problem (s):"		13 1 "$gnupotBusyWaitTime" \
 13 35 $action 0 \
-"Event notification time (ms):"		14 1 "$gnupotNotificationTime" \
+"SSH Master Socket Path:"		14 1 "$gnupotSSHMasterSocketPath" \
 14 35 $action 0 \
-"Lock file full path:"			15 1 "$gnupotLockFilePath" \
+"Event notification time (ms):"		15 1 "$gnupotNotificationTime" \
 15 35 $action 0 \
+"Lock file full path:"			16 1 "$gnupotLockFilePath" \
+16 35 $action 0 \
 )
 	retval="$?"
 	echo "$opts"
@@ -116,10 +118,10 @@ strTok()
 {
 	local FORMVARIABLES="gnupotServer gnupotServerUsername \
 gnupotRemoteDir gnupotLocalDir gnupotSSHKeyPath gnupotKeepMaxCommits \
-gnupotLocalHome gnupotRemoteHome gnupotGitCommitterUsername \
-gnupotGitCommitterEmail gnupotTimeToWaitForOtherChanges gnupotBusyWaitTime \
-gnupotSSHMasterSocketPath gnupotNotificationTime \
-gnupotLockFilePath"
+gnupotFileExcludePattern gnupotLocalHome gnupotRemoteHome \
+gnupotGitCommitterUsername gnupotGitCommitterEmail \
+gnupotTimeToWaitForOtherChanges gnupotBusyWaitTime \
+gnupotSSHMasterSocketPath gnupotNotificationTime gnupotLockFilePath"
 
 	# Control bash version to avoid IFS bug. bash 4.2 (and lower) has this
 	# bug. If bash is <=4.2 spaces must be avoided in form fields.
@@ -232,6 +234,7 @@ gnupotRemoteDir=\""$gnupotRemoteDir"\"\n\
 gnupotLocalDir=\""$gnupotLocalDir"\"\n\
 gnupotSSHKeyPath=\""$gnupotSSHKeyPath"\"\n\
 gnupotKeepMaxCommits=\""$gnupotKeepMaxCommits"\"\n\
+gnupotFileExcludePattern=\""$gnupotFileExcludePattern"\"\n\
 gnupotLocalHome=\""$gnupotLocalHome"\"\n\
 gnupotRemoteHome=\""$gnupotRemoteHome"\"\n\
 gnupotGitCommitterUsername=\""$gnupotGitCommitterUsername"\"\n\

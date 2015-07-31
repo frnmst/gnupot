@@ -79,10 +79,12 @@ setGloblVars()
 	# set notify-send is also required.
 	PROGRAMS="bash ssh inotifywait flock git getent"
 	[ -n "$DISPLAY" ] && PROGRAMS="$PROGRAMS notify-send"
+	# Subset of the commit message.
 	USERDATA="by "$USER"@"$HOSTNAME"."
 	# inotifywait args: recursive, quiet, listen only to certain events.
 	INOTIFYWAITCMD="inotifywait -r -q -e modify -e attrib \
--e move -e move_self -e create -e delete -e delete_self --format %f"
+-e move -e move_self -e create -e delete -e delete_self --format %f
+--exclude \""$gnupotFileExcludePattern"\""
 	# SSH arguments.
 	SSHARGS="-o PasswordAuthentication=no -i "$gnupotSSHKeyPath" -C -S \
 "$gnupotSSHMasterSocketPath" -o UserKnownHostsFile=/dev/null \
@@ -97,9 +99,9 @@ parsingErrMsg() { Err "Configuration or parsing problem.\n"; return 0; }
 parseConfig()
 {
         local variableList="ServerS ServerUsernameO RemoteDirO LocalDirO \
-SSHKeyPathO KeepMaxCommitsN LocalHomeO RemoteHomeO GitCommitterUsernameO \
-GitCommitterEmailO TimeToWaitForOtherChangesN BusyWaitTimeN \
-SSHMasterSocketPathO NotificationTimeN \
+SSHKeyPathO FileExcludePatternO KeepMaxCommitsN LocalHomeO RemoteHomeO \
+GitCommitterUsernameO GitCommitterEmailO TimeToWaitForOtherChangesN \
+BusyWaitTimeN SSHMasterSocketPathO NotificationTimeN \
 LockFilePathO" variable="" type=""
 
 	for variable in $variableList; do
@@ -224,7 +226,7 @@ execSSHCmd()
 	while [ "$?" -eq 255 ]; do
 		busyWait
 		# If command is not create master sock then recreate msock.
-		[ "$SSHCommand" != "crtSSHSock" ] && crtSSHSock 1>&- 2>&-
+		[ "$SSHCommand" != "crtSSHSock" ] && crtSSHSock
 		$SSHCommand 1>&- 2>&-
 	done
 
@@ -237,11 +239,11 @@ getCommitNumber() { printf "$(git rev-list HEAD --count)"; return 0; }
 # THIS FUNCTION WORKS BUT IT'S VERY BASIC. CONFLICTING FILES ARE MERGED.
 resolveConflicts()
 {
-	local returnedVal="$1"
+	local returnedVal="$1" path="$2"
 
 	[ "$returnedVal" -eq 1 ] \
 && { notify "Resolving file conflicts." "$gnupotNotificationTime"; \
-git commit -a -m "Commit on $(date "+%F %T") $USERDATA \
+git commit -a -m "Committed "$path" on $(date "+%F %T") $USERDATA \
 Handled conflicts"; }
 
 	return 0
@@ -287,13 +289,15 @@ $(date "+%F %T") $USERDATA"
 
 gitSyncOperations()
 {
+	local path="$1"
+
 	git add -A 1>&- 2>&-
-	git commit -m "Commit on $(date "+%F %T") \
+	git commit -m "Committed "$path" on $(date "+%F %T") \
 $USERDATA" 1>&- 2>&-
 	# Always pull from server first then check for conflicts using return
 	# value.
 	execSSHCmd "git pull origin master"
-	resolveConflicts "$?"
+	resolveConflicts "$?" "$path"
 
 	return 0
 }
@@ -312,7 +316,7 @@ syncOperation()
 	cd "$gnupotLocalDir"
 	# Do the syncing. To be able to clean: git config --system \
 	# receive.denyNonFastForwards true
-	gitSyncOperations; backupAndClean
+	gitSyncOperations "$path"; backupAndClean
 	# Go back to previous dir.
 	cd "$OLDPWD"
 
@@ -392,7 +396,7 @@ callSync()
 crtSSHSock()
 {
 	rm -rf "$gnupotSSHMasterSocketPath"
-	ssh $SSHMASTERSOCKCMDARGS
+	ssh $SSHMASTERSOCKCMDARGS 1>&- 2>&-
 
 	return "$?"
 }
@@ -432,7 +436,7 @@ syncC()
 	chkCliDirEx
 
 	while true; do
-		path=$($INOTIFYWAITCMD --exclude .git "$gnupotLocalDir")
+		path=$($INOTIFYWAITCMD "$gnupotLocalDir")
 		chkCliDirEx
 		callSync "client" "$path"
 	done
