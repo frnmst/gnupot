@@ -524,7 +524,7 @@ callThreads()
 	lastCommit
 	# Kill master ssh socket (this will kill any ssh connection associated
 	# with it).
-	ssh -O exit -S "$gnupotSSHMasterSocketPath" "$gnupotServer" 2>&- &
+	ssh -O exit -S "$gnupotSSHMasterSocketPath" "$gnupotServer" 2>&-
 	# Remove shared socket before exiting. Not doing this means having a
 	# security breach because the socket remains opened and anyone could
 	# use it.

@@ -50,7 +50,7 @@ gnupotGitCommitterEmail="<email>"
 gnupotKeepMaxCommits="0"
 
 # Exclude pattern in POSIX regex.
-gnupotFileExcludePattern="\\.(git|swp|save)"
+gnupotFileExcludePattern="\\.(swp|save)"
 
 gnupotTimeToWaitForOtherChanges="5" # seconds
 

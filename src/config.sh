@@ -127,8 +127,8 @@ gnupotSSHMasterSocketPath gnupotNotificationTime gnupotLockFilePath"
 	# bug. If bash is <=4.2 spaces must be avoided in form fields.
 	local bashVersion="${BASH_VERSINFO[0]}${BASH_VERSINFO[1]}"
 	[ "$bashVersion" -le 42 ] && options="$(echo $options | tr " " ";")" \
-&& IFS=";" read $FORMVARIABLES <<< "$options" || IFS=' ' read $FORMVARIABLES \
-<<< $options
+&& IFS=";" read -r $FORMVARIABLES <<< "$options" \
+|| IFS=' ' read -r $FORMVARIABLES <<< $options
 
 	return 0
 }
