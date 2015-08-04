@@ -98,10 +98,10 @@ parsingErrMsg() { Err "Configuration or parsing problem.\n"; return 0; }
 parseConfig()
 {
         local variableList="ServerS ServerUsernameO RemoteDirO LocalDirO \
-SSHKeyPathO FileExcludePatternO KeepMaxCommitsN LocalHomeO RemoteHomeO \
-GitCommitterUsernameO GitCommitterEmailO TimeToWaitForOtherChangesN \
-BusyWaitTimeN SSHMasterSocketPathO NotificationTimeN \
-LockFilePathO" variable="" type=""
+SSHKeyPathO RSAKeyBitsN KeepMaxCommitsN InotifyFileExcludeO GitFileExcludeO \
+LocalHomeO RemoteHomeO GitCommitterUsernameO GitCommitterEmailO \
+TimeToWaitForOtherChangesN BusyWaitTimeN SSHMasterSocketPathO \
+NotificationTimeN LockFilePathO" variable="" type=""
 
 	for variable in $variableList; do
 		# Get var name and last char of variable to determine type.
@@ -435,7 +435,7 @@ syncC()
 	chkCliDirEx
 
 	while true; do
-		path=$($INOTIFYWAITCMD --exclude $gnupotFileExcludePattern \
+		path=$($INOTIFYWAITCMD --exclude $gnupotInotifyFileExclude \
 "$gnupotLocalDir")
 		chkCliDirEx
 		callSync "client" "$path"
@@ -446,7 +446,9 @@ assignGitInfo()
 {
 	cd "$gnupotLocalDir" && { { git config user.name \
 "$gnupotGitCommitterUsername" && git config user.email \
-"$gnupotGitCommitterEmail"; }; cd "$OLDPWD"; }
+"$gnupotGitCommitterEmail"; } \
+&& printf "#Exclude files\n"$gnupotGitFileExclude"\n" > ".git/info/exclude" \
+&& cd "$OLDPWD"; }
 
 	return 0
 }

@@ -33,9 +33,23 @@ gnupotServer="<address or hostname>"
 
 gnupotServerUsername="<remote username>"
 
+gnupotRemoteDir="<remote watch dir>"
+
 gnupotLocalDir="<full path local watch dir>"
 
-gnupotRemoteDir="<remote watch dir>"
+# Path for SSH private and public keys.
+gnupotSSHKeyPath=""$HOME"/.config/gnupot/id_rsa_gnupot"
+
+gnupotRSAKeyBits="8192"
+
+# 0 means keep all commits.
+gnupotKeepMaxCommits="0"
+
+# Exclude pattern for inotifywait in POSIX extended regex.
+gnupotInotifyFileExclude="\\.(swp|save)"
+
+# Exclude pattern for git in globbing.
+gnupotGitFileExclude="**/*.swp\\\n**/.save"
 
 gnupotLocalHome="<full path local home dir>"
 
@@ -45,12 +59,6 @@ gnupotRemoteHome="<full path remote home dir>"
 gnupotGitCommitterUsername="<username>"
 
 gnupotGitCommitterEmail="<email>"
-
-# 0 means keep all commits.
-gnupotKeepMaxCommits="0"
-
-# Exclude pattern in POSIX regex.
-gnupotFileExcludePattern="\\.(swp|save)"
 
 gnupotTimeToWaitForOtherChanges="5" # seconds
 

@@ -30,16 +30,15 @@ PATH="$PATH":/usr/bin
 set -a
 
 # Macros.
-HELPFILE="README.md"
-BACKTITLE="GNUpot_setup._F1_for_help."
-DIALOG="dialog --stdout --hfile $HELPFILE --backtitle $BACKTITLE"
+BACKTITLE="https://github.com/frnmst/gnupot"
+DIALOG="dialog --stdout --backtitle $BACKTITLE"
 REMOTECHKCMD="which git && which inotifywait"
 CONFIGDIR="$HOME/.config/gnupot"
 PROGRAMS="bash ssh inotifywait flock git getent"
 CONFIGFILEPATH="src/configVariables.conf"
 
 options=""
-optNum="16"
+optNum="18"
 
 # Source function file.
 . "src/functions.sh"
@@ -47,7 +46,7 @@ optNum="16"
 infoMsg()
 {
 	# --msgbox or --infobox
-	local type="$1" msg="$2" winX="100" winY="25"
+	local type="$1" msg="$2" winX="110" winY="30"
 
 	if [ "$type" = "msgbox" ]; then
 		$DIALOG --clear --title "INFO" --"$type" \
@@ -67,38 +66,42 @@ displayForm()
 	opts=$($DIALOG --title "$title" \
 --form "$arg" \
 "$winY" "$winX" 0 \
-"Server address or hostname:"		1 1 "$gnupotServer"	1 35 $action \
+"Server address or hostname:"		1 1 "$gnupotServer"	1 40 $action \
 0 \
 "Remote user name:"			2 1 "$gnupotServerUsername" \
-2 35 $action 0 \
-"Remote directory path:"		3 1 "$gnupotRemoteDir"	3 35 $action \
+2 40 $action 0 \
+"Remote directory path:"		3 1 "$gnupotRemoteDir"	3 40 $action \
 0 \
-"Local directory full path:"		4 1 "$gnupotLocalDir"	4 35 $action \
+"Local directory full path:"		4 1 "$gnupotLocalDir"	4 40 $action \
 0 \
-"Local public key full path:"		5 1 "$gnupotSSHKeyPath"	5 35 $action \
+"Local RSA keys full path:"		5 1 "$gnupotSSHKeyPath"	5 40 $action \
 0 \
-"Backups to keep (0 = keep all):"	6 1 "$gnupotKeepMaxCommits" \
-6 35 $action 0 \
-"Exclude file POSIX pattern:"		7 1 "$gnupotFileExcludePattern" \
-7 35 $action 0 \
-"Local home full path:"			8 1 "$gnupotLocalHome"	8 35 $action \
+"Local RSA keys length (bits):"		6 1 "$gnupotRSAKeyBits"	6 40 $action \
 0 \
-"Remote home full path:"		9 1 "$gnupotRemoteHome"	9 35 $action \
+"Backups to keep (0 = keep all):"	7 1 "$gnupotKeepMaxCommits" \
+7 40 $action 0 \
+"Exclude file inotify POSIX pattern:"	8 1 "$gnupotInotifyFileExclude" \
+8 40 $action 0 \
+"Exclude file git globbing pattern:"	9 1 "$gnupotGitFileExclude" \
+9 40 $action 0 \
+"Local home full path:"			10 1 "$gnupotLocalHome"	10 40 $action \
 0 \
-"git committer user name:"		10 1 "$gnupotGitCommitterUsername" \
-10 35 $action 0 \
-"git committer email:"			11 1 "$gnupotGitCommitterEmail" \
-11 35 $action 0 \
-"Time to wait for changes (s):"		12 1 \
-"$gnupotTimeToWaitForOtherChanges" 12 35 $action 0 \
-"Time to wait on problem (s):"		13 1 "$gnupotBusyWaitTime" \
-13 35 $action 0 \
-"SSH Master Socket Path:"		14 1 "$gnupotSSHMasterSocketPath" \
-14 35 $action 0 \
-"Event notification time (ms):"		15 1 "$gnupotNotificationTime" \
-15 35 $action 0 \
-"Lock file full path:"			16 1 "$gnupotLockFilePath" \
-16 35 $action 0 \
+"Remote home full path:"		11 1 "$gnupotRemoteHome" \
+11 40 $action 0 \
+"git committer user name:"		12 1 "$gnupotGitCommitterUsername" \
+12 40 $action 0 \
+"git committer email:"			13 1 "$gnupotGitCommitterEmail" \
+13 40 $action 0 \
+"Time to wait for file changes (s):"		14 1 \
+"$gnupotTimeToWaitForOtherChanges" 14 40 $action 0 \
+"Time to wait on problem (s):"		15 1 "$gnupotBusyWaitTime" \
+15 40 $action 0 \
+"SSH Master Socket Path:"		16 1 "$gnupotSSHMasterSocketPath" \
+16 40 $action 0 \
+"Event notification time (ms):"		17 1 "$gnupotNotificationTime" \
+17 40 $action 0 \
+"Lock file full path:"			18 1 "$gnupotLockFilePath" \
+18 40 $action 0 \
 )
 	retval="$?"
 	echo "$opts"
@@ -117,10 +120,10 @@ to move between fields" "60")
 strTok()
 {
 	local FORMVARIABLES="gnupotServer gnupotServerUsername \
-gnupotRemoteDir gnupotLocalDir gnupotSSHKeyPath gnupotKeepMaxCommits \
-gnupotFileExcludePattern gnupotLocalHome gnupotRemoteHome \
-gnupotGitCommitterUsername gnupotGitCommitterEmail \
-gnupotTimeToWaitForOtherChanges gnupotBusyWaitTime \
+gnupotRemoteDir gnupotLocalDir gnupotSSHKeyPath gnupotRSAKeyBits \
+gnupotKeepMaxCommits gnupotInotifyFileExclude gnupotGitFileExclude \
+gnupotLocalHome gnupotRemoteHome gnupotGitCommitterUsername \
+gnupotGitCommitterEmail gnupotTimeToWaitForOtherChanges gnupotBusyWaitTime \
 gnupotSSHMasterSocketPath gnupotNotificationTime gnupotLockFilePath"
 
 	# Control bash version to avoid IFS bug. bash 4.2 (and lower) has this
@@ -227,14 +230,16 @@ Delete it first then restart the setup."
 
 writeConfigFile()
 {
-	echo -en "\
+	printf "\
 gnupotServer=\""$gnupotServer"\"\n\
 gnupotServerUsername=\""$gnupotServerUsername"\"\n\
 gnupotRemoteDir=\""$gnupotRemoteDir"\"\n\
 gnupotLocalDir=\""$gnupotLocalDir"\"\n\
 gnupotSSHKeyPath=\""$gnupotSSHKeyPath"\"\n\
+gnupotRSAKeyBits=\""$gnupotRSAKeyBits"\"\n\
 gnupotKeepMaxCommits=\""$gnupotKeepMaxCommits"\"\n\
-gnupotFileExcludePattern=\""$gnupotFileExcludePattern"\"\n\
+gnupotInotifyFileExclude=\""$gnupotInotifyFileExclude"\"\n\
+gnupotGitFileExclude=\""$gnupotGitFileExclude"\"\n\
 gnupotLocalHome=\""$gnupotLocalHome"\"\n\
 gnupotRemoteHome=\""$gnupotRemoteHome"\"\n\
 gnupotGitCommitterUsername=\""$gnupotGitCommitterUsername"\"\n\
