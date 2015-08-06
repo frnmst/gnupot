@@ -288,11 +288,17 @@ $(date "+%F %T") $USERDATA"
 
 gitSyncOperations()
 {
-	local path="$1"
+	# Transform path with spaces in dashes to avoid problems.
+	local path="$(echo "$1" | tr " " "-")" go=1
 
-	git add -A 1>&- 2>&-
-	git commit -m "Committed "$path" on $(date "+%F %T") \
+	# This loop is needed for "big" files.
+	while [ "$(git status --porcelain | wc -m)" -gt 0 ]; do
+		git add -A 1>&- 2>&-
+		git commit -m "Committed "$path" on $(date "+%F %T") \
 $USERDATA" 1>&- 2>&-
+		sleep 1
+	done
+
 	# Always pull from server first then check for conflicts using return
 	# value.
 	execSSHCmd "git pull origin master"
@@ -415,7 +421,7 @@ $INOTIFYWAITCMD "$gnupotRemoteDir""
 	execSSHCmd chkSrvDirEx
 
 	# First of all, pull or push changes while gnupot was not running.
-	callSync "server" "<ALL FILES>"
+	callSync "server" "ALL FILES"
 
 	while true; do
 		# Listen for changes on server.

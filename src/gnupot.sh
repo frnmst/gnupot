@@ -25,7 +25,7 @@
 
 # Save the current option settings.
 saveEnv="$(set +o)"
-
+set -x
 # set -m: The same as setsid. It changes the process group so it's not equal to
 # the parents' one. This way, even if GNUpot is killed the parent process will
 # not be affected (i.e. not killed when GNUpot is killed).
