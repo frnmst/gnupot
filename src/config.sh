@@ -61,47 +61,47 @@ infoMsg()
 
 displayForm()
 {
-	local title="$1" arg="$2" action="$3" opts="" retval=""
+	local title="$1" arg="$2" action="$3" opts="" retval="" fldChrs="50"
 
 	opts=$($DIALOG --title "$title" \
 --form "$arg" \
 "$winY" "$winX" 0 \
-"Server address or hostname:"		1 1 "$gnupotServer"	1 40 $action \
-0 \
+"Server address or hostname:"		1 1 "$gnupotServer"	1 $fldChrs \
+$action 0 \
 "Remote user name:"			2 1 "$gnupotServerUsername" \
-2 40 $action 0 \
-"Remote directory path:"		3 1 "$gnupotRemoteDir"	3 40 $action \
-0 \
-"Local directory full path:"		4 1 "$gnupotLocalDir"	4 40 $action \
-0 \
-"Local RSA keys full path:"		5 1 "$gnupotSSHKeyPath"	5 40 $action \
-0 \
-"Local RSA keys length (bits):"		6 1 "$gnupotRSAKeyBits"	6 40 $action \
-0 \
+2 $fldChrs $action 0 \
+"Remote directory path:"		3 1 "$gnupotRemoteDir"	3 $fldChrs \
+$action 0 \
+"Local directory full path:"		4 1 "$gnupotLocalDir"	4 $fldChrs \
+$action 0 \
+"Local RSA keys full path:"		5 1 "$gnupotSSHKeyPath"	5 $fldChrs \
+$action 0 \
+"Local RSA keys length (bits):"		6 1 "$gnupotRSAKeyBits"	6 $fldChrs \
+$action 0 \
 "Backups to keep (0 = keep all):"	7 1 "$gnupotKeepMaxCommits" \
-7 40 $action 0 \
+7 $fldChrs $action 0 \
 "Exclude file inotify POSIX pattern:"	8 1 "$gnupotInotifyFileExclude" \
-8 40 $action 0 \
+8 $fldChrs $action 0 \
 "Exclude file git globbing pattern:"	9 1 "$gnupotGitFileExclude" \
-9 40 $action 0 \
-"Local home full path:"			10 1 "$gnupotLocalHome"	10 40 $action \
-0 \
+9 $fldChrs $action 0 \
+"Local home full path:"			10 1 "$gnupotLocalHome"	10 $fldChrs \
+$action 0 \
 "Remote home full path:"		11 1 "$gnupotRemoteHome" \
-11 40 $action 0 \
+11 $fldChrs $action 0 \
 "git committer user name:"		12 1 "$gnupotGitCommitterUsername" \
-12 40 $action 0 \
+12 $fldChrs $action 0 \
 "git committer email:"			13 1 "$gnupotGitCommitterEmail" \
-13 40 $action 0 \
-"Time to wait for file changes (s):"		14 1 \
-"$gnupotTimeToWaitForOtherChanges" 14 40 $action 0 \
+13 $fldChrs $action 0 \
+"Time to wait for file changes (s):"	14 1 \
+"$gnupotTimeToWaitForOtherChanges" 14 $fldChrs $action 0 \
 "Time to wait on problem (s):"		15 1 "$gnupotBusyWaitTime" \
-15 40 $action 0 \
+15 $fldChrs $action 0 \
 "SSH Master Socket Path:"		16 1 "$gnupotSSHMasterSocketPath" \
-16 40 $action 0 \
+16 $fldChrs $action 0 \
 "Event notification time (ms):"		17 1 "$gnupotNotificationTime" \
-17 40 $action 0 \
+17 $fldChrs $action 0 \
 "Lock file full path:"			18 1 "$gnupotLockFilePath" \
-18 40 $action 0 \
+18 $fldChrs $action 0 \
 )
 	retval="$?"
 	echo "$opts"
@@ -112,7 +112,7 @@ displayForm()
 getConfig()
 {
 	options=$(displayForm "GNUpot setup" "Use arrow up and down \
-to move between fields" "60")
+to move between fields" "80")
 
 	return 0
 }
