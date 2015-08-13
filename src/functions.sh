@@ -77,7 +77,7 @@ setGloblVars()
 	SIGNALS="SIGABRT SIGCHLD SIGHUP SIGINT SIGQUIT SIGTERM SIGTSTP"
 	# List of installed programs that GNUpot uses. If display variable is
 	# set notify-send is also required.
-	PROGRAMS="bash ssh inotifywait flock git getent"
+	PROGRAMS="bash ssh inotifywait flock git getent trickle"
 	[ -n "$DISPLAY" ] && PROGRAMS="$PROGRAMS notify-send"
 	# Subset of the commit message.
 	USERDATA="by "$USER"@"$HOSTNAME"."
@@ -101,7 +101,8 @@ parseConfig()
 SSHKeyPathO RSAKeyBitsN KeepMaxCommitsN InotifyFileExcludeO GitFileExcludeO \
 LocalHomeO RemoteHomeO GitCommitterUsernameO GitCommitterEmailO \
 TimeToWaitForOtherChangesN BusyWaitTimeN SSHMasterSocketPathO \
-NotificationTimeN LockFilePathO" variable="" type=""
+NotificationTimeN LockFilePathO DownloadSpeedN UploadSpeedN" \
+variable="" type=""
 
 	for variable in $variableList; do
 		# Get var name and last char of variable to determine type.
@@ -398,10 +399,27 @@ callSync()
 
 # If SSH socket exists delete it. Start a new socket anyway.
 # Open a new master SSH socket after.
+# Speeds of 0 = no limits.
 crtSSHSock()
 {
+	local TRICKLECMD="trickle -s"
+
 	rm -rf "$gnupotSSHMasterSocketPath"
-	ssh $SSHMASTERSOCKCMDARGS 1>&- 2>&-
+	if [ "$gnupotDownloadSpeed" -eq 0 ] \
+&& [ "$gnupotUploadSpeed" -eq 0 ]; then
+		ssh $SSHMASTERSOCKCMDARGS 1>&- 2>&-
+	else
+		if [ "$gnupotDownloadSpeed" -eq 0 ]; then
+			$TRICKLECMD -u "$gnupotDownloadSpeed" \
+ssh $SSHMASTERSOCKCMDARGS 1>&- 2>&-
+		elif [ "$gnupotUploadSpeed" -eq 0 ]; then
+			$TRICKLECMD -d "$gnupotDownloadSpeed" \
+ssh $SSHMASTERSOCKCMDARGS 1>&- 2>&-
+		else
+			$TRICKLECMD -d "$gnupotDownloadSpeed" \
+-u "$gnupotUploadSpeed" ssh $SSHMASTERSOCKCMDARGS 1>&- 2>&-
+		fi
+	fi
 
 	return "$?"
 }

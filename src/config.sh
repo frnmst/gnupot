@@ -34,11 +34,11 @@ BACKTITLE="https://github.com/frnmst/gnupot"
 DIALOG="dialog --stdout --backtitle $BACKTITLE"
 REMOTECHKCMD="which git && which inotifywait"
 CONFIGDIR="$HOME/.config/gnupot"
-PROGRAMS="bash ssh inotifywait flock git getent"
+PROGRAMS="bash ssh inotifywait flock git getent trickle"
 CONFIGFILEPATH="src/configVariables.conf"
 
 options=""
-optNum="18"
+optNum="20"
 
 # Source function file.
 . "src/functions.sh"
@@ -102,6 +102,11 @@ $action 0 \
 17 $fldChrs $action 0 \
 "Lock file full path:"			18 1 "$gnupotLockFilePath" \
 18 $fldChrs $action 0 \
+"Download max speed (KB/s) (0 = no limit):" \
+19 1 "$gnupotDownloadSpeed" 19 $fldChrs $action 0 \
+"Upload max speed (KB/s) (0 = no limit):" \
+20 1 "$gnupotUploadSpeed" 20 $fldChrs $action 0 \
+
 )
 	retval="$?"
 	echo "$opts"
@@ -124,7 +129,8 @@ gnupotRemoteDir gnupotLocalDir gnupotSSHKeyPath gnupotRSAKeyBits \
 gnupotKeepMaxCommits gnupotInotifyFileExclude gnupotGitFileExclude \
 gnupotLocalHome gnupotRemoteHome gnupotGitCommitterUsername \
 gnupotGitCommitterEmail gnupotTimeToWaitForOtherChanges gnupotBusyWaitTime \
-gnupotSSHMasterSocketPath gnupotNotificationTime gnupotLockFilePath"
+gnupotSSHMasterSocketPath gnupotNotificationTime gnupotLockFilePath \
+gnupotDownloadSpeed gnupotUploadSpeed"
 
 	# Control bash version to avoid IFS bug. bash 4.2 (and lower) has this
 	# bug. If bash is <=4.2 spaces must be avoided in form fields.
@@ -249,6 +255,8 @@ gnupotBusyWaitTime=\""$gnupotBusyWaitTime"\"\n\
 gnupotSSHMasterSocketPath=\""$gnupotSSHMasterSocketPath"\"\n\
 gnupotNotificationTime=\""$gnupotNotificationTime"\"\n\
 gnupotLockFilePath=\""$gnupotLockFilePath"\"\n\
+gnupotDownloadSpeed=\""$gnupotDownloadSpeed"\"\n\
+gnupotUploadSpeed=\""$gnupotUploadSpeed"\"\n\
 " > ""$CONFIGDIR"/gnupot.config"
 
 	return 0

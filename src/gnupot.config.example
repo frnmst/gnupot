@@ -75,3 +75,8 @@ gnupotDefaultNotificationTime="2000" # ms
 # use a valid path. Check if "df | grep shm" has an output.
 gnupotLockFilePath="/dev/shm/.lockfile"
 
+# Maximum download and upload speeds. Both of them are expressed in KB/s. A 
+# speed of 0 means no limit.
+gnupotDownloadSpeed="0"
+
+gnupotUploadSpeed="0"
