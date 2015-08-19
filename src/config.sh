@@ -23,9 +23,6 @@
 #
 
 
-# Get input variables.
-
-
 # Macros.
 BACKTITLE="https://github.com/frnmst/gnupot"
 DIALOG="dialog --stdout --backtitle $BACKTITLE"
@@ -195,12 +192,14 @@ initRepo()
 	return 0
 }
 
-# Make a fake commit to avoid problems at the first pull of a new repository.
+# Make a fake commit to avoid problems at the first push of a new repository.
 makeFirstCommit()
 {
 	cd "$gnupotLocalDir"
-	git commit -m "Added user "$USER"." --allow-empty 1>&- 2>&-
-	git push origin master 1>&- 2>&-
+	# Check if git's HEAD exists.
+	[ -z "$(git show-ref --head)" ] \
+&& { git commit -m "First commit by "$USER"." --allow-empty 1>&- 2>&-; \
+git push origin master 1>&- 2>&-; }
 	cd "$OLDPWD"
 
 	return 0
