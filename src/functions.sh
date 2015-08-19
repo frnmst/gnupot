@@ -30,11 +30,12 @@ printHelp()
 	Err "\
 GNUpot help\n\n\
 SYNOPSIS\n\
-\t"$prgPath" [ -h | -i | -l | -k | -p | -s ]\n\n\
+\t"$prgPath" [ -h | -i | -k | -l | -n | -p | -s ]\n\n\
 \t\t-h\tHelp.\n\
 \t\t-i\tStart GNUpot.\n\
-\t\t-l\tShow GNUpot license.\n\
 \t\t-k\tKill GNUpot.\n\
+\t\t-l\tShow GNUpot license.\n\
+\t\t-n\tNew GNUpot setup.\n\
 \t\t-p\tPrint configuration file.\n\
 \t\t-s\tPrint status.\n\n\
 CONFIGURATION FILE\n\
@@ -147,16 +148,22 @@ loadConfig()
 {
 	local arg="$1"
 
-	# "." is the same as "source" but it is more portable.
-	[ -f "$CONFIGFILEPATH" ] && . "$CONFIGFILEPATH" 2>&- \
+	# Check when to setup a new GNUpot configuration. If that is the case
+	# ignore loading and parsing configuration file as well as other
+	# variables. Just set some global variables.
+	if [ "$arg" != "-n" ]; then
+		# "." is the same as "source" but it is more portable.
+		[ -f "$CONFIGFILEPATH" ] && . "$CONFIGFILEPATH" 2>&- \
 || { parsingErrMsg; exit 1; }
 
-	parseConfig || exit 1
+		parseConfig || exit 1
 
-	# Global variable.
-	gnupotServerORIG="$gnupotServer"
-	# If gnupot is started then find IP address from host name.
-	[ -z "$arg" ] || [ "$arg" = "-i" ] && { getAddrByName || exit 1; }
+		# Global variable.
+		gnupotServerORIG="$gnupotServer"
+		# If gnupot is started then find IP address from host name.
+		[ -z "$arg" ] || [ "$arg" = "-i" ] \
+&& { getAddrByName || exit 1; }
+	fi
 
 	setGloblVars
 
@@ -167,12 +174,13 @@ loadConfig()
 # on older versions of flock. See man 1 flock (examples section).
 lockOnFile()
 {
-	local prgPath="$1" argArray="$2" errMsg="GNUpot is already \
+	local lockFile="$1" command="$2" args="$3" errMsg="GNUpot is already \
 running.\n"
 
+	# syntax: flock <options> <file> <command> <arguments>
 	# Lock on configuration file path istead of this file (gnupot.sh).
-	[ "${FLOCKER}" != "$prgPath" ] && { FLOCKER="$prgPath" flock -en \
-"$CONFIGFILEPATH" "$prgPath" "$argArray" || Err "$errMsg"; \
+	[ "${FLOCKER}" != "$command" ] && { FLOCKER="$command" flock -en \
+"$lockFile" "$command" "$args" || Err "$errMsg"; \
 return 1; } || return 0
 }
 
@@ -584,8 +592,14 @@ callMain()
 {
 	local prgPath="$1" argArray="$2"
 
+	# I know the following is not a good thing to do but it works under
+	# certain conditions f.e. if the user is not 'using' another instance
+	# of dialog apart from GNUpot's one.
+	[ "$(pgrep -c dialog)" -gt 0 ] && { Err "GNUpot is already \
+running.\n"; exit 1; }
+
 	# The following set makes the script faster.
-	lockOnFile "$prgPath" "$argArray"
+	lockOnFile "$CONFIGFILEPATH" "$prgPath" "$argArray"
 	[ "$?" -eq 0 ] && { set +m; main & set -m; } || exit 1
 
 	return 0
@@ -596,14 +610,15 @@ parseOpts()
 	local prgPath="$1" argArray="$2"
 
 	# Get options from special variable $@. Treat no arguments as -i.
-	getopts ":hilkps" opt "$argArray"
+	getopts ":hiklnps" opt "$argArray"
 	case "$opt" in
 		h ) printHelp "$prgPath"; return 1 ;;
 		# Call main function as spawned shell (execute and return
 	 	# control to the shell).
 		i ) callMain "$prgPath" "$argArray" & ;;
-		l ) less "LICENSE" ;;
 		k ) killall -s SIGINT -q gnupot ;;
+		l ) less "LICENSE" ;;
+		n ) ""${0%/gnupot}"/src/config.sh" ;;
 		p ) cat ""$HOME"/.config/gnupot/gnupot.config" ;;
 		s ) printStatus ;;
 		? ) [ -z "$argArray" ] && callMain "$prgPath" "$argArray" \

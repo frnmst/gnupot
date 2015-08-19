@@ -23,25 +23,19 @@
 #
 
 
-# Set path.
-PATH="$PATH":/usr/bin
+# Get input variables.
 
-# This avoid problems with git ssh variable.
-set -a
 
 # Macros.
 BACKTITLE="https://github.com/frnmst/gnupot"
 DIALOG="dialog --stdout --backtitle $BACKTITLE"
 REMOTECHKCMD="which git && which inotifywait"
 CONFIGDIR="$HOME/.config/gnupot"
-PROGRAMS="bash ssh inotifywait flock git getent trickle"
 CONFIGFILEPATH="src/configVariables.conf"
 
+# Other global variables.
 options=""
 optNum="20"
-
-# Source function file.
-. "src/functions.sh"
 
 infoMsg()
 {
@@ -262,42 +256,42 @@ gnupotUploadSpeed=\""$gnupotUploadSpeed"\"\n\
 	return 0
 }
 
-main()
+mainSetup()
 {
 	while true; do
 		getConfig
 		verifyConfig
-		[ "$?" -ne 0 ] && { main; return 0; }
+		[ "$?" -ne 0 ] && { mainSetup; return 0; }
 		strTok
 		parseConfig || { infoMsg "msgbox" "Value/s type invalid."; \
 $(return 1); }
-		[ "$?" -ne 0 ] && { main; return 0; }
+		[ "$?" -ne 0 ] && { mainSetup; return 0; }
 		displayForm "GNUpot setup summary" "Are the displayed values \
 correct?" "0"
-		[ "$?" -ne 0 ] && { main; return 0; }
+		[ "$?" -ne 0 ] && { mainSetup; return 0; }
 		initConfigDir
-		[ "$?" -ne 0 ] && { main; return 0; }
+		[ "$?" -ne 0 ] && { mainSetup; return 0; }
 		testInfo
-		[ "$?" -ne 0 ] && { main; return 0; }
+		[ "$?" -ne 0 ] && { mainSetup; return 0; }
 		initRepo
 		cloneRepo
-		[ "$?" -ne 0 ] && { main; return 0; }
+		[ "$?" -ne 0 ] && { mainSetup; return 0; }
 		writeConfigFile
-		[ -n "$DISPLAY" ] && bash -c "notify-send -t 10000 \
+		[ -n "$DISPLAY" ] && bash -c "notify-send -t 2000 \
 GNUpot\ setup\ completed."
 		infoMsg "msgbox" "Setup completed."
 		return 0
 	done
 }
 
-# Flock so that script is not executed more than once.
-lockOnFile "$0" "" || exit 1
+# See funcions.sh for explanation (callMain function).
+[ "$(pgrep -c gnupot)" -gt 1 ] && { Err "GNUpot is already running.\n"; \
+exit 1; }
 
 # Load default variables.
 . "src/configVariables.conf" \
-|| { echo -en "Cannot start setup. No variables file found.\n"; exit 1; }
+|| { Err "Cannot start setup. No variables file found.\n"; exit 1; }
 
-checkExecutables
-main
+mainSetup
 
 exit 0

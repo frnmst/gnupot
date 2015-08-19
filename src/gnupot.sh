@@ -24,7 +24,7 @@
 
 
 # Save the current option settings.
-saveEnv="$(set +o)"
+savedEnv="$(set +o)"
 
 # set -m: The same as setsid. It changes the process group so it's not equal to
 # the parents' one. This way, even if GNUpot is killed the parent process will
@@ -45,6 +45,6 @@ loadConfig "$1"
 checkExecutables
 parseOpts "$0" "$@"; retval="$?"
 # Restore the previous option settings.
-$saveEnv
+$savedEnv
 
 exit "$retval"
