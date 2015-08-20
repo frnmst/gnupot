@@ -1,0 +1,95 @@
+.\" Manpage for gnupot.
+.\" Contact franco.masotti@student.unife.it.
+
+.TH GNUPOT 1 "August 2015" "0.0" "gnupot man page"
+
+.SH NAME
+gnupot \- Libre file syncronization witten in bash, based on git.
+
+.SH SYNOPSIS
+gnupot [OPTION]
+
+.SH DESCRIPTION
+Yet another libre Dropbox clone (only for the right aspects) written in bash 
+and based on git.
+.PP
+Only a single option is permitted.
+
+.TP
+.B -h
+.RS
+Show help.
+.RE
+
+.TP
+.B -i
+.RS
+Start gnupot. This is the same as executing it without option.
+.RE
+
+.TP
+.B -k
+.RS
+Quit gnupot.
+.RE
+
+.TP
+.B -l
+.RS
+Show GNUpot's license.
+.RE
+
+.TP
+.B -n
+.RS
+Setup a GNUpot instance.
+.RE
+
+.TP
+.B -p
+.RS
+Print configuration file.
+.RE
+
+.TP
+.B -s
+.RS
+Show if GNUpot is running or not.
+.RE
+
+.TP
+.B
+Exit status:
+.RS
+0 No error,
+.PP
+.RE
+.RS
+1 Some kind of error (printed on stderr).
+.RE
+
+.SH FILES
+.I ~/.config/gnupot
+.RS
+Directory of the configuration file as well as the SSH keys (by default 
+configuration).
+.RE
+
+.I ~/.config/gnupot.config
+.RS
+GNUpot's configuration file.
+.RE
+
+.SH BUGS
+Some bugs are certanly present.
+
+.SH AUTHOR
+Franco Masotti <franco.masotti@student.unife.it>
+
+.SH SEE ALSO
+.BR gnupot.conf(5),
+.BR bash(1),
+.BR ssh(1),
+.BR git(1),
+.BR inotifywait(1),
+
