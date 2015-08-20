@@ -374,9 +374,11 @@ acquireLockFile() { printf 1 > "$gnupotLockFilePath"; return 0; }
 
 freeLockFile() { printf 0 > "$gnupotLockFilePath"; return 0; }
 
+getLockFileVal() { cat "$gnupotLockFilePath"; return 0; }
+
 callSync()
 {
-	local source="$1" path="$2"
+	local source="$1" path="$2" lockValue="$3"
 
 	# Check if the other thread is in the critical section.
 	# This avoids a two way file update. Example: if a file is
@@ -385,7 +387,7 @@ callSync()
 	# pull is made from the server.
 	# So there are two types of locks: one between the round
 	# brackets and the other one is made by the if clause.
-	if [ $(cat "$gnupotLockFilePath") -eq 0 ]; then
+	if [ "$lockValue" -eq 0 ]; then
 		(	# Open a subshell for critical section.
 			acquireLockFile
 			# While not acquire lock:
@@ -436,7 +438,7 @@ ssh $SSHMASTERSOCKCMDARGS 1>&- 2>&-
 syncS()
 {
 	local pathCmd="ssh $SSHCONNECTCMDARGS \
-$INOTIFYWAITCMD "$gnupotRemoteDir""
+$INOTIFYWAITCMD "$gnupotRemoteDir"" lockVal=""
 
 	# return/exit when signal{,s} is/are received.
 	trap "exit 0" $SIGNALS
@@ -447,20 +449,27 @@ $INOTIFYWAITCMD "$gnupotRemoteDir""
 	execSSHCmd chkSrvDirEx
 
 	# First of all, pull or push changes while gnupot was not running.
-	callSync "server" "ALL FILES"
+	callSync "server" "ALL FILES" "$(getLockFileVal)"
 
 	while true; do
 		# Listen for changes on server.
 		execSSHCmd "$pathCmd"
+		# The following exists because chkSrvDirEx is a slow
+		# command and the value of the lock sometimes changes, causing
+		# a useless double sync. This way the value is saved before the
+		# function call so it can be safely passed to the callSync
+		# function. This has beem done for the client thread also, for
+		# precaution, even if it's not strictly necessary.
+		lockVal="$(getLockFileVal)"
 		chkSrvDirEx
-		callSync "server" ""
+		callSync "server" "remote" "$lockVal"
 	done
 }
 
 # Client sync thread.
 syncC()
 {
-	local path=""
+	local path="" lockVal=""
 
 	trap "exit 0" $SIGNALS
 
@@ -469,8 +478,9 @@ syncC()
 	while true; do
 		path=$($INOTIFYWAITCMD --exclude $gnupotInotifyFileExclude \
 "$gnupotLocalDir")
+		lockVal="$(getLockFileVal)"
 		chkCliDirEx
-		callSync "client" "$path"
+		callSync "client" "$path" "$lockVal"
 	done
 }
 
