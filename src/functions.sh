@@ -47,7 +47,7 @@ Report bugs to: franco.masotti@live.com or \
 franco.masotti@student.unife.it\n\
 Full documentation at: <https://github.com/frnmst/gnupot/wiki>\n\
 or available locally via: man man/gnupot.man\n\n\
-GNUpot  Copyright (C) 2015  frnmst (Franco Masotti)\n\
+GNUpot  Copyright © 2015  frnmst (Franco Masotti)\n\
 This program comes with ABSOLUTELY NO WARRANTY; for details type \
 \`"$prgPath" -l'.\n\
 This is free software, and you are welcome to redistribute it \n\
@@ -606,8 +606,8 @@ callMain()
 	# of dialog apart from GNUpot's one.
 	[ "$(pgrep -c dialog)" -gt 0 ] && { Err "GNUpot is already \
 running.\n"; exit 1; }
-
-	# The following set makes the script faster.
+	# The following set makes the script faster because the lock is
+	# checked before the function call.
 	lockOnFile "$CONFIGFILEPATH" "$prgPath" "$argArray"
 	[ "$?" -eq 0 ] && { set +m; main & set -m; } || exit 1
 

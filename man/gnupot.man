@@ -1,13 +1,34 @@
-.\" Manpage for gnupot.
-.\" Contact franco.masotti@student.unife.it.
+.\"
+.\" gnupot.man
+.\"
+.\" Copyright (C) 2015 frnmst (Franco Masotti) <franco.masotti@live.com>
+.\"                                            <franco.masotti@student.unife.it>
+.\"
+.\" This file is part of GNUpot.
+.\"
+.\" GNUpot is free software: you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation, either version 3 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" GNUpot is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with GNUpot.  If not, see <http://www.gnu.org/licenses/>.
+.\"
 
-.TH GNUPOT 1 "August 2015" "0.0" "gnupot man page"
+
+.TH GNUPOT 1 "August 2015" "0.0" "User Commands"
 
 .SH NAME
 gnupot \- Libre file syncronization witten in bash, based on git.
 
 .SH SYNOPSIS
-gnupot [OPTION]
+.B gnupot 
+[OPTION]
 
 .SH DESCRIPTION
 Yet another libre Dropbox clone (only for the right aspects) written in bash 
@@ -103,5 +124,6 @@ Full documentation (i.e. server configuration) at:
 .BR bash(1),
 .BR ssh(1),
 .BR git(1),
-.BR inotifywait(1).
-
+.BR inotifywait(1),
+.BR trickle(1),
+.BR notify-send\ --help.

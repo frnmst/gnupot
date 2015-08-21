@@ -1,0 +1,286 @@
+.\"
+.\" gnupot.config.man
+.\"
+.\" Copyright (C) 2015 frnmst (Franco Masotti) <franco.masotti@live.com>
+.\"                                            <franco.masotti@student.unife.it>
+.\"
+.\" This file is part of GNUpot.
+.\"
+.\" GNUpot is free software: you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation, either version 3 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" GNUpot is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with GNUpot.  If not, see <http://www.gnu.org/licenses/>.
+.\"
+
+
+.TH GNUPOT 5 "August 2015" "0.0" "File Formats Manual"
+
+.SH NAME
+gnupot.conf \- Configuration file for GNUpot.
+
+.SH SYNOPSIS
+.B ~/.config/gnupot/gnupot.config
+
+.SH DESCRIPTION
+GNUpot has one configuration file only. SSH keys file are used as well.
+.br
+All the options are required.
+.br
+All variables with numbers must be positive integers.
+.br
+All variables with paths must contain full paths except 
+.B gnupotRemoteDir
+which can refer to the relative path starting from the remote home.
+.br
+The syntax is always: 
+.I variableName="value"
+i.e. the 
+.B bash(1)
+syntax when assigning a value to a variable.
+.PP
+
+.TP
+.B gnupotServer
+.RS
+A string, without spaces (ASCII 32), containing the server address or hostname.
+.br
+This variable is used by SSH.
+.RE
+
+.TP
+.B gnupotServerUsername
+.RS
+A string containing the server (remote) username.
+.br
+This variable is used by SSH.
+.RE
+
+.TP
+.B gnupotRemoteDir
+.RS
+A string containing the remote watch directory.
+.br
+It refers to the relative path from the remote user's home if a not full path 
+is used, i.e. if 
+.B gnupotServerUsername
+is
+.B user
+then the remote home should be
+.B /home/user
+.br
+This means that if
+.B gnupotRemoteDir
+is, for example,
+.B rdir
+then the assumed path is
+.B /home/user/rdir
+.br
+If
+.B gnupotRemoteDir
+is a full path then that path will be used.
+.RE
+
+.TP
+.B gnupotLocalDir
+.RS
+A string containing the full path of the local watch directory (the git 
+repository).
+.RE
+
+.TP
+.B
+gnupotSSHKeyPath
+.RS
+A string containing the full path of the SSH private key used to connect to the 
+server. The public key path is
+.B gnupotSSHKeyPath.pub
+.RE
+
+.TP
+.B gnupotRSAKeyBits
+.RS
+An unsigned integer between 1024 and 16384 containing the number of bits used 
+to generate the RSA key pair.
+.br
+Although this variable is only used during the setup, it has been put here for 
+reference.
+.RE
+
+.TP
+.B gnupotKeepMaxCommits
+.RS
+An unsigned integer containing the maximum of git commits to keep. A value of 0 
+means to keep all commits.
+.br
+This means that every 
+.B gnupotKeepMaxCommits
+history is truncated and starts from that current commit.
+.RE
+
+.TP
+.B
+gnupotInotifyFileExclude
+.RS
+A string that contains the exclude pattern for files for 
+.B inotifywait(1) 
+in POSIX extended regex.
+.RE
+
+.TP
+.B gnupotGitFileExclude
+.RS
+A string that contains the exclude pattern for files for git in globbing style. 
+This option acts like the
+.B gitignore(5)
+file but locally (i.e. it is not commited).
+.br
+This information it is infact written in 
+.B gnupot/.git/info/exclude
+.br
+Each exclude rule must be separated from a literal
+.B \en
+character. 
+.br
+This option cannot be ignored during the setup, but it can 
+be set to an empty string in the configuration file, after that.
+.RE
+
+.TP
+.B gnupotLocalHome
+.RS
+A string containing the full path of the local home. This is used to get a 
+relative path when desktop notification are shown.
+.br
+.B TO BE REMOVED.
+.RE
+
+.TP
+.B gnupotRemoteHome
+.RS
+Same as previous variable.
+.br
+.B TO BE REMOVED.
+.RE
+
+.TP
+.B gnupotGitCommitterUsername
+.RS
+A string containing the username of the git committer.
+.RE
+
+.TP
+.B gnupotGitCommitterEmail
+.RS
+A string containing the email of the git committer.
+.RE
+
+.TP
+.B gnupotTimeToWaitForOtherChanges
+.RS
+An unsigned integer containing the number of seconds to wait for new 
+file changes after an initial change.
+.br
+This means that if the file
+.B a
+is changed a countdown of
+.B gnupotTimeToWaitForOtherChanges
+seconds starts. When the countdown terminates the file 
+.B a
+ , or any other file modified in that interval is committed and sent to the 
+server.
+.br
+This variable is applied both to the local and remote directory.
+.RE
+
+.TP
+.B gnupotBusyWaitTime
+.RS
+An unsigned integer containing the number of seconds to wait if there is any 
+kind of connection problem with the server. After that timeout a new connection 
+tries to be established.
+.RE
+
+.TP
+.B gnupotSSHMasterSocketPath
+.RS
+A string containing the full path of the master SSH socket. This avoids 
+multiple SSH authentications that would slow down gnupot.
+.br
+This socket should be in a directory readable and writable only by the
+intended user. If that is not the case anyone could use the master socket to
+connect to the server without any password nor key request whatsoever.
+.RE
+
+.TP
+.B gnupotDefaultNotificationTime
+.RS
+An unsigned integer containing the number of milliseconds for the desktop 
+notification to be visible.
+.RE
+
+.TP
+.B gnupotLockFilePath
+.RS
+A string containing the full path of the lock file that avoids double 
+syncronization (i.e. if a file is changed on the client this is sent to the 
+server, but the server thread sees the (same) modified file and so start 
+another syncronization).
+.br
+If present it is advisable to use shared memory to avoid writing on disk.
+For example check if "df | grep shm" has an output. In that case
+.B /dev/shm/lockFile
+can be used as a value for the variable.
+.RE
+
+.TP
+.B gnupotDownloadSpeed
+.RS
+An unsigned integer containing the maximum download speed, expressed in KB/s, 
+from the server. 
+.br
+A value of 0 does not set any limit.
+.RE
+
+.TP
+.B gnupotUploadSpeed
+.RS
+The same as
+.B gnupotDownloadSpeed 
+except that this is the upload speed.
+.RE
+
+.SH AUTHOR
+Written by Franco Masotti <franco.masotti@student.unife.it>
+
+.SH REPORT BUGS
+Report bugs in the issue page: <https://github.com/frnmst/gnupot/issues>
+.br
+or email at: <franco.masotti@student.unife.it>
+
+.SH COPYRIGHT
+Copyright © 2015 frnmst/Franco Masotti.   License  GPLv3+:  GNU GPL version 3 
+or later <http://gnu.org/licenses/gpl.html>.
+.br
+This  is  free  software:  you  are free to change and redistribute it. There 
+is NO WARRANTY, to the extent permitted by law.
+
+.SH SEE ALSO
+Full documentation (i.e. server configuration) at: 
+<https://github.com/frnmst/gnupot/wiki>
+.PP
+.BR gnupot(1),
+.BR bash(1),
+.BR ssh(1),
+.BR git(1),
+.BR gitignore(5),
+.BR inotifywait(1),
+.BR trickle(1),
+.BR notify-send\ --help.
