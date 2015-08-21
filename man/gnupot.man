@@ -80,16 +80,28 @@ configuration).
 GNUpot's configuration file.
 .RE
 
-.SH BUGS
-Some bugs are certanly present.
-
 .SH AUTHOR
-Franco Masotti <franco.masotti@student.unife.it>
+Written by Franco Masotti <franco.masotti@student.unife.it>
+
+.SH REPORT BUGS
+Report bugs in the issue page: <https://github.com/frnmst/gnupot/issues>
+.br
+or email at: <franco.masotti@student.unife.it>
+
+.SH COPYRIGHT
+Copyright © 2015 frnmst/Franco Masotti.   License  GPLv3+:  GNU GPL version 3 
+or later <http://gnu.org/licenses/gpl.html>.
+.br
+This  is  free  software:  you  are free to change and redistribute it. There 
+is NO WARRANTY, to the extent permitted by law.
 
 .SH SEE ALSO
+Full documentation (i.e. server configuration) at: 
+<https://github.com/frnmst/gnupot/wiki>
+.PP
 .BR gnupot.conf(5),
 .BR bash(1),
 .BR ssh(1),
 .BR git(1),
-.BR inotifywait(1),
+.BR inotifywait(1).
 

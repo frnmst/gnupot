@@ -28,31 +28,30 @@ printHelp()
 	local prgPath="$1"
 
 	Err "\
-GNUpot help\n\n\
-SYNOPSIS\n\
-\t"$prgPath" [ -h | -i | -k | -l | -n | -p | -s ]\n\n\
-\t\t-h\tHelp.\n\
-\t\t-i\tStart GNUpot.\n\
-\t\t-k\tKill GNUpot.\n\
-\t\t-l\tShow GNUpot license.\n\
-\t\t-n\tNew GNUpot setup.\n\
-\t\t-p\tPrint configuration file.\n\
-\t\t-s\tPrint status.\n\n\
-CONFIGURATION FILE\n\
-\tConfiguration file is found in ~/.config/gnupot/gnupot.config.\n\n\
-RETURN VALUES\n\
-\t0\tNo error occurred.\n\
-\t1\tSome error occurred.\n\n\
-CONTACT\n\
-\tReport bugs to: franco.masotti@live.com or \
+Use: "$prgPath" [ OPTION ]\n\
+Yet another libre Dropbox clone (only for the right aspects) written in\n\
+bash and based on git.\n\n\
+Only one option is permitted.\n\
+\t-h\tHelp.\n\
+\t-i\tStart GNUpot.\n\
+\t-k\tKill GNUpot.\n\
+\t-l\tShow GNUpot license.\n\
+\t-n\tNew GNUpot setup.\n\
+\t-p\tPrint configuration file.\n\
+\t-s\tPrint status.\n\n\
+Configuration file is found in ~/.config/gnupot/gnupot.config.\n\n\
+Exit value:\n\
+\t0\tno error occurred,\n\
+\t1\tsome error occurred.\n\n\
+Report bugs to: franco.masotti@live.com or \
 franco.masotti@student.unife.it\n\
-\tGNUpot home page: <https://github.com/frnmst/gnupot>\n\n\
-COPYRIGHT\n\
-\tGNUpot  Copyright (C) 2015  frnmst (Franco Masotti)\n\
-\tThis program comes with ABSOLUTELY NO WARRANTY; for details type \
+Full documentation at: <https://github.com/frnmst/gnupot/wiki>\n\
+or available locally via: man man/gnupot.man\n\n\
+GNUpot  Copyright (C) 2015  frnmst (Franco Masotti)\n\
+This program comes with ABSOLUTELY NO WARRANTY; for details type \
 \`"$prgPath" -l'.\n\
-\tThis is free software, and you are welcome to redistribute it \n\
-\tunder certain conditions; type \`"$prgPath" -l' for details.\n\
+This is free software, and you are welcome to redistribute it \n\
+under certain conditions; type \`"$prgPath" -l' for details.\n\
 "
 
 	return 0
