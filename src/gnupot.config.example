@@ -23,60 +23,24 @@
 
 # GNUpot configuration file.
 # This is an example configuration file. You can edit it and change name to 
-# gnupot.config and place it in $HOME/.config/gnupot
+# gnupot.config and place it in $HOME/.config/gnupot directory.
+# For further information refer to the manual: gnupot.config(5)
 
-# All variables with numbers must be positive integers.
-# All variables with paths must contain full paths except $gnupotRemoteDir
-# which refers to the relative path starting from the remote home.
-
-gnupotServer="<address or hostname>"
-
-gnupotServerUsername="<remote username>"
-
-gnupotRemoteDir="<remote watch dir>"
-
-gnupotLocalDir="<full path local watch dir>"
-
-# Path for SSH private and public keys.
+gnupotServer="myserverhostnameoraddress.com"
+gnupotServerUsername="gnupot"
+gnupotRemoteDir="GNUpot"
+gnupotLocalDir=""$HOME"/GNUpot"
 gnupotSSHKeyPath=""$HOME"/.config/gnupot/id_rsa_gnupot"
-
 gnupotRSAKeyBits="8192"
-
-# 0 means keep all commits.
 gnupotKeepMaxCommits="0"
-
-# Exclude pattern for inotifywait in POSIX extended regex.
-gnupotInotifyFileExclude="\\.(swp|save)"
-
-# Exclude pattern for git in globbing.
-gnupotGitFileExclude="**/*.swp\\\n**/.save"
-
-gnupotLocalHome="<full path local home dir>"
-
-gnupotRemoteHome="<full path remote home dir>"
-
-# Git committer information.
-gnupotGitCommitterUsername="<username>"
-
-gnupotGitCommitterEmail="<email>"
-
-gnupotTimeToWaitForOtherChanges="5" # seconds
-
-gnupotBusyWaitTime="60" # seconds
-
-# The master socket should be in a directory readable and writable only by the
-# intended user. If that is not the case anyone could use the master socket to
-# connect to the server without any password nor key request whatsoever.
+gnupotInotifyFileExclude="\.(swp|save)"
+gnupotGitFileExclude="**/*.swp\n**/.save"
+gnupotGitCommitterUsername="$USER"
+gnupotGitCommitterEmail="$USER"
+gnupotTimeToWaitForOtherChanges="5"
+gnupotBusyWaitTime="60"
 gnupotSSHMasterSocketPath=""$HOME"/.config/gnupot/gnupotSSHMasterSocket"
-
-gnupotDefaultNotificationTime="2000" # ms
-
-# Use shared memory (if present) to avoid writing on disk. If it's not present,
-# use a valid path. Check if "df | grep shm" has an output.
+gnupotDefaultNotificationTime="2000"
 gnupotLockFilePath="/dev/shm/.lockfile"
-
-# Maximum download and upload speeds. Both of them are expressed in KB/s. A 
-# speed of 0 means no limit.
 gnupotDownloadSpeed="0"
-
 gnupotUploadSpeed="0"

@@ -154,23 +154,6 @@ be set to an empty string in the configuration file, after that.
 .RE
 
 .TP
-.B gnupotLocalHome
-.RS
-A string containing the full path of the local home. This is used to get a 
-relative path when desktop notification are shown.
-.br
-.B TO BE REMOVED.
-.RE
-
-.TP
-.B gnupotRemoteHome
-.RS
-Same as previous variable.
-.br
-.B TO BE REMOVED.
-.RE
-
-.TP
 .B gnupotGitCommitterUsername
 .RS
 A string containing the username of the git committer.

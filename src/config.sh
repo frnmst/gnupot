@@ -32,14 +32,14 @@ CONFIGFILEPATH="src/configVariables.conf"
 
 # Other global variables.
 options=""
-optNum="20"
+optNum="18"
 
 infoMsg()
 {
-	# --msgbox or --infobox
+	# msgbox, infobox, yesno
 	local type="$1" msg="$2" winX="110" winY="30"
 
-	if [ "$type" = "msgbox" ]; then
+	if [ "$type" != "infobox" ]; then
 		$DIALOG --clear --title "INFO" --"$type" \
 "$msg" "$winY" "$winX"
 	else
@@ -47,7 +47,7 @@ infoMsg()
 "$msg" "$winY" "$winX"
 	fi
 
-	return 0
+	return "$?"
 }
 
 displayForm()
@@ -75,28 +75,24 @@ $action 0 \
 8 $fldChrs $action 0 \
 "Exclude file git globbing pattern:"	9 1 "$gnupotGitFileExclude" \
 9 $fldChrs $action 0 \
-"Local home full path:"			10 1 "$gnupotLocalHome"	10 $fldChrs \
-$action 0 \
-"Remote home full path:"		11 1 "$gnupotRemoteHome" \
+"git committer user name:"		10 1 "$gnupotGitCommitterUsername" \
+10 $fldChrs $action 0 \
+"git committer email:"			11 1 "$gnupotGitCommitterEmail" \
 11 $fldChrs $action 0 \
-"git committer user name:"		12 1 "$gnupotGitCommitterUsername" \
-12 $fldChrs $action 0 \
-"git committer email:"			13 1 "$gnupotGitCommitterEmail" \
+"Time to wait for file changes (s):"	12 1 \
+"$gnupotTimeToWaitForOtherChanges" 12 $fldChrs $action 0 \
+"Time to wait on problem (s):"		13 1 "$gnupotBusyWaitTime" \
 13 $fldChrs $action 0 \
-"Time to wait for file changes (s):"	14 1 \
-"$gnupotTimeToWaitForOtherChanges" 14 $fldChrs $action 0 \
-"Time to wait on problem (s):"		15 1 "$gnupotBusyWaitTime" \
+"SSH Master Socket Path:"		14 1 "$gnupotSSHMasterSocketPath" \
+14 $fldChrs $action 0 \
+"Event notification time (ms):"		15 1 "$gnupotNotificationTime" \
 15 $fldChrs $action 0 \
-"SSH Master Socket Path:"		16 1 "$gnupotSSHMasterSocketPath" \
+"Lock file full path:"			16 1 "$gnupotLockFilePath" \
 16 $fldChrs $action 0 \
-"Event notification time (ms):"		17 1 "$gnupotNotificationTime" \
-17 $fldChrs $action 0 \
-"Lock file full path:"			18 1 "$gnupotLockFilePath" \
-18 $fldChrs $action 0 \
 "Download max speed (KB/s) (0 = no limit):" \
-19 1 "$gnupotDownloadSpeed" 19 $fldChrs $action 0 \
+17 1 "$gnupotDownloadSpeed" 17 $fldChrs $action 0 \
 "Upload max speed (KB/s) (0 = no limit):" \
-20 1 "$gnupotUploadSpeed" 20 $fldChrs $action 0 \
+18 1 "$gnupotUploadSpeed" 18 $fldChrs $action 0 \
 
 )
 	retval="$?"
@@ -118,10 +114,10 @@ strTok()
 	local FORMVARIABLES="gnupotServer gnupotServerUsername \
 gnupotRemoteDir gnupotLocalDir gnupotSSHKeyPath gnupotRSAKeyBits \
 gnupotKeepMaxCommits gnupotInotifyFileExclude gnupotGitFileExclude \
-gnupotLocalHome gnupotRemoteHome gnupotGitCommitterUsername \
-gnupotGitCommitterEmail gnupotTimeToWaitForOtherChanges gnupotBusyWaitTime \
-gnupotSSHMasterSocketPath gnupotNotificationTime gnupotLockFilePath \
-gnupotDownloadSpeed gnupotUploadSpeed"
+gnupotGitCommitterUsername gnupotGitCommitterEmail \
+gnupotTimeToWaitForOtherChanges gnupotBusyWaitTime gnupotSSHMasterSocketPath \
+gnupotNotificationTime gnupotLockFilePath gnupotDownloadSpeed \
+gnupotUploadSpeed"
 
 	# Control bash version to avoid IFS bug. bash 4.2 (and lower) has this
 	# bug. If bash is <=4.2 spaces must be avoided in form fields.
@@ -219,9 +215,12 @@ repository."; return 1; }
 		assignGitInfo
 		makeFirstCommit
 	else
-		infoMsg "msgbox" "Local destination directory already exists. \
-Delete it first then restart the setup."
-		return 1
+		infoMsg "yesno" "Local destination directory already exists. \
+Backup old directory and continue [yes] or Delete it and continue [no] ?"
+		# 0 = yes
+		[ "$?" -eq 0 ] && mv "$gnupotLocalDir" \
+""$gnupotLocalDir"_"$(date +%s)"" || rm -rf "$gnupotLocalDir"
+		cloneRepo
 	fi
 
 	return 0
@@ -239,8 +238,6 @@ gnupotRSAKeyBits=\""$gnupotRSAKeyBits"\"\n\
 gnupotKeepMaxCommits=\""$gnupotKeepMaxCommits"\"\n\
 gnupotInotifyFileExclude=\""$gnupotInotifyFileExclude"\"\n\
 gnupotGitFileExclude=\""$gnupotGitFileExclude"\"\n\
-gnupotLocalHome=\""$gnupotLocalHome"\"\n\
-gnupotRemoteHome=\""$gnupotRemoteHome"\"\n\
 gnupotGitCommitterUsername=\""$gnupotGitCommitterUsername"\"\n\
 gnupotGitCommitterEmail=\""$gnupotGitCommitterEmail"\"\n\
 gnupotTimeToWaitForOtherChanges=\""$gnupotTimeToWaitForOtherChanges"\"\n\
@@ -277,7 +274,7 @@ correct?" "0"
 		[ "$?" -ne 0 ] && { mainSetup; return 0; }
 		writeConfigFile
 		[ -n "$DISPLAY" ] && bash -c "notify-send -t 2000 \
-GNUpot\ setup\ completed."
+'GNUpot setup completed.'"
 		infoMsg "msgbox" "Setup completed."
 		return 0
 	done

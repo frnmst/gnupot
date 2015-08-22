@@ -99,9 +99,9 @@ parseConfig()
 {
         local variableList="ServerS ServerUsernameO RemoteDirO LocalDirO \
 SSHKeyPathO RSAKeyBitsN KeepMaxCommitsN InotifyFileExcludeO GitFileExcludeO \
-LocalHomeO RemoteHomeO GitCommitterUsernameO GitCommitterEmailO \
-TimeToWaitForOtherChangesN BusyWaitTimeN SSHMasterSocketPathO \
-NotificationTimeN LockFilePathO DownloadSpeedN UploadSpeedN" \
+GitCommitterUsernameO GitCommitterEmailO TimeToWaitForOtherChangesN \
+BusyWaitTimeN SSHMasterSocketPathO NotificationTimeN LockFilePathO \
+DownloadSpeedN UploadSpeedN" \
 variable="" type=""
 
 	for variable in $variableList; do
