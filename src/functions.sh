@@ -87,7 +87,9 @@ setGloblVars()
 	# SSH arguments.
 	SSHARGS="-o PasswordAuthentication=no -i "$gnupotSSHKeyPath" -C -S \
 "$gnupotSSHMasterSocketPath" -o UserKnownHostsFile=/dev/null \
--o StrictHostKeyChecking=no"
+-o StrictHostKeyChecking=no \
+-o ServerAliveInterval="$gnupotSSHServerAliveInterval" \
+-o ServerAliveCountMax="$gnupotSSHServerAliveCountMax""
 	setUpdateableGloblVars
 
 	return 0
@@ -100,9 +102,9 @@ parseConfig()
         local variableList="ServerS ServerUsernameO RemoteDirO LocalDirO \
 SSHKeyPathO RSAKeyBitsN KeepMaxCommitsN InotifyFileExcludeO GitFileExcludeO \
 GitCommitterUsernameO GitCommitterEmailO TimeToWaitForOtherChangesN \
-BusyWaitTimeN SSHMasterSocketPathO NotificationTimeN LockFilePathO \
-DownloadSpeedN UploadSpeedN" \
-variable="" type=""
+BusyWaitTimeN SSHServerAliveIntervalN SSHServerAliveCountMaxN \
+SSHMasterSocketPathO NotificationTimeN LockFilePathO DownloadSpeedN \
+UploadSpeedN" variable="" type=""
 
 	for variable in $variableList; do
 		# Get var name and last char of variable to determine type.
@@ -225,11 +227,11 @@ execSSHCmd()
 	local SSHCommand="$1"
 
 	# Check if server is reachable.
-	# Poll input command until it finishes correctly.
 	ssh "$gnupotServerUsername"@"$gnupotServer" \
 -o PasswordAuthentication=no -o UserKnownHostsFile=/dev/null \
 -o StrictHostKeyChecking=no 2>&1 | grep denied &>/dev/null \
 && $SSHCommand 1>&- 2>&- || $(return 255)
+	# Poll input command until it finishes correctly.
 	while [ "$?" -eq 255 ]; do
 		busyWait
 		# If command is not create master sock then recreate msock.
@@ -297,7 +299,7 @@ $(date "+%F %T") $USERDATA"
 gitSyncOperations()
 {
 	# Transform path with spaces in dashes to avoid problems.
-	local path="$(echo "$1" | tr " " "-")" go=1
+	local path="$(echo "$1" | tr " " "-")"
 
 	# This loop is needed for "big" files.
 	while [ "$(git status --porcelain | wc -m)" -gt 0 ]; do
@@ -437,7 +439,7 @@ ssh $SSHMASTERSOCKCMDARGS 1>&- 2>&-
 syncS()
 {
 	local pathCmd="ssh $SSHCONNECTCMDARGS \
-$INOTIFYWAITCMD "$gnupotRemoteDir"" lockVal=""
+$INOTIFYWAITCMD --exclude lastCommit "$gnupotRemoteDir"" lockVal=""
 
 	# return/exit when signal{,s} is/are received.
 	trap "exit 0" $SIGNALS
@@ -509,6 +511,7 @@ checkGitVersion()
 	local gitVer="" gitVer0="" gitVer1="" trash=""
 
 	# Check if git supports GIT_SSH_COMMAND environment variaible.
+	# In order for gnupot to work, git must be at least version 2.4.
 	gitVer="$(git --version | awk ' { print $3 } ')"
 	IFS="." read gitVer0 gitVer1 trash <<< "$gitVer"
 	[ "$gitVer0$gitVer1" -le 23 ] && return 1
@@ -540,12 +543,18 @@ sigHandler()
 
 # Function that makes a fake commit so that inotifywait process on the server
 # is killed.
-lastCommit()
+lastFakeCommit()
 {
-	cd "$gnupotLocalDir"
-	git commit --allow-empty -m ""$USER"'s exit commit." 1>&- 2>&-
-	git push origin master 1>&- 2>&-
-	cd "$OLDPWD"
+	local fFile="lastCommit"
+
+	ssh $SSHCONNECTCMDARGS "touch "$gnupotRemoteDir"/"$fFile" \
+&& rm "$gnupotRemoteDir"/"$fFile""
+	# Test if inotifywait version needs to detect local changes at exit
+	# (version less than 3.14).
+	[ $(inotifywait --help | head -n1 | awk ' { print $2 } ' | tr -d '.') \
+-lt 314 ] \
+&& touch ""$gnupotLocalDir"/"$fFile"" 1>&- 2>&- \
+&& rm ""$gnupotLocalDir"/"$fFIle"" 1>&- 2>&-
 
 	return 0
 }
@@ -563,8 +572,8 @@ callThreads()
 	# Lowest process priority for the threads.
 	renice 20 "$srvPid" "$cliPid" 1>&- 2>&-
 	wait "$srvPid" "$cliPid"
-	# Make the final commit
-	lastCommit
+	# Make the final fake commit.
+	lastFakeCommit
 	# Kill master ssh socket (this will kill any ssh connection associated
 	# with it).
 	ssh -O exit -S "$gnupotSSHMasterSocketPath" "$gnupotServer" 2>&-

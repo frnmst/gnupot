@@ -32,7 +32,7 @@ CONFIGFILEPATH="src/configVariables.conf"
 
 # Other global variables.
 options=""
-optNum="18"
+optNum="20"
 
 infoMsg()
 {
@@ -69,7 +69,7 @@ $action 0 \
 $action 0 \
 "Local RSA keys length (bits):"		6 1 "$gnupotRSAKeyBits"	6 $fldChrs \
 $action 0 \
-"Backups to keep (0 = keep all):"	7 1 "$gnupotKeepMaxCommits" \
+"Backups to keep (#; 0 = keep all):"	7 1 "$gnupotKeepMaxCommits" \
 7 $fldChrs $action 0 \
 "Exclude file inotify POSIX pattern:"	8 1 "$gnupotInotifyFileExclude" \
 8 $fldChrs $action 0 \
@@ -83,16 +83,20 @@ $action 0 \
 "$gnupotTimeToWaitForOtherChanges" 12 $fldChrs $action 0 \
 "Time to wait on problem (s):"		13 1 "$gnupotBusyWaitTime" \
 13 $fldChrs $action 0 \
-"SSH Master Socket Path:"		14 1 "$gnupotSSHMasterSocketPath" \
+"SSH server alive interval (s):"	14 1 "$gnupotSSHServerAliveInterval" \
 14 $fldChrs $action 0 \
-"Event notification time (ms):"		15 1 "$gnupotNotificationTime" \
-15 $fldChrs $action 0 \
-"Lock file full path:"			16 1 "$gnupotLockFilePath" \
+"SSH server alive count max (#; 0 = no messages):" \
+15 1 "$gnupotSSHServerAliveCountMax" 15 $fldChrs $action 0 \
+"SSH master socket full path:"		16 1 "$gnupotSSHMasterSocketPath" \
 16 $fldChrs $action 0 \
+"Event notification time (ms):"		17 1 "$gnupotNotificationTime" \
+17 $fldChrs $action 0 \
+"Lock file full path:"			18 1 "$gnupotLockFilePath" \
+18 $fldChrs $action 0 \
 "Download max speed (KB/s) (0 = no limit):" \
-17 1 "$gnupotDownloadSpeed" 17 $fldChrs $action 0 \
+19 1 "$gnupotDownloadSpeed" 19 $fldChrs $action 0 \
 "Upload max speed (KB/s) (0 = no limit):" \
-18 1 "$gnupotUploadSpeed" 18 $fldChrs $action 0 \
+20 1 "$gnupotUploadSpeed" 20 $fldChrs $action 0 \
 
 )
 	retval="$?"
@@ -115,9 +119,10 @@ strTok()
 gnupotRemoteDir gnupotLocalDir gnupotSSHKeyPath gnupotRSAKeyBits \
 gnupotKeepMaxCommits gnupotInotifyFileExclude gnupotGitFileExclude \
 gnupotGitCommitterUsername gnupotGitCommitterEmail \
-gnupotTimeToWaitForOtherChanges gnupotBusyWaitTime gnupotSSHMasterSocketPath \
-gnupotNotificationTime gnupotLockFilePath gnupotDownloadSpeed \
-gnupotUploadSpeed"
+gnupotTimeToWaitForOtherChanges gnupotBusyWaitTime \
+gnupotSSHServerAliveInterval gnupotSSHServerAliveCountMax \
+gnupotSSHMasterSocketPath gnupotNotificationTime gnupotLockFilePath \
+gnupotDownloadSpeed gnupotUploadSpeed"
 
 	# Control bash version to avoid IFS bug. bash 4.2 (and lower) has this
 	# bug. If bash is <=4.2 spaces must be avoided in form fields.
@@ -242,6 +247,8 @@ gnupotGitCommitterUsername=\""$gnupotGitCommitterUsername"\"\n\
 gnupotGitCommitterEmail=\""$gnupotGitCommitterEmail"\"\n\
 gnupotTimeToWaitForOtherChanges=\""$gnupotTimeToWaitForOtherChanges"\"\n\
 gnupotBusyWaitTime=\""$gnupotBusyWaitTime"\"\n\
+gnupotSSHServerAliveInterval=\""$gnupotSSHServerAliveInterval"\"\n\
+gnupotSSHServerAliveCountMax=\""$gnupotSSHServerAliveCountMax"\"\n\
 gnupotSSHMasterSocketPath=\""$gnupotSSHMasterSocketPath"\"\n\
 gnupotNotificationTime=\""$gnupotNotificationTime"\"\n\
 gnupotLockFilePath=\""$gnupotLockFilePath"\"\n\

@@ -21,7 +21,7 @@
 .\"
 
 
-.TH GNUPOT 1 "August 2015" "0.0" "User Commands"
+.TH GNUPOT 1 "August 2015" "0.1" "User Commands"
 
 .SH NAME
 gnupot \- Libre file syncronization witten in bash, based on git.
@@ -123,6 +123,7 @@ Full documentation (i.e. server configuration) at:
 .BR gnupot.conf(5),
 .BR bash(1),
 .BR ssh(1),
+.BR ssh_config(5),
 .BR git(1),
 .BR inotifywait(1),
 .BR trickle(1),

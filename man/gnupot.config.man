@@ -21,7 +21,7 @@
 .\"
 
 
-.TH GNUPOT 5 "August 2015" "0.0" "File Formats Manual"
+.TH GNUPOT 5 "August 2015" "0.1" "File Formats Manual"
 
 .SH NAME
 gnupot.conf \- Configuration file for GNUpot.
@@ -45,6 +45,8 @@ The syntax is always:
 i.e. the 
 .B bash(1)
 syntax when assigning a value to a variable.
+.br
+Default values for most variables are loaded during the setup.
 .PP
 
 .TP
@@ -192,6 +194,47 @@ tries to be established.
 .RE
 
 .TP
+.B gnupotSSHServerAliveInterval
+.RS
+An unsigned integer containing the number of seconds to wait before 
+establishing a new connection to the server, when that server is unreachable.
+.br
+This means that if no packets are received from the server a timeout of
+.B gnupotSSHServerAliveInterval
+starts. When the timeout is over a packet is sent to the server and if that 
+packet is not returned for
+.B gnupotSSHServerAliveCountMax
+, then a new connection is established.
+.br
+A value of 0 means that server alive messages will not be sent.
+.br
+This variable depends on 
+.B gnupotSSHServerAliveCountMax
+.br
+For further information read
+.B ssh_config(5)
+.RE
+
+.TP
+.B gnupotSSHServerAliveCountMax
+.RS
+An unsigned integer containing the number of attempts to do to 
+establish a new connection if the current one is not responsive.
+.br
+This means that if the connection is unresponsive for
+.B gnupotSSHServerAliveInterval
+seconds for
+.B gnupotSSHServerAliveCountMax
+times, then a new conection is established.
+.br
+This variable depends on 
+.B gnupotSSHServerAliveInterval
+.br
+For further information read
+.B ssh_config(5)
+.RE
+
+.TP
 .B gnupotSSHMasterSocketPath
 .RS
 A string containing the full path of the master SSH socket. This avoids 
@@ -262,6 +305,7 @@ Full documentation (i.e. server configuration) at:
 .BR gnupot(1),
 .BR bash(1),
 .BR ssh(1),
+.BR ssh_config(5),
 .BR git(1),
 .BR gitignore(5),
 .BR inotifywait(1),
