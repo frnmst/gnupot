@@ -196,8 +196,9 @@ tries to be established.
 .TP
 .B gnupotSSHServerAliveInterval
 .RS
-An unsigned integer containing the number of seconds to wait before 
-establishing a new connection to the server, when that server is unreachable.
+An unsigned integer, greater than 0, containing the number of seconds to wait 
+before establishing a new connection to the server, when that server is 
+unreachable.
 .br
 This means that if no packets are received from the server a timeout of
 .B gnupotSSHServerAliveInterval
@@ -205,8 +206,6 @@ starts. When the timeout is over a packet is sent to the server and if that
 packet is not returned for
 .B gnupotSSHServerAliveCountMax
 , then a new connection is established.
-.br
-A value of 0 means that server alive messages will not be sent.
 .br
 This variable depends on 
 .B gnupotSSHServerAliveCountMax
@@ -218,8 +217,8 @@ For further information read
 .TP
 .B gnupotSSHServerAliveCountMax
 .RS
-An unsigned integer containing the number of attempts to do to 
-establish a new connection if the current one is not responsive.
+An unsigned integer, greater than 0, containing the number of attempts to do 
+to establish a new connection if the current one is not responsive.
 .br
 This means that if the connection is unresponsive for
 .B gnupotSSHServerAliveInterval

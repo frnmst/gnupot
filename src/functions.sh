@@ -21,7 +21,7 @@
 #
 
 
-Err() { local msg="$1"; printf "$msg" >&2; return 0; }
+Err() { local msg="$1"; printf "$msg" 1>&2; return 0; }
 
 printHelp()
 {
@@ -38,7 +38,8 @@ Only one option is permitted.\n\
 \t-l\tShow GNUpot license.\n\
 \t-n\tNew GNUpot setup.\n\
 \t-p\tPrint configuration file.\n\
-\t-s\tPrint status.\n\n\
+\t-s\tPrint status.\n\
+\t-v\tShow program version.\n\n\
 Configuration file is found in ~/.config/gnupot/gnupot.config.\n\n\
 Exit value:\n\
 \t0\tno error occurred,\n\
@@ -100,11 +101,11 @@ parsingErrMsg() { Err "Configuration or parsing problem.\n"; return 0; }
 parseConfig()
 {
         local variableList="ServerS ServerUsernameO RemoteDirO LocalDirO \
-SSHKeyPathO RSAKeyBitsN KeepMaxCommitsN InotifyFileExcludeO GitFileExcludeO \
-GitCommitterUsernameO GitCommitterEmailO TimeToWaitForOtherChangesN \
-BusyWaitTimeN SSHServerAliveIntervalN SSHServerAliveCountMaxN \
-SSHMasterSocketPathO NotificationTimeN LockFilePathO DownloadSpeedN \
-UploadSpeedN" variable="" type=""
+SSHKeyPathO RSAKeyBitsU KeepMaxCommitsU InotifyFileExcludeO GitFileExcludeO \
+GitCommitterUsernameO GitCommitterEmailO TimeToWaitForOtherChangesU \
+BusyWaitTimeU SSHServerAliveIntervalN SSHServerAliveCountMaxN \
+SSHMasterSocketPathO NotificationTimeU LockFilePathO DownloadSpeedU \
+UploadSpeedU" variable="" type=""
 
 	for variable in $variableList; do
 		# Get var name and last char of variable to determine type.
@@ -112,8 +113,12 @@ UploadSpeedN" variable="" type=""
 		# Get original variable name and reference variable.
 		variable="${variable:0:(-1)}"; eval variable=\$"$variable"
 		case "$type" in
-			N ) # Numbers only.
+			U ) # Unsigned integers only.
 				case "$variable" in '' | *[!0-9]* )
+					parsingErrMsg; return 1 ;; esac
+			;;
+			N ) # Natural numbers only.
+				case "$variable" in '' | [!1-9]* | *[!0-9]* )
 					parsingErrMsg; return 1 ;; esac
 			;;
 			S ) # Strings without space char.
@@ -156,9 +161,7 @@ loadConfig()
 		# "." is the same as "source" but it is more portable.
 		[ -f "$CONFIGFILEPATH" ] && . "$CONFIGFILEPATH" 2>&- \
 || { parsingErrMsg; exit 1; }
-
 		parseConfig || exit 1
-
 		# Global variable.
 		gnupotServerORIG="$gnupotServer"
 		# If gnupot is started then find IP address from host name.
@@ -194,15 +197,6 @@ notify()
 	[ -n "$DISPLAY" ] && notify-send -t "$ms" "$msg"; return 0
 }
 
-syncNotify()
-{
-	local path="$1" source="$2"
-
-	notify "GNUpot syncing $path from $source" "$gnupotNotificationTime"
-
-	return 0
-}
-
 # The new address is only valid for the thread caller, i.e. Only the client
 # thread OR the server thread is updated here. The update is done only when SSH
 # commands fail.
@@ -227,10 +221,7 @@ execSSHCmd()
 	local SSHCommand="$1"
 
 	# Check if server is reachable.
-	ssh "$gnupotServerUsername"@"$gnupotServer" \
--o PasswordAuthentication=no -o UserKnownHostsFile=/dev/null \
--o StrictHostKeyChecking=no 2>&1 | grep denied &>/dev/null \
-&& $SSHCommand 1>&- 2>&- || $(return 255)
+	$SSHCommand 1>&- 2>&- || $(return 255)
 	# Poll input command until it finishes correctly.
 	while [ "$?" -eq 255 ]; do
 		busyWait
@@ -259,6 +250,8 @@ Handled conflicts"; }
 }
 
 # Clean useless files and keep maximum user defined number of backups.
+# Do the syncing. To be able to clean: git config --system \
+# receive.denyNonFastForwards true
 backupAndClean()
 {
 	local commitSha=""
@@ -324,17 +317,10 @@ syncOperation()
 	local source="$1" path="$2"
 
 	sleep "$gnupotTimeToWaitForOtherChanges"
-
-	syncNotify "$path" "$source"
-
-	# Do all git operations in the correct directory.
-	cd "$gnupotLocalDir"
-	# Do the syncing. To be able to clean: git config --system \
-	# receive.denyNonFastForwards true
-	gitSyncOperations "$path"; backupAndClean
-	# Go back to previous dir.
-	cd "$OLDPWD"
-
+	notify "GNUpot syncing $path from $source" "$gnupotNotificationTime"
+	# Do all git operations in the correct directory before returning.
+	cd "$gnupotLocalDir" && gitSyncOperations "$path"; backupAndClean \
+&& cd "$OLDPWD"
 	notify "GNUpot $path done." "$gnupotNotificationTime"
 
 	return 0
@@ -439,7 +425,7 @@ ssh $SSHMASTERSOCKCMDARGS 1>&- 2>&-
 syncS()
 {
 	local pathCmd="ssh $SSHCONNECTCMDARGS \
-$INOTIFYWAITCMD --exclude lastCommit "$gnupotRemoteDir"" lockVal=""
+$INOTIFYWAITCMD "$gnupotRemoteDir"" lockVal=""
 
 	# return/exit when signal{,s} is/are received.
 	trap "exit 0" $SIGNALS
@@ -485,6 +471,7 @@ syncC()
 	done
 }
 
+# User and exclude file settigs.
 assignGitInfo()
 {
 	cd "$gnupotLocalDir" && { { git config user.name \
@@ -523,7 +510,7 @@ checkGitVersion()
 checkExecutables()
 {
 	# Redirect which stderr and stdout to /dev/null (see bash
-	# redirection).
+	# redirection) otherwise which returns error..
 	checkGitVersion && which $PROGRAMS 1>/dev/null 2>/dev/null
 	[ "$?" -ne 0 ] && { Err "Missing programs or unsupported. \
 Check: $PROGRAMS. Also check package versions.\n"; exit 1; }
@@ -592,13 +579,11 @@ main()
 	trap "sigHandler" $SIGNALS
 
 	notify "GNUpot starting..." "$gnupotNotificationTime"
-
 	freeLockFile
 	# Assign git repo configuration.
 	assignGitInfo
 	# Call threads and wait for them to exit before continuing.
 	callThreads
-
 	notify "GNUpot stopped." "$gnupotNotificationTime"
 
 	exit 0
@@ -623,12 +608,18 @@ running.\n"; exit 1; }
 	return 0
 }
 
+# In the PKGBUILD the git command is substituted by the string containing the
+# version. TODO.
+printVersion()
+{ Err "GNUpot version \
+"$(git describe --long | sed 's/\([^-]*-g\)/r\1/;s/-/./g')"\n"; return 0; }
+
 parseOpts()
 {
 	local prgPath="$1" argArray="$2"
 
 	# Get options from special variable $@. Treat no arguments as -i.
-	getopts ":hiklnps" opt "$argArray"
+	getopts ":hiklnpsv" opt "$argArray"
 	case "$opt" in
 		h ) printHelp "$prgPath"; return 1 ;;
 		# Call main function as spawned shell (execute and return
@@ -639,6 +630,7 @@ parseOpts()
 		n ) ""${0%/gnupot}"/src/config.sh" ;;
 		p ) cat ""$HOME"/.config/gnupot/gnupot.config" ;;
 		s ) printStatus ;;
+		v ) printVersion ;;
 		? ) [ -z "$argArray" ] && callMain "$prgPath" "$argArray" \
 || { printHelp "$prgPath"; return 1; } ;;
 	esac

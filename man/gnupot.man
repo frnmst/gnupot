@@ -39,19 +39,19 @@ Only a single option is permitted.
 .TP
 .B -h
 .RS
-Show help.
+Show GNUpot's help.
 .RE
 
 .TP
 .B -i
 .RS
-Start gnupot. This is the same as executing it without option.
+Start GNUpot. This is the same as executing it without option.
 .RE
 
 .TP
 .B -k
 .RS
-Quit gnupot.
+Quit GNUpot.
 .RE
 
 .TP
@@ -76,6 +76,12 @@ Print configuration file.
 .B -s
 .RS
 Show if GNUpot is running or not.
+.RE
+
+.TP
+.B -v
+.RS
+Show GNUpot's version.
 .RE
 
 .TP
