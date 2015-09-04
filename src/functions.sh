@@ -310,6 +310,19 @@ $USERDATA" 1>&- 2>&-
 	return 0
 }
 
+checkFileChanges()
+{
+	# If local nd remote sha checksum is different then print
+	# number; else print 0.
+	[ "$(git ls-remote --heads \
+"$gnupotServerUsername"@"$gnupotServer":"$gnupotRemoteDir" \
+| awk '{print $1}')" == "$(git rev-list HEAD --max-count=1)" ] && printf 0 \
+|| printf "$(git diff --name-only HEAD~1 HEAD | wc -l)"
+#|| printf "$(git whatchanged -1 --format=oneline | tail -n +2 | wc -l)"
+
+	return 0
+}
+
 # Main file syncronization function.
 # This is executed inside a critical section.
 syncOperation()
@@ -319,9 +332,10 @@ syncOperation()
 	sleep "$gnupotTimeToWaitForOtherChanges"
 	notify "GNUpot syncing $path from $source" "$gnupotNotificationTime"
 	# Do all git operations in the correct directory before returning.
-	cd "$gnupotLocalDir" && gitSyncOperations "$path"; backupAndClean \
-&& cd "$OLDPWD"
-	notify "GNUpot $path done." "$gnupotNotificationTime"
+	cd "$gnupotLocalDir" && { gitSyncOperations "$path"; \
+chgFilesNum="$(checkFileChanges)"; backupAndClean; } && cd "$OLDPWD"
+	notify "GNUpot $path done. Changed "$chgFilesNum" file(s)." \
+"$gnupotNotificationTime"
 
 	return 0
 }
