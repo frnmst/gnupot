@@ -71,7 +71,7 @@ $action 0 \
 $action 0 \
 "Backups to keep (#; 0 = keep all):"	7 1 "$gnupotKeepMaxCommits" \
 7 $fldChrs $action 0 \
-"Exclude file inotify POSIX pattern:"	8 1 "$gnupotInotifyFileExclude" \
+"Exclude file inotify POSIX pattern:"	8 1 '$gnupotInotifyFileExclude' \
 8 $fldChrs $action 0 \
 "Exclude file git globbing pattern:"	9 1 "$gnupotGitFileExclude" \
 9 $fldChrs $action 0 \
@@ -215,7 +215,7 @@ cloneRepo()
 a while."
 		git clone \
 "$gnupotServerUsername"@"$gnupotServer":"$gnupotRemoteDir" \
-"$gnupotLocalDir"     || { infoMsg "msgbox" "Cannot clone remote \
+"$gnupotLocalDir" 1>&- 2>&- || { infoMsg "msgbox" "Cannot clone remote \
 repository."; sleep 60; return 1; }
 		assignGitInfo
 		makeFirstCommit
@@ -296,8 +296,8 @@ exit 1; }
 || { Err "Cannot start setup. No variables file found.\n"; exit 1; }
 
 # Load variables file if gnupot.config already exists.
-#[ -f ""$CONFIGDIR"/gnupot.config" ] && . ""$CONFIGDIR"/gnupot.config" \
-; #{ [ -d "$gnupotLocalDir" ] && cd "$gnupotLocalDir" && if gitlocalshas == 
+[ -f ""$CONFIGDIR"/gnupot.config" ] && . ""$CONFIGDIR"/gnupot.config"
+#{ [ -d "$gnupotLocalDir" ] && cd "$gnupotLocalDir" && if gitlocalshas == 
 # gitremoteshas then overwrite config file=1; else return dir error; && check 
 # ssh stuff}
 
