@@ -83,9 +83,9 @@ $action 0 \
 "$gnupotTimeToWaitForOtherChanges" 12 $fldChrs $action 0 \
 "Time to wait on problem (s):"		13 1 "$gnupotBusyWaitTime" \
 13 $fldChrs $action 0 \
-"SSH server alive interval (s):"	14 1 "$gnupotSSHServerAliveInterval" \
+"SSH server alive interval (s; >= 1):"	14 1 "$gnupotSSHServerAliveInterval" \
 14 $fldChrs $action 0 \
-"SSH server alive count max (#; 0 = no messages):" \
+"SSH server alive count max (>= 1):" \
 15 1 "$gnupotSSHServerAliveCountMax" 15 $fldChrs $action 0 \
 "SSH master socket full path:"		16 1 "$gnupotSSHMasterSocketPath" \
 16 $fldChrs $action 0 \
@@ -215,8 +215,8 @@ cloneRepo()
 a while."
 		git clone \
 "$gnupotServerUsername"@"$gnupotServer":"$gnupotRemoteDir" \
-"$gnupotLocalDir" 1>&- 2>&- || { infoMsg "msgbox" "Cannot clone remote \
-repository."; return 1; }
+"$gnupotLocalDir"     || { infoMsg "msgbox" "Cannot clone remote \
+repository."; sleep 60; return 1; }
 		assignGitInfo
 		makeFirstCommit
 	else
@@ -294,6 +294,12 @@ exit 1; }
 # Load default variables.
 . "src/configVariables.conf" \
 || { Err "Cannot start setup. No variables file found.\n"; exit 1; }
+
+# Load variables file if gnupot.config already exists.
+#[ -f ""$CONFIGDIR"/gnupot.config" ] && . ""$CONFIGDIR"/gnupot.config" \
+; #{ [ -d "$gnupotLocalDir" ] && cd "$gnupotLocalDir" && if gitlocalshas == 
+# gitremoteshas then overwrite config file=1; else return dir error; && check 
+# ssh stuff}
 
 mainSetup
 

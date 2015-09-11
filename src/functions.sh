@@ -25,10 +25,8 @@ Err() { local msg="$1"; printf "$msg" 1>&2; return 0; }
 
 printHelp()
 {
-	local prgPath="$1"
-
 	Err "\
-Use: "$prgPath" [ OPTION ]\n\
+Use: gnupot [ OPTION ]\n\
 Yet another libre Dropbox clone (only for the right aspects) written in\n\
 bash and based on git.\n\n\
 Only one option is permitted.\n\
@@ -50,9 +48,9 @@ Full documentation at: <https://github.com/frnmst/gnupot/wiki>\n\
 or available locally via: man man/gnupot.man\n\n\
 GNUpot  Copyright © 2015  frnmst (Franco Masotti)\n\
 This program comes with ABSOLUTELY NO WARRANTY; for details type \
-\`"$prgPath" -l'.\n\
+\`gnupot -l'.\n\
 This is free software, and you are welcome to redistribute it \n\
-under certain conditions; type \`"$prgPath" -l' for details.\n\
+under certain conditions; type \`gnupot -l' for details.\n\
 "
 
 	return 0
@@ -96,7 +94,7 @@ setGloblVars()
 	return 0
 }
 
-parsingErrMsg() { Err "Configuration or parsing problem.\n"; return 0; }
+parsingErrMsg() { Err "Config or parsing error. Try: gnupot -n\n"; return 0; }
 
 parseConfig()
 {
@@ -243,8 +241,7 @@ resolveConflicts()
 
 	[ "$returnedVal" -eq 1 ] \
 && { notify "Resolving file conflicts." "$gnupotNotificationTime"; \
-git commit -a -m "Committed "$path" on $(date "+%F %T") $USERDATA \
-Handled conflicts"; }
+git commit -a -m "Committed "$path" $USERDATA Handled conflicts"; }
 
 	return 0
 }
@@ -269,8 +266,7 @@ HEAD | tail -n 1)
 		# <start_point> and switch to it.
 		git checkout --orphan tmp "$commitSha"
 		# Change old commit.
-		git commit -m "Truncated history on \
-$(date "+%F %T") $USERDATA"
+		git commit -m "Truncated history $USERDATA"
 		# From man git-rebase:
 		# Forward-port local commits to the updated upstream head.
 		git rebase --onto tmp "$commitSha" master
@@ -297,8 +293,7 @@ gitSyncOperations()
 	# This loop is needed for "big" files.
 	while [ "$(git status --porcelain | wc -m)" -gt 0 ]; do
 		git add -A 1>&- 2>&-
-		git commit -m "Committed "$path" on $(date "+%F %T") \
-$USERDATA" 1>&- 2>&-
+		git commit -m "Committed "$path" $USERDATA" 1>&- 2>&-
 		sleep 1
 	done
 
@@ -318,7 +313,6 @@ checkFileChanges()
 "$gnupotServerUsername"@"$gnupotServer":"$gnupotRemoteDir" \
 | awk '{print $1}')" == "$(git rev-list HEAD --max-count=1)" ] && printf 0 \
 || printf "$(git diff --name-only HEAD~1 HEAD | wc -l)"
-#|| printf "$(git whatchanged -1 --format=oneline | tail -n +2 | wc -l)"
 
 	return 0
 }
@@ -356,9 +350,9 @@ exist, or no git repository."
 # Check if remote directory exists.
 chkSrvDirEx()
 {
-	ssh $SSHCONNECTCMDARGS "cd $gnupotRemoteDir 2>&- && git show \
-1>&- 2>&- || exit 1" || DirErr
-
+	cd "$gnupotLocalDir"
+	git ls-remote --exit-code -h 1>&- 2>&- || DirErr
+	cd "$OLDPWD"
 	return 0
 }
 
@@ -459,7 +453,7 @@ $INOTIFYWAITCMD "$gnupotRemoteDir"" lockVal=""
 		# command and the value of the lock sometimes changes, causing
 		# a useless double sync. This way the value is saved before the
 		# function call so it can be safely passed to the callSync
-		# function. This has beem done for the client thread also, for
+		# function. This has been done for the client thread also, for
 		# precaution, even if it's not strictly necessary.
 		lockVal="$(getLockFileVal)"
 		chkSrvDirEx
@@ -475,6 +469,9 @@ syncC()
 	trap "exit 0" $SIGNALS
 
 	chkCliDirEx
+
+	# Assign git repo configuration after checking local dir existence.
+	assignGitInfo
 
 	while true; do
 		path=$($INOTIFYWAITCMD --exclude $gnupotInotifyFileExclude \
@@ -533,29 +530,21 @@ Check: $PROGRAMS. Also check package versions.\n"; exit 1; }
 }
 
 # Signal handler function.
-sigHandler()
-{
-	Err "GNUpot killed\n"
-	# Send a signal to all the other threads so that they exit.
-	kill -s SIGINT 0
-
-	return 0
-}
+# Send a signal to all the other threads so that they exit.
+sigHandler() { Err "GNUpot killed\n"; kill -s SIGINT 0; return 0; }
 
 # Function that makes a fake commit so that inotifywait process on the server
 # is killed.
 lastFakeCommit()
 {
-	local fFile="lastCommit"
-
-	ssh $SSHCONNECTCMDARGS "touch "$gnupotRemoteDir"/"$fFile" \
-&& rm "$gnupotRemoteDir"/"$fFile""
+	ssh $SSHCONNECTCMDARGS "touch "$gnupotRemoteDir"/lastCommit \
+&& rm "$gnupotRemoteDir"/lastCommit" 1>&- 2>&-
 	# Test if inotifywait version needs to detect local changes at exit
 	# (version less than 3.14).
 	[ $(inotifywait --help | head -n1 | awk ' { print $2 } ' | tr -d '.') \
 -lt 314 ] \
-&& touch ""$gnupotLocalDir"/"$fFile"" 1>&- 2>&- \
-&& rm ""$gnupotLocalDir"/"$fFIle"" 1>&- 2>&-
+&& touch ""$gnupotLocalDir"/lastCommit" 1>&- 2>&- \
+&& rm ""$gnupotLocalDir"/lastCommit" 1>&- 2>&-
 
 	return 0
 }
@@ -594,8 +583,6 @@ main()
 
 	notify "GNUpot starting..." "$gnupotNotificationTime"
 	freeLockFile
-	# Assign git repo configuration.
-	assignGitInfo
 	# Call threads and wait for them to exit before continuing.
 	callThreads
 	notify "GNUpot stopped." "$gnupotNotificationTime"
@@ -624,9 +611,7 @@ running.\n"; exit 1; }
 
 # In the PKGBUILD the git command is substituted by the string containing the
 # version. TODO.
-printVersion()
-{ Err "GNUpot version \
-"$(git describe --long | sed 's/\([^-]*-g\)/r\1/;s/-/./g')"\n"; return 0; }
+printVersion() { Err "GNUpot version "$(git describe --long)"\n"; return 0; }
 
 parseOpts()
 {
@@ -635,7 +620,7 @@ parseOpts()
 	# Get options from special variable $@. Treat no arguments as -i.
 	getopts ":hiklnpsv" opt "$argArray"
 	case "$opt" in
-		h ) printHelp "$prgPath"; return 1 ;;
+		h ) printHelp; return 1 ;;
 		# Call main function as spawned shell (execute and return
 	 	# control to the shell).
 		i ) callMain "$prgPath" "$argArray" & ;;
