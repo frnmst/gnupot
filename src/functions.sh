@@ -82,7 +82,7 @@ setGloblVars()
 	USERDATA="by "$USER"@"$HOSTNAME"."
 	# inotifywait args: recursive, quiet, listen only to certain events.
 	INOTIFYWAITCMD="inotifywait -r -q -e modify -e attrib \
--e move -e move_self -e create -e delete -e delete_self --format %f"
+-e move -e move_self -e create -e delete --format %f"
 	# SSH arguments.
 	SSHARGS="-o PasswordAuthentication=no -i "$gnupotSSHKeyPath" -C -S \
 "$gnupotSSHMasterSocketPath" -o UserKnownHostsFile=/dev/null \
@@ -172,6 +172,37 @@ loadConfig()
 	return 0
 }
 
+# Kill program if local and/or remote directories do not exist.
+DirErr()
+{
+	local errMsg="Local and/or remote directory does/do not \
+exist, or no git repository."
+
+	Err "$errMsg\n"
+	notify "$errMsg" "$gnupotNotificationTime"
+	kill -s SIGINT 0
+
+	return 0
+}
+
+# Check if remote directory exists.
+chkSrvDirEx()
+{
+	cd "$gnupotLocalDir"
+	git ls-remote --exit-code -h 1>&- 2>&- || DirErr
+	cd "$OLDPWD"
+	return 0
+}
+
+# Check if local directory exists.
+chkCliDirEx()
+{
+	cd "$gnupotLocalDir" 2>&- && { git status -s 1>&- 2>&- || DirErr; } \
+|| DirErr; cd "$OLDPWD"
+
+	return 0
+}
+
 # Modified version of flock's boilterplate. This version is able to run also
 # on older versions of flock. See man 1 flock (examples section).
 lockOnFile()
@@ -219,13 +250,16 @@ execSSHCmd()
 	local SSHCommand="$1"
 
 	# Check if server is reachable.
-	$SSHCommand 1>&- 2>&- || $(return 255)
+	$SSHCommand 1>&- 2>&-
+	retval="$?"
+	[ "$retval" -eq 1 ] && chkSrvDirEx
 	# Poll input command until it finishes correctly.
-	while [ "$?" -eq 255 ]; do
+	while [ "$retval" -eq 255 ]; do
 		busyWait
 		# If command is not create master sock then recreate msock.
 		[ "$SSHCommand" != "crtSSHSock" ] && crtSSHSock
 		$SSHCommand 1>&- 2>&-
+		retval="$?"
 	done
 
 	return 0
@@ -288,13 +322,14 @@ HEAD | tail -n 1)
 gitSyncOperations()
 {
 	# Transform path with spaces in dashes to avoid problems.
-	local path="$(echo "$1" | tr " " "-")"
+	local path="$(echo "$1" | tr " " "-")" count=0
 
-	# This loop is needed for "big" files.
+	# This loop is needed for "big" or lots of files.
 	while [ "$(git status --porcelain | wc -m)" -gt 0 ]; do
 		git add -A 1>&- 2>&-
 		git commit -m "Committed "$path" $USERDATA" 1>&- 2>&-
-		sleep 1
+		[ "$count" -gt 0 ] && sleep 1
+		count=$(($count+1))
 	done
 
 	# Always pull from server first then check for conflicts using return
@@ -326,41 +361,15 @@ syncOperation()
 	sleep "$gnupotTimeToWaitForOtherChanges"
 	notify "GNUpot syncing $path from $source" "$gnupotNotificationTime"
 	# Do all git operations in the correct directory before returning.
-	cd "$gnupotLocalDir" && { gitSyncOperations "$path"; \
-chgFilesNum="$(checkFileChanges)"; backupAndClean; } && cd "$OLDPWD"
+	# if action=pull then check (before) then pull
+	# else if action=push push then check.
+	cd "$gnupotLocalDir" \
+&& { [ "$source" = "server" ] \
+&& { chgFilesNum="$(checkFileChanges)"; gitSyncOperations "$path"; } \
+|| { gitSyncOperations "$path"; chgFilesNum="$(checkFileChanges)"; }; }
+	backupAndClean && cd "$OLDPWD"
 	notify "GNUpot $path done. Changed "$chgFilesNum" file(s)." \
 "$gnupotNotificationTime"
-
-	return 0
-}
-
-# Kill program if local and/or remote directories do not exist.
-DirErr()
-{
-	local errMsg="Local and/or remote directory does/do not \
-exist, or no git repository."
-
-	Err "$errMsg\n"
-	notify "$errMsg" "$gnupotNotificationTime"
-	kill -s SIGINT 0
-
-	return 0
-}
-
-# Check if remote directory exists.
-chkSrvDirEx()
-{
-	cd "$gnupotLocalDir"
-	git ls-remote --exit-code -h 1>&- 2>&- || DirErr
-	cd "$OLDPWD"
-	return 0
-}
-
-# Check if local directory exists.
-chkCliDirEx()
-{
-	cd "$gnupotLocalDir" 2>&- && { git status -s 1>&- 2>&- || DirErr; } \
-|| DirErr; cd "$OLDPWD"
 
 	return 0
 }
@@ -433,7 +442,7 @@ ssh $SSHMASTERSOCKCMDARGS 1>&- 2>&-
 syncS()
 {
 	local pathCmd="ssh $SSHCONNECTCMDARGS \
-$INOTIFYWAITCMD "$gnupotRemoteDir"" lockVal=""
+$INOTIFYWAITCMD "$gnupotRemoteDir""
 
 	# return/exit when signal{,s} is/are received.
 	trap "exit 0" $SIGNALS
@@ -449,15 +458,12 @@ $INOTIFYWAITCMD "$gnupotRemoteDir"" lockVal=""
 	while true; do
 		# Listen for changes on server.
 		execSSHCmd "$pathCmd"
-		# The following exists because chkSrvDirEx is a slow
-		# command and the value of the lock sometimes changes, causing
+		# The value of the lock sometimes changes, causing
 		# a useless double sync. This way the value is saved before the
 		# function call so it can be safely passed to the callSync
 		# function. This has been done for the client thread also, for
 		# precaution, even if it's not strictly necessary.
-		lockVal="$(getLockFileVal)"
-		chkSrvDirEx
-		callSync "server" "remote" "$lockVal"
+		callSync "server" "remote" "$(getLockFileVal)"
 	done
 }
 
@@ -475,10 +481,8 @@ syncC()
 
 	while true; do
 		path=$($INOTIFYWAITCMD --exclude $gnupotInotifyFileExclude \
-"$gnupotLocalDir")
-		lockVal="$(getLockFileVal)"
-		chkCliDirEx
-		callSync "client" "$path" "$lockVal"
+"$gnupotLocalDir" || chkCliDirEx)
+		callSync "client" "$path" "$(getLockFileVal)"
 	done
 }
 
@@ -499,6 +503,10 @@ printStatus()
 	Err "GNUpot is "
 	[ "$(pgrep -c gnupot)" -lt "$procNum" ] && Err "NOT "
 	Err "running correctly.\n"
+	Err "\n"
+	cd "$gnupotLocalDir"
+	Err "$(git status)\n"
+	cd "$OLDPWD"
 
 	return 0
 }
