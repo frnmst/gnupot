@@ -187,8 +187,9 @@ initRepo()
 {
 	ssh -i "$gnupotSSHKeyPath" "$gnupotServerUsername"@"$gnupotServer" \
 "if [ ! -d "$gnupotRemoteDir" ]; then mkdir -p "$gnupotRemoteDir" \
-&& cd "$gnupotRemoteDir" && git init --bare --shared; fi \
-&& git config --system receive.denyNonFastForwards false" 1>&- 2>&-
+&& git -C "$gnupotRemoteDir" init --bare --shared; fi \
+&& git -C "$gnupotRemoteDir" config --system receive.denyNonFastForwards \
+false" 1>&- 2>&-
 
 	return 0
 }
@@ -206,6 +207,24 @@ git push origin master 1>&- 2>&-; }
 	return 0
 }
 
+updateRepo()
+{
+	# Check if repo path coincides with the one written in the conf file.
+	# Push and pull so that history is even.
+	[ "$(git -C "$gnupotLocalDir" config --get remote.origin.url)" = \
+"$gnupotServerUsername"@"$gnupotServer":"$gnupotRemoteDir" ] || return 1
+
+[ "$(git status --porcelain | wc -m)" -gt 0 ] \
+&& { git -C "$gnupotLocalDir" add -A 1>&- 2>&-; \
+git -C "$gnupotLocalDir" commit -am "Update merge by "$USER"." 1>&- 2>&-; }
+
+	{ git -C "$gnupotLocalDir" pull origin master 1>&- 2>&- \
+&& git -C "$gnupotLocalDir" push origin master 1>&- 2>&-; } \
+|| return 1
+
+	return 0
+}
+
 cloneRepo()
 {
 	GIT_SSH_COMMAND="ssh -i $gnupotSSHKeyPath"
@@ -216,16 +235,20 @@ a while."
 		git clone \
 "$gnupotServerUsername"@"$gnupotServer":"$gnupotRemoteDir" \
 "$gnupotLocalDir" 1>&- 2>&- || { infoMsg "msgbox" "Cannot clone remote \
-repository."; sleep 60; return 1; }
+repository."; return 1; }
 		assignGitInfo
 		makeFirstCommit
 	else
-		infoMsg "yesno" "Local destination directory already exists. \
-Backup old directory and continue [yes] or Delete it and continue [no] ?"
-		# 0 = yes
-		[ "$?" -eq 0 ] && mv "$gnupotLocalDir" \
-""$gnupotLocalDir"_"$(date +%s)"" || rm -rf "$gnupotLocalDir"
-		cloneRepo
+		# Check if local and remote commits are equal.
+		updateRepo || \
+		{ infoMsg "yesno" "Local destination directory already exists \
+and commit history differs from the remote server's one (or the selected \
+diretory is not a git repository). \
+Backup old directory and continue [yes] or Delete it and continue [no] ?"; \
+		# 0 = yes; 1 = no. \
+		{ [ "$?" -eq 0 ] && mv "$gnupotLocalDir" \
+""$gnupotLocalDir"_"$(date +%s)"" || rm -rf "$gnupotLocalDir"; }; \
+		cloneRepo; }
 	fi
 
 	return 0
@@ -259,6 +282,8 @@ gnupotLockFilePath=\""$gnupotLockFilePath"\"\n\
 gnupotDownloadSpeed=\""$gnupotDownloadSpeed"\"\n\
 gnupotUploadSpeed=\""$gnupotUploadSpeed"\"\n\
 " > ""$CONFIGDIR"/gnupot.config"
+
+	chmod 600 ""$CONFIGDIR"/gnupot.config"
 
 	return 0
 }
@@ -300,10 +325,7 @@ exit 1; }
 || { Err "Cannot start setup. No variables file found.\n"; exit 1; }
 
 # Load variables file if gnupot.config already exists.
- [ -f ""$CONFIGDIR"/gnupot.config" ] && . ""$CONFIGDIR"/gnupot.config"
-#{ [ -d "$gnupotLocalDir" ] && cd "$gnupotLocalDir" && if gitlocalshas ==
-# gitremoteshas then overwrite config file=1; else return dir error; && check
-# ssh stuff}
+[ -f ""$CONFIGDIR"/gnupot.config" ] && . ""$CONFIGDIR"/gnupot.config"
 
 mainSetup
 

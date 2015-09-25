@@ -94,7 +94,7 @@ setGloblVars()
 	return 0
 }
 
-parsingErrMsg() { Err "Config or parsing error. Try: gnupot -n\n"; return 0; }
+parsingErrMsg() { Err "Config or parsing err. Setup: gnupot -n\n"; return 0; }
 
 parseConfig()
 {
@@ -157,7 +157,7 @@ loadConfig()
 	# variables. Just set some global variables.
 	if [ "$arg" != "-n" ]; then
 		# "." is the same as "source" but it is more portable.
-		[ -f "$CONFIGFILEPATH" ] && . "$CONFIGFILEPATH" 2>&- \
+		[ -r "$CONFIGFILEPATH" ] && . "$CONFIGFILEPATH" 2>&- \
 || { parsingErrMsg; exit 1; }
 		parseConfig || exit 1
 		# Global variable.
@@ -188,9 +188,7 @@ exist, or no git repository."
 # Check if remote directory exists.
 chkSrvDirEx()
 {
-	cd "$gnupotLocalDir"
-	git ls-remote --exit-code -h 1>&- 2>&- || DirErr
-	cd "$OLDPWD"
+	git -C "$gnupotLocalDir" ls-remote --exit-code -h 1>&- 2>&- || DirErr
 	return 0
 }
 
@@ -247,19 +245,25 @@ busyWait()
 # after a certain period of time.
 execSSHCmd()
 {
-	local SSHCommand="$1"
+	local SSHCommand="$1" retval="2"
 
-	# Check if server is reachable.
-	$SSHCommand 1>&- 2>&-
-	retval="$?"
+	# Check if server is reachable/working.
+	# A retval of 2 means that inotifywait timeout occurred.
+	while [ "$retval" -eq 2 ]; do
+		$SSHCommand 1>&- 2>&-
+		retval="$?"
+	done
+
 	[ "$retval" -eq 1 ] && chkSrvDirEx
 	# Poll input command until it finishes correctly.
 	while [ "$retval" -eq 255 ]; do
 		busyWait
 		# If command is not create master sock then recreate msock.
 		[ "$SSHCommand" != "crtSSHSock" ] && crtSSHSock
-		$SSHCommand 1>&- 2>&-
-		retval="$?"
+		while [ "$retval" -eq 2 ]; do
+			$SSHCommand 1>&- 2>&-
+			retval="$?"
+		done
 	done
 
 	return 0
@@ -442,7 +446,7 @@ ssh $SSHMASTERSOCKCMDARGS 1>&- 2>&-
 syncS()
 {
 	local pathCmd="ssh $SSHCONNECTCMDARGS \
-$INOTIFYWAITCMD "$gnupotRemoteDir""
+$INOTIFYWAITCMD -t 43200 "$gnupotRemoteDir""
 
 	# return/exit when signal{,s} is/are received.
 	trap "exit 0" $SIGNALS
@@ -504,9 +508,7 @@ printStatus()
 	[ "$(pgrep -c gnupot)" -lt "$procNum" ] && Err "NOT "
 	Err "running correctly.\n"
 	Err "\n"
-	cd "$gnupotLocalDir"
-	Err "$(git status)\n"
-	cd "$OLDPWD"
+	Err "$(git -C "$gnupotLocalDir" status)\n"
 
 	return 0
 }
@@ -541,12 +543,10 @@ Check: $PROGRAMS. Also check package versions.\n"; exit 1; }
 # Send a signal to all the other threads so that they exit.
 sigHandler() { Err "GNUpot killed\n"; kill -s SIGINT 0; return 0; }
 
-# Function that makes a fake commit so that inotifywait process on the server
-# is killed.
+# Function that makes a fake commit so that inotifywait process on the client
+# is killed (if inotify-tools version in old.
 lastFakeCommit()
 {
-	ssh $SSHCONNECTCMDARGS "touch "$gnupotRemoteDir"/lastCommit \
-&& rm "$gnupotRemoteDir"/lastCommit" 1>&- 2>&-
 	# Test if inotifywait version needs to detect local changes at exit
 	# (version less than 3.14).
 	[ $(inotifywait --help | head -n1 | awk ' { print $2 } ' | tr -d '.') \
