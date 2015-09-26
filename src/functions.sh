@@ -83,8 +83,9 @@ setGloblVars()
 	# inotifywait args: recursive, quiet, listen only to certain events.
 	INOTIFYWAITCMD="inotifywait -r -q -e modify -e attrib \
 -e move -e move_self -e create -e delete --format %f"
-	# SSH arguments.
-	SSHARGS="-o PasswordAuthentication=no -i "$gnupotSSHKeyPath" -C -S \
+	# SSH arguments. Force pseudo terminal allocation with -t -t swicthes.
+	SSHARGS="-t -t -o PasswordAuthentication=no -i \
+"$gnupotSSHKeyPath" -C -S \
 "$gnupotSSHMasterSocketPath" -o UserKnownHostsFile=/dev/null \
 -o StrictHostKeyChecking=no \
 -o ServerAliveInterval="$gnupotSSHServerAliveInterval" \
@@ -245,25 +246,20 @@ busyWait()
 # after a certain period of time.
 execSSHCmd()
 {
-	local SSHCommand="$1" retval="2"
+	local SSHCommand="$1" retval="0"
 
-	# Check if server is reachable/working.
-	# A retval of 2 means that inotifywait timeout occurred.
-	while [ "$retval" -eq 2 ]; do
-		$SSHCommand 1>&- 2>&-
-		retval="$?"
-	done
-
-	[ "$retval" -eq 1 ] && chkSrvDirEx
+	# Check if server is reachable/working. A retval of 2 means that
+	# inotifywait timeout occurred.
+	$SSHCommand 1>&- 2>&-
+	retval="$?"
+	[ "$?" -eq 1 ] && chkSrvDirEx
 	# Poll input command until it finishes correctly.
 	while [ "$retval" -eq 255 ]; do
 		busyWait
 		# If command is not create master sock then recreate msock.
 		[ "$SSHCommand" != "crtSSHSock" ] && crtSSHSock
-		while [ "$retval" -eq 2 ]; do
-			$SSHCommand 1>&- 2>&-
-			retval="$?"
-		done
+		$SSHCommand 1>&- 2>&-
+		retval="$?"
 	done
 
 	return 0
@@ -346,10 +342,10 @@ gitSyncOperations()
 
 checkFileChanges()
 {
-	# If local nd remote sha checksum is different then print
+	# If local and remote sha checksum is different then print
 	# number; else print 0.
 	[ "$(git ls-remote --heads \
-"$gnupotServerUsername"@"$gnupotServer":"$gnupotRemoteDir" \
+"$gnupotServerUsername"@"$gnupotServer":"$gnupotRemoteDir" 2>&- \
 | awk '{print $1}')" == "$(git rev-list HEAD --max-count=1)" ] && printf 0 \
 || printf "$(git diff --name-only HEAD~1 HEAD | wc -l)"
 
@@ -446,7 +442,7 @@ ssh $SSHMASTERSOCKCMDARGS 1>&- 2>&-
 syncS()
 {
 	local pathCmd="ssh $SSHCONNECTCMDARGS \
-$INOTIFYWAITCMD -t 43200 "$gnupotRemoteDir""
+$INOTIFYWAITCMD "$gnupotRemoteDir""
 
 	# return/exit when signal{,s} is/are received.
 	trap "exit 0" $SIGNALS
@@ -570,11 +566,12 @@ callThreads()
 	# Lowest process priority for the threads.
 	renice 20 "$srvPid" "$cliPid" 1>&- 2>&-
 	wait "$srvPid" "$cliPid"
-	# Make the final fake commit.
+	# Make the final fake commit (used for systems with old versions of
+	# inotify-tools).
 	lastFakeCommit
 	# Kill master ssh socket (this will kill any ssh connection associated
 	# with it).
-	ssh -O exit -S "$gnupotSSHMasterSocketPath" "$gnupotServer" 2>&-
+	ssh -O exit -S "$gnupotSSHMasterSocketPath" "$gnupotServer" 1>&- 2>&-
 	# Remove shared socket before exiting. Not doing this means having a
 	# security breach because the socket remains opened and anyone could
 	# use it.

@@ -214,7 +214,7 @@ updateRepo()
 	[ "$(git -C "$gnupotLocalDir" config --get remote.origin.url)" = \
 "$gnupotServerUsername"@"$gnupotServer":"$gnupotRemoteDir" ] || return 1
 
-[ "$(git status --porcelain | wc -m)" -gt 0 ] \
+	[ "$(git status --porcelain | wc -m)" -gt 0 ] \
 && { git -C "$gnupotLocalDir" add -A 1>&- 2>&-; \
 git -C "$gnupotLocalDir" commit -am "Update merge by "$USER"." 1>&- 2>&-; }
 
