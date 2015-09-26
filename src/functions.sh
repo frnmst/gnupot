@@ -342,11 +342,20 @@ gitSyncOperations()
 checkFileChanges()
 {
 	# If local and remote sha checksum is different then print
-	# number; else print 0.
+	# number; else print 0. If it's a first commit and it is syncing from
+	# the server, it cannot go back with HEAD~1 because it would underflow.
+	# unkown is used as a fake value instead. To get the real value another
+	# connection to the server is required, so it's inefficient. The
+	# command would be something like:
+	# ssh ... "git -C ... status --porcelain | wc -l"
+	# This has been avoided because it's required only once, under certain
+	# circumstances.
 	[ "$(git ls-remote --heads \
 "$gnupotServerUsername"@"$gnupotServer":"$gnupotRemoteDir" 2>&- \
 | awk '{print $1}')" == "$(git rev-list HEAD --max-count=1)" ] && printf 0 \
-|| printf "$(git diff --name-only HEAD~1 HEAD | wc -l)"
+|| { [ "$(getCommitNumber)" -gt 1 ] \
+&& printf "$(git diff --name-only HEAD~1 HEAD | wc -l)" \
+|| printf "unkown"; }
 
 	return 0
 }
@@ -365,7 +374,8 @@ syncOperation()
 	cd "$gnupotLocalDir" \
 && { [ "$source" = "server" ] \
 && { chgFilesNum="$(checkFileChanges)"; gitSyncOperations "$path"; } \
-|| { gitSyncOperations "$path"; chgFilesNum="$(checkFileChanges)"; }; }
+|| { gitSyncOperations "$path"; chgFilesNum="$(checkFileChanges)"; }; } \
+|| return 1
 	backupAndClean && cd "$OLDPWD"
 	notify "GNUpot $path done. Changed "$chgFilesNum" file(s)." \
 "$gnupotNotificationTime"
