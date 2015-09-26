@@ -232,8 +232,8 @@ updateDNSRecord() { { getAddrByName && setUpdateableGloblVars; }; return 0; }
 
 busyWait()
 {
-	notify "GNUpot connection or auth problem. Retrying..." \
-"$gnupotNotificationTime"
+	notify "GNUpot connection or auth problem. Retrying in \
+"$gnupotBusyWaitTime" seconds..." "$gnupotNotificationTime"
 	updateDNSRecord
 	sleep "$gnupotBusyWaitTime"
 
@@ -248,11 +248,10 @@ execSSHCmd()
 {
 	local SSHCommand="$1" retval="0"
 
-	# Check if server is reachable/working. A retval of 2 means that
-	# inotifywait timeout occurred.
+	# Check if server is fully working and reachable.
 	$SSHCommand 1>&- 2>&-
 	retval="$?"
-	[ "$?" -eq 1 ] && chkSrvDirEx
+	[ "$retval" -eq 1 ] && chkSrvDirEx
 	# Poll input command until it finishes correctly.
 	while [ "$retval" -eq 255 ]; do
 		busyWait
