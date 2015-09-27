@@ -282,7 +282,7 @@ git commit -a -m "Committed "$path" $USERDATA Handled conflicts"; }
 # Clean useless files and keep maximum user defined number of backups.
 # Do the syncing. To be able to clean: git config --system \
 # receive.denyNonFastForwards true
-backupAndClean()
+backupAndPush()
 {
 	local commitSha=""
 
@@ -325,12 +325,15 @@ gitSyncOperations()
 
 	# This loop is needed for "big" or lots of files.
 	while [ "$(git status --porcelain | wc -m)" -gt 0 ]; do
+		# Count number of ahead commits. If there are any then push
+		# them to the server.
+		[ "$(git rev-list origin..HEAD --count)" -gt 0 ] \
+&& backupAndPush
 		git add -A 1>&- 2>&-
 		git commit -m "Committed "$path" $USERDATA" 1>&- 2>&-
 		[ "$count" -gt 0 ] && sleep 1
 		count=$(($count+1))
 	done
-
 	# Always pull from server first then check for conflicts using return
 	# value.
 	execSSHCmd "git pull origin master"
@@ -376,7 +379,7 @@ syncOperation()
 && { chgFilesNum="$(checkFileChanges)"; gitSyncOperations "$path"; } \
 || { gitSyncOperations "$path"; chgFilesNum="$(checkFileChanges)"; }; } \
 || return 1
-	backupAndClean && cd "$OLDPWD"
+	backupAndPush && cd "$OLDPWD"
 	notify "GNUpot $path done. Changed "$chgFilesNum" file(s)." \
 "$gnupotNotificationTime"
 
@@ -509,10 +512,9 @@ assignGitInfo()
 
 printStatus()
 {
-	Err "GNUpot is "
+	Err "GNUpot status: "
 	[ "$(pgrep -c gnupot)" -lt "$procNum" ] && Err "NOT "
-	Err "running correctly.\n"
-	Err "\n"
+	Err "running\n"
 	Err "$(git -C "$gnupotLocalDir" status)\n"
 
 	return 0
