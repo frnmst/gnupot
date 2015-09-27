@@ -28,4 +28,4 @@ Stupid) principal.
 ##More
 
 For technical information read the 
-[GNUpot WIKI](https://github.com/frnmst/gnupot/wiki)
+[GNUpot WIKI](https://github.com/frnmst/gnupot/wiki) ![https://github.com/frnmst/gnupot/wiki](https://upload.wikimedia.org/wikipedia/commons/thumb/f/f6/Oxygen480-mimetypes-x-office-address-book.svg/128px-Oxygen480-mimetypes-x-office-address-book.svg.png "© 2007 Nuno Pinheiro & David Vignoni & David Miller & Johann Ollivier Lapeyre & Kenneth Wimer & Riccardo Iaconelli / KDE / LGPL 3")
