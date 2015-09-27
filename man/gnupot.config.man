@@ -21,7 +21,7 @@
 .\"
 
 
-.TH GNUPOT 5 "August 2015" "0.1" "File Formats Manual"
+.TH GNUPOT 5 "September 2015" "0.2" "File Formats Manual"
 
 .SH NAME
 gnupot.conf \- Configuration file for GNUpot.

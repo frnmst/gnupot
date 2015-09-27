@@ -623,8 +623,6 @@ running.\n"; exit 1; }
 	return 0
 }
 
-# In the PKGBUILD the git command is substituted by the string containing the
-# version. TODO.
 printVersion() { Err "GNUpot version "$(git describe --long)"\n"; return 0; }
 
 parseOpts()
@@ -636,7 +634,7 @@ parseOpts()
 	case "$opt" in
 		h ) printHelp; return 1 ;;
 		# Call main function as spawned shell (execute and return
-	 	# control to the shell).
+		# control to the shell).
 		i ) callMain "$prgPath" "$argArray" & ;;
 		k ) killall -s SIGINT -q gnupot ;;
 		l ) less "LICENSE" ;;
