@@ -21,7 +21,63 @@
 #
 
 
-Err() { local msg="$1"; printf "$msg" 1>&2; return 0; }
+# From the bash manual:
+# The exit status of a function definition is zero unless a syntax error
+# occurs  or  a readonly  function with the same name already exists.  When
+# executed, the exit status of a function is the exit status  of  the
+# last command executed in the body.
+
+# git functions follow.
+
+gitStatus() { git -C "$gnupotLocalDir" status -vu --long --ignored; }
+
+gitGetCommitNumber() { git rev-list HEAD --count; }
+
+gitSimpleStatus() { git status --porcelain | wc -m; }
+
+# Count number of ahead commits. If there are any then push them to the
+# server.
+gitChkPrevCommits() { git rev-list origin..HEAD --count; }
+
+gitGetCommitNumDiff() { git diff --name-only HEAD~1 HEAD | wc -l; }
+
+gitChkExLocl() { git -C "$gnupotLocalDir" status -s 1>&- 2>&-; return "$?"; }
+
+gitChkExRem() { git -C "$gnupotLocalDir" ls-remote --exit-code -h 1>&- 2>&- \
+|| return 1; }
+
+gitGetLoclLastCommitSha() { git rev-list HEAD --max-count=1; }
+
+gitGetRemLastCommitSha() { git ls-remote --heads \
+"$gnupotServerUsername"@"$gnupotServer":"$gnupotRemoteDir" 2>&- \
+| awk ' { print $1 } '; }
+
+gitRemoteSetHead() { git -C "$gnupotLocalDir" remote set head origin master \
+1>&- 2>&-; }
+
+# User and exclude file settigs.
+assignGitInfo()
+{
+	cd "$gnupotLocalDir" && { { git config user.name \
+"$gnupotGitCommitterUsername" && git config user.email \
+"$gnupotGitCommitterEmail"; } \
+&& printf "#Exclude files\n"$gnupotGitFileExclude"\n" > ".git/info/exclude" \
+&& cd "$OLDPWD"; }
+}
+
+gitGetGnupotVersion() { git describe --long; }
+
+gitGetGitVersion() { git --version | awk ' { print $3 } '; }
+
+# The other functions follow.
+
+acquireLockFile() { printf 1 > "$gnupotLockFilePath"; }
+
+freeLockFile() { printf 0 > "$gnupotLockFilePath"; }
+
+getLockFileVal() { cat "$gnupotLockFilePath"; }
+
+Err() { local msg="$1"; printf "$msg" 1>&2; }
 
 printHelp()
 {
@@ -52,8 +108,6 @@ This program comes with ABSOLUTELY NO WARRANTY; for details type \
 This is free software, and you are welcome to redistribute it \n\
 under certain conditions; type \`gnupot -l' for details.\n\
 "
-
-	return 0
 }
 
 setUpdateableGloblVars()
@@ -66,8 +120,6 @@ setUpdateableGloblVars()
 ControlPersist=yes $SSHCONNECTCMDARGS exit"
 	# git environment variable for ssh.
 	GIT_SSH_COMMAND="ssh $SSHARGS"
-
-	return 0
 }
 
 setGloblVars()
@@ -91,11 +143,9 @@ setGloblVars()
 -o ServerAliveInterval="$gnupotSSHServerAliveInterval" \
 -o ServerAliveCountMax="$gnupotSSHServerAliveCountMax""
 	setUpdateableGloblVars
-
-	return 0
 }
 
-parsingErrMsg() { Err "Config or parsing err. Setup: gnupot -n\n"; return 0; }
+parsingErrMsg() { Err "Config or parsing err. Setup: gnupot -n\n"; }
 
 parseConfig()
 {
@@ -130,8 +180,6 @@ UploadSpeedU" variable="" type=""
 			;;
 		esac
 	done
-
-	return 0
 }
 
 # Find server address from hostname. If original variable is an IP
@@ -144,9 +192,7 @@ getAddrByName()
 	[[ "$gnupotServerORIG" =~ [[:alpha:]] ]] \
 && [[ ! "$gnupotServerORIG" =~ ":" ]] \
 && gnupotServer=$(getent hosts "$gnupotServerORIG" | awk ' { print $1 } ') \
-&& [ -z "$gnupotServer" ] && { Err "$hostErrMsg"; return 1; }
-
-	return 0
+&& { [ -z "$gnupotServer" ] && { Err "$hostErrMsg"; return 1; }; } || return 0
 }
 
 loadConfig()
@@ -169,8 +215,6 @@ loadConfig()
 	fi
 
 	setGloblVars
-
-	return 0
 }
 
 # Kill program if local and/or remote directories do not exist.
@@ -182,38 +226,21 @@ exist, or no git repository."
 	Err "$errMsg\n"
 	notify "$errMsg" "$gnupotNotificationTime"
 	kill -s SIGINT 0
-
-	return 0
 }
 
 # Check if remote directory exists.
-chkSrvDirEx()
-{
-	git -C "$gnupotLocalDir" ls-remote --exit-code -h 1>&- 2>&- || DirErr
-	return 0
-}
+chkSrvDirEx() { gitChkExRem || DirErr; }
 
 # Check if local directory exists.
-chkCliDirEx()
-{
-	cd "$gnupotLocalDir" 2>&- && { git status -s 1>&- 2>&- || DirErr; } \
-|| DirErr; cd "$OLDPWD"
+chkCliDirEx() { gitChkExLocl || DirErr; }
 
-	return 0
-}
-
-# Modified version of flock's boilterplate. This version is able to run also
-# on older versions of flock. See man 1 flock (examples section).
 lockOnFile()
 {
-	local lockFile="$1" command="$2" args="$3" errMsg="GNUpot is already \
-running.\n"
+	local lockFile="$1" errMsg="GNUpot is already running.\n"
 
-	# syntax: flock <options> <file> <command> <arguments>
-	# Lock on configuration file path istead of this file (gnupot.sh).
-	[ "${FLOCKER}" != "$command" ] && { FLOCKER="$command" flock -en \
-"$lockFile" "$command" "$args" || Err "$errMsg"; \
-return 1; } || return 0
+	# Get a dynamic file descriptor.
+	exec {FD}>>"$lockFile"
+	flock -en "$FD" || { Err "$errMsg"; return 1; }
 }
 
 # General notification function.
@@ -222,13 +249,13 @@ notify()
 	local msg="$1" ms="$2"
 
 	# If you are running GNUpot in a GUI then notify else do nothing.
-	[ -n "$DISPLAY" ] && notify-send -t "$ms" "$msg"; return 0
+	[ -n "$DISPLAY" ] && notify-send -t "$ms" "$msg"
 }
 
 # The new address is only valid for the thread caller, i.e. Only the client
 # thread OR the server thread is updated here. The update is done only when SSH
 # commands fail.
-updateDNSRecord() { { getAddrByName && setUpdateableGloblVars; }; return 0; }
+updateDNSRecord() { { getAddrByName && setUpdateableGloblVars; }; }
 
 busyWait()
 {
@@ -236,8 +263,6 @@ busyWait()
 "$gnupotBusyWaitTime" seconds..." "$gnupotNotificationTime"
 	updateDNSRecord
 	sleep "$gnupotBusyWaitTime"
-
-	return 0
 }
 
 # Function that checks if connection to server is active.
@@ -260,11 +285,7 @@ execSSHCmd()
 		$SSHCommand 1>&- 2>&-
 		retval="$?"
 	done
-
-	return 0
 }
-
-getCommitNumber() { printf "$(git rev-list HEAD --count)"; return 0; }
 
 # Resolve conflict function.
 # THIS FUNCTION WORKS BUT IT'S VERY BASIC. CONFLICTING FILES ARE MERGED.
@@ -275,47 +296,6 @@ resolveConflicts()
 	[ "$returnedVal" -eq 1 ] \
 && { notify "Resolving file conflicts." "$gnupotNotificationTime"; \
 git commit -a -m "Committed "$path" $USERDATA Handled conflicts"; }
-
-	return 0
-}
-
-# Clean useless files and keep maximum user defined number of backups.
-# Do the syncing. To be able to clean: git config --system \
-# receive.denyNonFastForwards true
-backupAndPush()
-{
-	local commitSha=""
-
-	# if Max backups is set to 0 it means always to do a simple commit.
-	# Otherwise use mod operator to find out when to truncate history (if
-	# result is 0 it means that history must be truncated.
-	if [ "$gnupotKeepMaxCommits" -ne 0 ] \
-&& [ $(expr "$(getCommitNumber)" % "$gnupotKeepMaxCommits") -eq 0 ]; then
-		# Get sha of interest.
-		commitSha=$(git rev-list --max-count="$gnupotKeepMaxCommits" \
-HEAD | tail -n 1)
-		# From man git-checkout:
-		# Create a new orphan branch, named <new_branch>, started from
-		# <start_point> and switch to it.
-		git checkout --orphan tmp "$commitSha"
-		# Change old commit.
-		git commit -m "Truncated history $USERDATA"
-		# From man git-rebase:
-		# Forward-port local commits to the updated upstream head.
-		git rebase --onto tmp "$commitSha" master
-		#git rebase --continue
-		git checkout master
-		# Delete tmp branch.
-		git branch -D tmp
-		# Garbage collector for stuff older than 1d.
-		# TODO better.
-		git gc --auto --prune=1d
-		execSSHCmd "git push -f origin master"
-	else
-		execSSHCmd "git push origin master"
-	fi
-
-	return 0
 }
 
 gitSyncOperations()
@@ -324,11 +304,7 @@ gitSyncOperations()
 	local path="$(echo "$1" | tr " " "-")" count=0
 
 	# This loop is needed for "big" or lots of files.
-	while [ "$(git status --porcelain | wc -m)" -gt 0 ]; do
-		# Count number of ahead commits. If there are any then push
-		# them to the server.
-		[ "$(git rev-list origin..HEAD --count)" -gt 0 ] \
-&& backupAndPush
+	while [ "$(gitSimpleStatus)" -gt 0 ]; do
 		git add -A 1>&- 2>&-
 		git commit -m "Committed "$path" $USERDATA" 1>&- 2>&-
 		[ "$count" -gt 0 ] && sleep 1
@@ -338,8 +314,6 @@ gitSyncOperations()
 	# value.
 	execSSHCmd "git pull origin master"
 	resolveConflicts "$?" "$path"
-
-	return 0
 }
 
 checkFileChanges()
@@ -353,14 +327,10 @@ checkFileChanges()
 	# ssh ... "git -C ... status --porcelain | wc -l"
 	# This has been avoided because it's required only once, under certain
 	# circumstances.
-	[ "$(git ls-remote --heads \
-"$gnupotServerUsername"@"$gnupotServer":"$gnupotRemoteDir" 2>&- \
-| awk '{print $1}')" == "$(git rev-list HEAD --max-count=1)" ] && printf 0 \
-|| { [ "$(getCommitNumber)" -gt 1 ] \
-&& printf "$(git diff --name-only HEAD~1 HEAD | wc -l)" \
-|| printf "unkown"; }
-
-	return 0
+	[ "$(gitGetRemLastCommitSha)" = "$(gitGetLoclLastCommitSha)" ] \
+&& printf 0 \
+|| { [ "$(gitGetCommitNumber)" -gt 1 ] && printf "$(gitGetCommitNumDiff)" \
+|| printf "unknown"; }
 }
 
 # Main file syncronization function.
@@ -372,25 +342,15 @@ syncOperation()
 	sleep "$gnupotTimeToWaitForOtherChanges"
 	notify "GNUpot syncing $path from $source" "$gnupotNotificationTime"
 	# Do all git operations in the correct directory before returning.
-	# if action=pull then check (before) then pull
-	# else if action=push push then check.
-	cd "$gnupotLocalDir" \
-&& { [ "$source" = "server" ] \
+	cd "$gnupotLocalDir" && \
+{ [ "$source" = "server" ] \
 && { chgFilesNum="$(checkFileChanges)"; gitSyncOperations "$path"; } \
-|| { gitSyncOperations "$path"; chgFilesNum="$(checkFileChanges)"; }; } \
+|| { gitSyncOperations "$path"; chgFilesNum="$(checkFileChanges)"; } ; } \
 || return 1
-	backupAndPush && cd "$OLDPWD"
+	execSSHCmd "git push origin master" && cd "$OLDPWD"
 	notify "GNUpot $path done. Changed "$chgFilesNum" file(s)." \
 "$gnupotNotificationTime"
-
-	return 0
 }
-
-acquireLockFile() { printf 1 > "$gnupotLockFilePath"; return 0; }
-
-freeLockFile() { printf 0 > "$gnupotLockFilePath"; return 0; }
-
-getLockFileVal() { cat "$gnupotLockFilePath"; return 0; }
 
 callSync()
 {
@@ -408,7 +368,7 @@ callSync()
 			acquireLockFile
 			# While not acquire lock:
 			# while [ ! flock -n 1024 ]; do :; done is same as:
-			flock -x "$FD"
+			flock -e "$FD"
 			syncOperation "$source" "$path"
 			# End critical section.
 		# Get first valid file descriptor from a bash builtin.
@@ -419,8 +379,6 @@ callSync()
 		# there are lots of files to be transferred.
 		sleep "$gnupotTimeToWaitForOtherChanges"
 	fi
-
-	return 0
 }
 
 # If SSH socket exists delete it. Start a new socket anyway.
@@ -465,7 +423,8 @@ $INOTIFYWAITCMD "$gnupotRemoteDir""
 	execSSHCmd chkSrvDirEx
 
 	# First of all, pull or push changes while gnupot was not running.
-	callSync "server" "ALL FILES" "$(getLockFileVal)"
+	# Use client as param instead of server to avoid problems.
+	callSync "client" "ALL FILES" "$(getLockFileVal)"
 
 	while true; do
 		# Listen for changes on server.
@@ -498,26 +457,12 @@ syncC()
 	done
 }
 
-# User and exclude file settigs.
-assignGitInfo()
-{
-	cd "$gnupotLocalDir" && { { git config user.name \
-"$gnupotGitCommitterUsername" && git config user.email \
-"$gnupotGitCommitterEmail"; } \
-&& printf "#Exclude files\n"$gnupotGitFileExclude"\n" > ".git/info/exclude" \
-&& cd "$OLDPWD"; }
-
-	return 0
-}
-
 printStatus()
 {
 	Err "GNUpot status: "
 	[ "$(pgrep -c gnupot)" -lt "$procNum" ] && Err "NOT "
 	Err "running\n"
-	Err "$(git -C "$gnupotLocalDir" status)\n"
-
-	return 0
+	Err "$(gitStatus)\n"
 }
 
 checkGitVersion()
@@ -527,11 +472,8 @@ checkGitVersion()
 
 	# Check if git supports GIT_SSH_COMMAND environment variaible.
 	# In order for gnupot to work, git must be at least version 2.4.
-	gitVer="$(git --version | awk ' { print $3 } ')"
-	IFS="." read gitVer0 gitVer1 trash <<< "$gitVer"
-	[ "$gitVer0$gitVer1" -le 23 ] && return 1
-
-	return 0
+	IFS="." read gitVer0 gitVer1 trash <<< "$(gitGetGitVersion)" #"$gitVer"
+	[ "$gitVer0$gitVer1" -gt 23 ] || return 1
 }
 
 # Check if all necessary programs are installed.
@@ -542,13 +484,11 @@ checkExecutables()
 	checkGitVersion && which $PROGRAMS 1>/dev/null 2>/dev/null
 	[ "$?" -ne 0 ] && { Err "Missing programs or unsupported. \
 Check: $PROGRAMS. Also check package versions.\n"; exit 1; }
-
-	return 0
 }
 
 # Signal handler function.
 # Send a signal to all the other threads so that they exit.
-sigHandler() { Err "GNUpot killed\n"; kill -s SIGINT 0; return 0; }
+sigHandler() { Err "GNUpot killed\n"; kill -s SIGINT 0; }
 
 # Function that makes a fake commit so that inotifywait process on the client
 # is killed (if inotify-tools version in old.
@@ -560,8 +500,6 @@ lastFakeCommit()
 -lt 314 ] \
 && touch ""$gnupotLocalDir"/lastCommit" 1>&- 2>&- \
 && rm ""$gnupotLocalDir"/lastCommit" 1>&- 2>&-
-
-	return 0
 }
 
 # Function that calls client and server threads as well as removing the SSH
@@ -570,6 +508,10 @@ callThreads()
 {
 	local srvPid="" cliPid=""
 
+	# Remove git lock (if exists).
+	rm -rf "$gnupotLocalDir"/.git/refs/heads/master.lock
+	# Set default remote head
+	gitRemoteSetHead
 	# Listen from server and send to client.
 	syncS & srvPid="$!"
 	# Listen from client and send to server.
@@ -587,8 +529,6 @@ callThreads()
 	# security breach because the socket remains opened and anyone could
 	# use it.
 	rm -rf "$gnupotSSHMasterSocketPath"
-
-	return 0
 }
 
 # Main function that runs in background.
@@ -619,13 +559,10 @@ callMain()
 running.\n"; exit 1; }
 	# The following set makes the script faster because the lock is
 	# checked before the function call.
-	lockOnFile "$CONFIGFILEPATH" "$prgPath" "$argArray"
-	[ "$?" -eq 0 ] && { set +m; main & set -m; } || exit 1
-
-	return 0
+	lockOnFile "$CONFIGFILEPATH" && { set +m; main & set -m; } || exit 1
 }
 
-printVersion() { Err "GNUpot version "$(git describe --long)"\n"; return 0; }
+printVersion() { Err "GNUpot version "; gitGetGnupotVersion; Err "\n"; }
 
 parseOpts()
 {
@@ -647,6 +584,4 @@ parseOpts()
 		? ) [ -z "$argArray" ] && callMain "$prgPath" "$argArray" \
 || { printHelp "$prgPath"; return 1; } ;;
 	esac
-
-	return 0
 }

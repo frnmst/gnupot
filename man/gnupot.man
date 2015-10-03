@@ -21,7 +21,7 @@
 .\"
 
 
-.TH GNUPOT 1 "September 2015" "0.2" "User Commands"
+.TH GNUPOT 1 "October 2015" "0.2" "User Commands"
 
 .SH NAME
 gnupot \- Libre file syncronization witten in bash, based on git.

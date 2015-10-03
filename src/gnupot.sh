@@ -31,7 +31,7 @@ savedEnv="$(set +o)"
 # not be affected (i.e. not killed when GNUpot is killed).
 # set -a: Enable automatic export of all variables form now on.
 # This avoids putting "export" in front of every variable.
-set -m; set -a
+set -ma
 
 # Set paths and constants.
 PATH="$PATH":/usr/bin
