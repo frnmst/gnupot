@@ -559,7 +559,7 @@ callMain()
 running.\n"; exit 1; }
 	# The following set makes the script faster because the lock is
 	# checked before the function call.
-	lockOnFile "$CONFIGFILEPATH" && { set +m; main & set -m; } || exit 1
+	lockOnFile "$CONFIGFILEPATH" && { main & : ; } || exit 1
 }
 
 printVersion() { Err "GNUpot version "; gitGetGnupotVersion; Err "\n"; }
