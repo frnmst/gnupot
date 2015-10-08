@@ -35,10 +35,6 @@ gitGetCommitNumber() { git rev-list HEAD --count; }
 
 gitSimpleStatus() { git status --porcelain | wc -m; }
 
-# Count number of ahead commits. If there are any then push them to the
-# server.
-gitChkPrevCommits() { git rev-list origin..HEAD --count; }
-
 gitGetCommitNumDiff() { git diff --name-only HEAD~1 HEAD | wc -l; }
 
 gitChkExLocl() { git -C "$gnupotLocalDir" status -s 1>&- 2>&-; return "$?"; }
@@ -481,9 +477,9 @@ checkExecutables()
 {
 	# Redirect which stderr and stdout to /dev/null (see bash
 	# redirection) otherwise which returns error..
-	checkGitVersion && which $PROGRAMS 1>/dev/null 2>/dev/null
-	[ "$?" -ne 0 ] && { Err "Missing programs or unsupported. \
-Check: $PROGRAMS. Also check package versions.\n"; exit 1; }
+	checkGitVersion && which $PROGRAMS 1>/dev/null 2>/dev/null \
+|| { Err "Missing programs or unsupported. Check: $PROGRAMS. \
+Also check package versions.\n"; exit 1; }
 }
 
 # Signal handler function.
@@ -498,7 +494,7 @@ lastFakeCommit()
 	# (version less than 3.14).
 	[ $(inotifywait --help | head -n1 | awk ' { print $2 } ' | tr -d '.') \
 -lt 314 ] \
-&& touch ""$gnupotLocalDir"/lastCommit" 1>&- 2>&- \
+&& : > ""$gnupotLocalDir"/lastCommit" 1>&- 2>&- \
 && rm ""$gnupotLocalDir"/lastCommit" 1>&- 2>&-
 }
 
@@ -509,7 +505,7 @@ callThreads()
 	local srvPid="" cliPid=""
 
 	# Remove git lock (if exists).
-	rm -rf "$gnupotLocalDir"/.git/refs/heads/master.lock
+	rm -rf ""$gnupotLocalDir"/.git/refs/heads/master.lock"
 	# Set default remote head
 	gitRemoteSetHead
 	# Listen from server and send to client.
@@ -552,17 +548,12 @@ callMain()
 {
 	local prgPath="$1" argArray="$2"
 
-	# I know the following is not a good thing to do but it works under
-	# certain conditions f.e. if the user is not 'using' another instance
-	# of dialog apart from GNUpot's one.
-	[ "$(pgrep -c dialog)" -gt 0 ] && { Err "GNUpot is already \
-running.\n"; exit 1; }
 	# The following set makes the script faster because the lock is
 	# checked before the function call.
 	lockOnFile "$CONFIGFILEPATH" && { main & : ; } || exit 1
 }
 
-printVersion() { Err "GNUpot version "; gitGetGnupotVersion; Err "\n"; }
+printVersion() { Err "GNUpot version "; gitGetGnupotVersion; }
 
 parseOpts()
 {

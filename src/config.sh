@@ -144,7 +144,7 @@ verifyConfig()
 
 genSSHKey()
 {
-	if [ ! -f "$SSHKeyPath" ]; then
+	if [ ! -r "$SSHKeyPath" ]; then
 		infoMsg "infobox" "Generating SSH keys. Please wait."
 		ssh-keygen -t rsa -b "$gnupotRSAKeyBits" -C \
 "gnupot:$USER@$HOSTNAME:$(date -I)" -f "$gnupotSSHKeyPath" -N "" -q
@@ -316,9 +316,7 @@ correct?" "0"
 	done
 }
 
-# See funcions.sh for explanation (callMain function).
-[ "$(pgrep -c gnupot)" -gt 1 ] && { Err "GNUpot is already running.\n"; \
-exit 1; }
+lockOnFile "$HOME/.config/gnupot/gnupot.config" || exit 1
 
 # Load default variables.
 . "src/configVariables.conf" \
