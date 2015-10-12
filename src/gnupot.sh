@@ -42,7 +42,7 @@ procNum="3"
 . ""${0%/gnupot}"/src/functions.sh"
 
 # Update Dbus environment so that notification will be show.
-[ -x "/usr/bin/dbus-update-activation-environment --all" ] \
+[ -x "/usr/bin/dbus-update-activation-environment" ] \
 && /usr/bin/dbus-update-activation-environment --all
 
 loadConfig "$1"
