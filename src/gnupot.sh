@@ -43,7 +43,7 @@ procNum="3"
 
 # Update Dbus environment so that notification will be show.
 [ -x "/usr/bin/dbus-update-activation-environment" ] \
-&& /usr/bin/dbus-update-activation-environment --all
+&& /usr/bin/dbus-update-activation-environment DISPLAY
 
 loadConfig "$1"
 checkExecutables
