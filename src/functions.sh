@@ -26,7 +26,6 @@
 # occurs  or  a readonly  function with the same name already exists.  When
 # executed, the exit status of a function is the exit status  of  the
 # last command executed in the body.
-
 # git functions follow.
 
 gitStatus() { git -C "$gnupotLocalDir" status -vu --long --ignored; }
@@ -543,15 +542,9 @@ main()
 }
 
 # Check if another istance of GNUpot is running. If that is the case exit with
-# error message.
-callMain()
-{
-	local prgPath="$1" argArray="$2"
-
-	# The following set makes the script faster because the lock is
-	# checked before the function call.
-	lockOnFile "$CONFIGFILEPATH" && { main & : ; } || exit 1
-}
+# error message. The following set makes the script faster because the lock is
+# checked before the function call.
+callMain() { lockOnFile "$CONFIGFILEPATH" && { main & : ; } || exit 1; }
 
 printVersion() { Err "GNUpot version "; gitGetGnupotVersion; }
 
@@ -565,14 +558,14 @@ parseOpts()
 		h ) printHelp; return 1 ;;
 		# Call main function as spawned shell (execute and return
 		# control to the shell).
-		i ) callMain "$prgPath" "$argArray" & ;;
+		i ) callMain & ;;
 		k ) killall -s SIGINT -q gnupot ;;
 		l ) less "LICENSE" ;;
-		n ) ""${0%/gnupot}"/src/config.sh" ;;
+		n ) ""${prgPath%/gnupot}"/src/config.sh" ;;
 		p ) cat ""$HOME"/.config/gnupot/gnupot.config" ;;
 		s ) printStatus ;;
 		v ) printVersion ;;
-		? ) [ -z "$argArray" ] && callMain "$prgPath" "$argArray" \
+		? ) [ -z "$argArray" ] && callMain \
 || { printHelp "$prgPath"; return 1; } ;;
 	esac
 }

@@ -41,6 +41,10 @@ procNum="3"
 # Source functions file.
 . ""${0%/gnupot}"/src/functions.sh"
 
+# Update Dbus environment so that notification will be show.
+[ -x "/usr/bin/dbus-update-activation-environment --all" ] \
+&& /usr/bin/dbus-update-activation-environment --all
+
 loadConfig "$1"
 checkExecutables
 parseOpts "$0" "$@"; retval="$?"

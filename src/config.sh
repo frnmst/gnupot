@@ -22,6 +22,9 @@
 # along with GNUpot.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+# Trap signals to release flock when doing CTRL+C
+#...
+
 
 # Macros.
 BACKTITLE="https://github.com/frnmst/gnupot"
