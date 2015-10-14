@@ -179,15 +179,15 @@ UploadSpeedU" variable="" type=""
 
 # Find server address from hostname. If original variable is an IP
 # address, then nothing changes. Doing this avoids making unecessary
-# DNS server requests. It works for IPv6 addresses also.
+# DNS server requests. It also works for IPv6 addresses.
 getAddrByName()
 {
-	local hostErrMsg="Cannot resolve host name.\n"
+	local hostErrMsg="Cannot resolve host name. Retrying.\n"
 
 	[[ "$gnupotServerORIG" =~ [[:alpha:]] ]] \
 && [[ ! "$gnupotServerORIG" =~ ":" ]] \
 && gnupotServer=$(getent hosts "$gnupotServerORIG" | awk ' { print $1 } ') \
-&& { [ -z "$gnupotServer" ] && { Err "$hostErrMsg"; return 1; }; } || return 0
+&& { [ -z "$gnupotServer" ] && Err "$hostErrMsg"; }
 }
 
 loadConfig()
@@ -205,8 +205,7 @@ loadConfig()
 		# Global variable.
 		gnupotServerORIG="$gnupotServer"
 		# If gnupot is started then find IP address from host name.
-		[ -z "$arg" ] || [ "$arg" = "-i" ] \
-&& { getAddrByName || exit 1; }
+		[ -z "$arg" ] || [ "$arg" = "-i" ] && getAddrByName
 	fi
 
 	setGloblVars

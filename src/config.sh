@@ -100,7 +100,6 @@ $action 0 \
 19 1 "$gnupotDownloadSpeed" 19 $fldChrs $action 0 \
 "Upload max speed (KB/s) (0 = no limit):" \
 20 1 "$gnupotUploadSpeed" 20 $fldChrs $action 0 \
-
 )
 	retval="$?"
 	echo "$opts"
