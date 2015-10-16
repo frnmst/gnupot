@@ -74,6 +74,15 @@ getLockFileVal() { cat "$gnupotLockFilePath"; }
 
 Err() { local msg="$1"; printf "$msg" 1>&2; }
 
+# General notification function.
+notify()
+{
+	local msg="$1" ms="$2"
+
+	# If you are running GNUpot in a GUI then notify else do nothing.
+	[ -n "$DISPLAY" ] && notify-send -t "$ms" "$msg" 1>&- 2>&-
+}
+
 printHelp()
 {
 	Err "\
@@ -140,7 +149,12 @@ setGloblVars()
 	setUpdateableGloblVars
 }
 
-parsingErrMsg() { Err "Config or parsing err. Setup: gnupot -n\n"; }
+parsingErrMsg()
+{
+	local msg="Config or parsing err. Setup: gnupot -n\n"
+
+	Err "$msg"; notify "${msg%%\\n}" "10000"
+}
 
 parseConfig()
 {
@@ -235,15 +249,6 @@ lockOnFile()
 	# Get a dynamic file descriptor.
 	exec {FD}>>"$lockFile"
 	flock -en "$FD" || { Err "$errMsg"; return 1; }
-}
-
-# General notification function.
-notify()
-{
-	local msg="$1" ms="$2"
-
-	# If you are running GNUpot in a GUI then notify else do nothing.
-	[ -n "$DISPLAY" ] && notify-send -t "$ms" "$msg"
 }
 
 # The new address is only valid for the thread caller, i.e. Only the client
@@ -453,20 +458,26 @@ syncC()
 
 printStatus()
 {
+	local running="0" diskUsage=""
+
 	Err "GNUpot status: "
-	[ "$(pgrep -c gnupot)" -lt "$procNum" ] && Err "NOT "
-	Err "running\n"
-	Err "$(gitStatus)\n"
+	[ "$(pgrep -c gnupot)" -ge "$procNum" ] && running="1" || Err "NOT "
+	Err "running\n\n"
+	Err "$(gitStatus)\n\n"
+	diskUsage="$(du -k -d0 "$gnupotLocalDir")"
+	Err "Directory disk usage: $(printf "$diskUsage" \
+| awk ' { print $1 }') KB\n"
+	[ "$running" -eq 1 ] && Err "\nGNUpot main PID: $(pgrep -o gnupot)\n"
 }
 
 checkGitVersion()
 {
 	# trash is a garbage variable.
-	local gitVer="" gitVer0="" gitVer1="" trash=""
+	local gitVer0="" gitVer1="" trash=""
 
 	# Check if git supports GIT_SSH_COMMAND environment variaible.
 	# In order for gnupot to work, git must be at least version 2.4.
-	IFS="." read gitVer0 gitVer1 trash <<< "$(gitGetGitVersion)" #"$gitVer"
+	IFS="." read gitVer0 gitVer1 trash <<< "$(gitGetGitVersion)"
 	[ "$gitVer0$gitVer1" -gt 23 ] || return 1
 }
 
@@ -512,6 +523,7 @@ callThreads()
 	syncC & cliPid="$!"
 	# Lowest process priority for the threads.
 	renice 20 "$srvPid" "$cliPid" 1>&- 2>&-
+	# Wait for the two threads before continuing.
 	wait "$srvPid" "$cliPid"
 	# Make the final fake commit (used for systems with old versions of
 	# inotify-tools).
@@ -533,7 +545,6 @@ main()
 
 	notify "GNUpot starting..." "$gnupotNotificationTime"
 	freeLockFile
-	# Call threads and wait for them to exit before continuing.
 	callThreads
 	notify "GNUpot stopped." "$gnupotNotificationTime"
 
@@ -561,7 +572,7 @@ parseOpts()
 		k ) killall -s SIGINT -q gnupot ;;
 		l ) less "LICENSE" ;;
 		n ) ""${prgPath%/gnupot}"/src/config.sh" ;;
-		p ) cat ""$HOME"/.config/gnupot/gnupot.config" ;;
+		p ) cat "$CONFIGFILEPATH" ;;
 		s ) printStatus ;;
 		v ) printVersion ;;
 		? ) [ -z "$argArray" ] && callMain \

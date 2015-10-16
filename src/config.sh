@@ -22,16 +22,11 @@
 # along with GNUpot.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-# Trap signals to release flock when doing CTRL+C
-#...
-
 
 # Macros.
 BACKTITLE="https://github.com/frnmst/gnupot"
 DIALOG="dialog --stdout --backtitle $BACKTITLE"
 REMOTECHKCMD="which git && which inotifywait"
-CONFIGDIR="$HOME/.config/gnupot"
-CONFIGFILEPATH="src/configVariables.conf"
 
 # Other global variables.
 options=""
@@ -111,8 +106,6 @@ getConfig()
 {
 	options=$(displayForm "GNUpot setup" "Use arrow up and down \
 to move between fields" "80")
-
-	return 0
 }
 
 strTok()
@@ -126,8 +119,8 @@ gnupotSSHServerAliveInterval gnupotSSHServerAliveCountMax \
 gnupotSSHMasterSocketPath gnupotNotificationTime gnupotLockFilePath \
 gnupotDownloadSpeed gnupotUploadSpeed"
 
-	# Control bash version to avoid IFS bug. bash 4.2 (and lower) has this
-	# bug. If bash is <=4.2 spaces must be avoided in form fields.
+	# Control bash version to avoid IFS bug. bash <=4.2 has this bug. If
+	# bash is <=4.2 spaces must be avoided in form fields.
 	local bashVersion="${BASH_VERSINFO[0]}${BASH_VERSINFO[1]}"
 	[ "$bashVersion" -le 42 ] && options="$(echo $options | tr " " ";")" \
 && IFS=";" read -r $FORMVARIABLES <<< "$options" \
@@ -141,7 +134,7 @@ verifyConfig()
 	local i=0 option=""
 
 	for option in $options; do i=$(($i+1)); done
-	[ $i -lt $optNum ] && return 1 || return 0
+	[ $i -eq $optNum ] && return 0 || return 1
 }
 
 genSSHKey()
@@ -165,7 +158,7 @@ genSSHKey()
 
 testInfo()
 {
-	# Check if ssh and remote programs already work.
+	# Check if ssh and remote programs already works.
 	{ ssh "$gnupotServerUsername"@"$gnupotServer" \
 -o PasswordAuthentication=no 2>&1 | grep denied &>/dev/null \
 && ssh -o PasswordAuthentication=no -i "$gnupotSSHKeyPath" \
@@ -179,10 +172,8 @@ inotifywait missing on server."; return 1; }
 
 initConfigDir()
 {
-	mkdir -p ""$HOME"/.config/gnupot" || { infoMsg "msgbox" "Cannot \
-create configuration directory."; return 1; }
-
-	return 0
+	mkdir -p "$CONFIGDIRPATH" || { infoMsg "msgbox" "Cannot create \
+configuration directory."; return 1; }
 }
 
 initRepo()
@@ -192,8 +183,6 @@ initRepo()
 && git -C "$gnupotRemoteDir" init --bare --shared; fi \
 && git -C "$gnupotRemoteDir" config --system receive.denyNonFastForwards \
 false" 1>&- 2>&-
-
-	return 0
 }
 
 # Make a fake commit to avoid problems at the first push of a new repository.
@@ -205,8 +194,6 @@ makeFirstCommit()
 && { git commit -m "First commit by "$USER"." --allow-empty 1>&- 2>&-; \
 git push origin master 1>&- 2>&-; }
 	cd "$OLDPWD"
-
-	return 0
 }
 
 updateRepo()
@@ -283,33 +270,31 @@ gnupotNotificationTime=\""$gnupotNotificationTime"\"\n\
 gnupotLockFilePath=\""$gnupotLockFilePath"\"\n\
 gnupotDownloadSpeed=\""$gnupotDownloadSpeed"\"\n\
 gnupotUploadSpeed=\""$gnupotUploadSpeed"\"\n\
-" > ""$CONFIGDIR"/gnupot.config"
+" > "$CONFIGFILEPATH"
 
-	chmod 600 ""$CONFIGDIR"/gnupot.config"
+	chmod 600 "$CONFIGFILEPATH"
 
 	return 0
 }
 
 mainSetup()
 {
+	# Trap signals so that CTRL+C aborts setup.
+	trap "infoMsg "infobox" 'Exited from setup.'; exit 1" SIGINT SIGTERM
+
 	while true; do
-		getConfig
-		verifyConfig
-		[ "$?" -ne 0 ] && { mainSetup; return 0; }
+		getConfig || return 1
+		verifyConfig || { mainSetup; return 0; }
 		strTok
 		parseConfig || { infoMsg "msgbox" "Value/s type invalid."; \
 $(return 1); }
 		[ "$?" -ne 0 ] && { mainSetup; return 0; }
 		displayForm "GNUpot setup summary" "Are the displayed values \
-correct?" "0"
-		[ "$?" -ne 0 ] && { mainSetup; return 0; }
-		initConfigDir
-		[ "$?" -ne 0 ] && { mainSetup; return 0; }
-		testInfo
-		[ "$?" -ne 0 ] && { mainSetup; return 0; }
+correct?" "0" || { mainSetup; return 0; }
+		initConfigDir || { mainSetup; return 0; }
+		testInfo || { mainSetup; return 0; }
 		initRepo
-		cloneRepo
-		[ "$?" -ne 0 ] && { mainSetup; return 0; }
+		cloneRepo || { mainSetup; return 0; }
 		writeConfigFile
 		[ -n "$DISPLAY" ] && bash -c "notify-send -t 2000 \
 'GNUpot setup completed.'"
@@ -318,15 +303,15 @@ correct?" "0"
 	done
 }
 
-lockOnFile "$HOME/.config/gnupot/gnupot.config" || exit 1
+initConfigDir && lockOnFile "$CONFIGFILEPATH" || exit 1
 
 # Load default variables.
 . "src/configVariables.conf" \
 || { Err "Cannot start setup. No variables file found.\n"; exit 1; }
 
 # Load variables file if gnupot.config already exists.
-[ -f ""$CONFIGDIR"/gnupot.config" ] && . ""$CONFIGDIR"/gnupot.config"
+[ -r "$CONFIGFILEPATH" ] && . "$CONFIGFILEPATH"
 
 mainSetup
 
-exit 0
+exit "$?"

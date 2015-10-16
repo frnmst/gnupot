@@ -35,7 +35,8 @@ set -ma
 
 # Set paths and constants.
 PATH="$PATH":/usr/bin
-CONFIGFILEPATH=""$HOME"/.config/gnupot/gnupot.config"
+CONFIGDIRPATH=""$HOME"/.config/gnupot"
+CONFIGFILEPATH=""$CONFIGDIRPATH"/gnupot.config"
 procNum="3"
 
 # Source functions file.
