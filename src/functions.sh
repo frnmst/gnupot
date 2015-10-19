@@ -43,14 +43,12 @@ gitChkExRem() { git -C "$gnupotLocalDir" ls-remote --exit-code -h 1>&- 2>&- \
 
 gitGetLoclLastCommitSha() { git rev-list HEAD --max-count=1; }
 
-gitGetRemLastCommitSha() { git ls-remote --heads \
-"$gnupotServerUsername"@"$gnupotServer":"$gnupotRemoteDir" 2>&- \
-| awk ' { print $1 } '; }
+gitGetRemLastCommitSha() { git ls-remote --heads  2>&- | awk ' { print $1 } '; }
 
 gitRemoteSetHead() { git -C "$gnupotLocalDir" remote set head origin master \
 1>&- 2>&-; }
 
-# User and exclude file settigs.
+# User and exclude file settings.
 assignGitInfo()
 {
 	cd "$gnupotLocalDir" && { { git config user.name \
@@ -341,11 +339,22 @@ syncOperation()
 	sleep "$gnupotTimeToWaitForOtherChanges"
 	notify "GNUpot syncing $path from $source" "$gnupotNotificationTime"
 	# Do all git operations in the correct directory before returning.
-	cd "$gnupotLocalDir" && \
-{ [ "$source" = "server" ] \
-&& { chgFilesNum="$(checkFileChanges)"; gitSyncOperations "$path"; } \
-|| { gitSyncOperations "$path"; chgFilesNum="$(checkFileChanges)"; } ; } \
-|| return 1
+	# The compressed (list) vewrsion of this didn't work. It also made a
+	# double, unexplicable call to gitSyncOperations
+	cd "$gnupotLocalDir" || return 1
+	if [ "$source" = "server" ]; then
+		chgFilesNum="$(checkFileChanges)"; gitSyncOperations "$path";
+		# The following doesn't work correctly when a merge occurs and
+		# the same files have been modified both on client and on
+		# server. In that case those files are counted twice. When
+		# gnupot starts, local and remote modified file count must be
+		# done.
+		[ "$path" = "ALL FILES" ] \
+&& chgFilesNum=$((chgFilesNum+$(checkFileChanges)))
+	else
+		gitSyncOperations "$path"; chgFilesNum="$(checkFileChanges)";
+	fi
+
 	execSSHCmd "git push origin master" && cd "$OLDPWD"
 	notify "GNUpot $path done. Changed "$chgFilesNum" file(s)." \
 "$gnupotNotificationTime"
@@ -423,7 +432,7 @@ $INOTIFYWAITCMD "$gnupotRemoteDir""
 
 	# First of all, pull or push changes while gnupot was not running.
 	# Use client as param instead of server to avoid problems.
-	callSync "client" "ALL FILES" "$(getLockFileVal)"
+	callSync "server" "ALL FILES" "$(getLockFileVal)"
 
 	while true; do
 		# Listen for changes on server.
