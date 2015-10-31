@@ -577,7 +577,7 @@ parseOpts()
 		h ) printHelp; return 1 ;;
 		# Call main function as spawned shell (execute and return
 		# control to the shell).
-		i ) callMain & ;;
+		i ) callMain ;;
 		k ) killall -s SIGINT -q gnupot ;;
 		l ) less "LICENSE" ;;
 		n ) ""${prgPath%/gnupot}"/src/config.sh" ;;
