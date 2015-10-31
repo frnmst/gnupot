@@ -249,10 +249,10 @@ lockOnFile()
 	flock -en "$FD" || { Err "$errMsg"; return 1; }
 }
 
-# The new address is only valid for the thread caller, i.e. Only the client
-# thread OR the server thread is updated here. The update is done only when SSH
-# commands fail.
-updateDNSRecord() { { getAddrByName && setUpdateableGloblVars; }; }
+# The new address is only valid for the caller thread (i.e. Only the client
+# thread OR the server thread is updated here). The update is done only when
+# an SSH command fails.
+updateDNSRecord() { { getAddrByName; setUpdateableGloblVars; }; }
 
 busyWait()
 {
