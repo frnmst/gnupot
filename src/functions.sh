@@ -38,8 +38,7 @@ gitGetCommitNumDiff() { git diff --name-only HEAD~1 HEAD | wc -l; }
 
 gitChkExLocl() { git -C "$gnupotLocalDir" status -s 1>&- 2>&-; return "$?"; }
 
-gitChkExRem() { git -C "$gnupotLocalDir" ls-remote --exit-code -h 1>&- 2>&- \
-|| return 1; }
+gitChkExRem() { git -C "$gnupotLocalDir" ls-remote --exit-code -h 1>&- 2>&-; }
 
 gitGetLoclLastCommitSha() { git rev-list HEAD --max-count=1; }
 
@@ -67,6 +66,8 @@ gitGetGitVersion() { git --version | awk ' { print $3 } '; }
 acquireLockFile() { printf 1 > "$gnupotLockFilePath"; }
 
 freeLockFile() { printf 0 > "$gnupotLockFilePath"; }
+
+busyWaitAcquireLockFile() { printf 2 > "$gnupotLockFilePath"; }
 
 getLockFileVal() { cat "$gnupotLockFilePath"; }
 
@@ -199,7 +200,9 @@ getAddrByName()
 	[[ "$gnupotServerORIG" =~ [[:alpha:]] ]] \
 && [[ ! "$gnupotServerORIG" =~ ":" ]] \
 && gnupotServer=$(getent hosts "$gnupotServerORIG" | awk ' { print $1 } ') \
-&& { [ -z "$gnupotServer" ] && Err "$hostErrMsg"; }
+|| { [ -z "$gnupotServer" ] && Err "$hostErrMsg"; }
+
+	return 0
 }
 
 loadConfig()
@@ -252,14 +255,46 @@ lockOnFile()
 # The new address is only valid for the caller thread (i.e. Only the client
 # thread OR the server thread is updated here). The update is done only when
 # an SSH command fails.
-updateDNSRecord() { { getAddrByName; setUpdateableGloblVars; }; }
+updateDNSRecord() { { getAddrByName && setUpdateableGloblVars; }; }
 
 busyWait()
 {
+	local tmp="$(getLockFileVal)"
+
+	busyWaitAcquireLockFile
 	notify "GNUpot connection or auth problem. Retrying in \
 "$gnupotBusyWaitTime" seconds..." "$gnupotNotificationTime"
-	updateDNSRecord
 	sleep "$gnupotBusyWaitTime"
+	updateDNSRecord
+	# Restore previous state in lock file.
+	printf "$tmp" > "$gnupotLockFilePath"
+}
+
+# If SSH socket exists delete it. Start a new socket anyway.
+# Open a new master SSH socket after.
+# Speeds of 0 = no limits.
+crtSSHSock()
+{
+	local TRICKLECMD="trickle -s"
+
+	rm -rf "$gnupotSSHMasterSocketPath"
+	if [ "$gnupotDownloadSpeed" -eq 0 ] \
+&& [ "$gnupotUploadSpeed" -eq 0 ]; then
+		ssh $SSHMASTERSOCKCMDARGS 1>&- 2>&-
+	else
+		if [ "$gnupotDownloadSpeed" -eq 0 ]; then
+			$TRICKLECMD -u "$gnupotDownloadSpeed" \
+ssh $SSHMASTERSOCKCMDARGS 1>&- 2>&-
+		elif [ "$gnupotUploadSpeed" -eq 0 ]; then
+			$TRICKLECMD -d "$gnupotDownloadSpeed" \
+ssh $SSHMASTERSOCKCMDARGS 1>&- 2>&-
+		else
+			$TRICKLECMD -d "$gnupotDownloadSpeed" \
+-u "$gnupotUploadSpeed" ssh $SSHMASTERSOCKCMDARGS 1>&- 2>&-
+		fi
+	fi
+
+	return "$?"
 }
 
 # Function that checks if connection to server is active.
@@ -273,7 +308,12 @@ execSSHCmd()
 	# Check if server is fully working and reachable.
 	$SSHCommand 1>&- 2>&-
 	retval="$?"
-	[ "$retval" -eq 1 ] && chkSrvDirEx
+	# Before checking remote directory existence, be sure not to be in the
+	# busy wait function. This happens when the computer is disconnected
+	# and a file is modified locally. A value of 2 is used so that it's
+	# distinguishable from 0 and 1. An event gets ignored if it passes the
+	# first if but not the second.
+	[ "$retval" -eq 1 ] && [ "$(getLockFileVal)" -ne 2 ] && chkSrvDirEx
 	# Poll input command until it finishes correctly.
 	while [ "$retval" -eq 255 ]; do
 		busyWait
@@ -389,33 +429,6 @@ callSync()
 	fi
 }
 
-# If SSH socket exists delete it. Start a new socket anyway.
-# Open a new master SSH socket after.
-# Speeds of 0 = no limits.
-crtSSHSock()
-{
-	local TRICKLECMD="trickle -s"
-
-	rm -rf "$gnupotSSHMasterSocketPath"
-	if [ "$gnupotDownloadSpeed" -eq 0 ] \
-&& [ "$gnupotUploadSpeed" -eq 0 ]; then
-		ssh $SSHMASTERSOCKCMDARGS 1>&- 2>&-
-	else
-		if [ "$gnupotDownloadSpeed" -eq 0 ]; then
-			$TRICKLECMD -u "$gnupotDownloadSpeed" \
-ssh $SSHMASTERSOCKCMDARGS 1>&- 2>&-
-		elif [ "$gnupotUploadSpeed" -eq 0 ]; then
-			$TRICKLECMD -d "$gnupotDownloadSpeed" \
-ssh $SSHMASTERSOCKCMDARGS 1>&- 2>&-
-		else
-			$TRICKLECMD -d "$gnupotDownloadSpeed" \
--u "$gnupotUploadSpeed" ssh $SSHMASTERSOCKCMDARGS 1>&- 2>&-
-		fi
-	fi
-
-	return "$?"
-}
-
 # Server sync thread.
 syncS()
 {
@@ -471,12 +484,13 @@ printStatus()
 
 	Err "GNUpot status: "
 	[ "$(pgrep -c gnupot)" -ge "$procNum" ] && running="1" || Err "NOT "
-	Err "running\n\n"
+	Err "running "
+	[ "$running" -eq 1 ] && Err "with PID: $(pgrep -o gnupot)"
+	Err "\n\n"
 	Err "$(gitStatus)\n\n"
 	diskUsage="$(du -k -d0 "$gnupotLocalDir")"
 	Err "Directory disk usage: $(printf "$diskUsage" \
 | awk ' { print $1 }') KB\n"
-	[ "$running" -eq 1 ] && Err "\nGNUpot main PID: $(pgrep -o gnupot)\n"
 }
 
 checkGitVersion()
