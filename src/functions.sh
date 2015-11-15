@@ -101,8 +101,8 @@ Configuration file is found in ~/.config/gnupot/gnupot.config.\n\n\
 Exit value:\n\
 \t0\tno error occurred,\n\
 \t1\tsome error occurred.\n\n\
-Report bugs to: franco.masotti@live.com or \
-franco.masotti@student.unife.it\n\
+Report bugs to: franco.masotti@student.unife.it or \
+franco.masotti@live.com\
 Full documentation at: <https://github.com/frnmst/gnupot/wiki>\n\
 or available locally via: man man/gnupot.man\n\n\
 GNUpot  Copyright © 2015  frnmst (Franco Masotti)\n\
@@ -136,7 +136,7 @@ setGloblVars()
 	# Subset of the commit message.
 	USERDATA="by "$USER"@"$HOSTNAME"."
 	# inotifywait args: recursive, quiet, listen only to certain events.
-	INOTIFYWAITCMD="inotifywait -r -q -e modify -e attrib \
+	INOTIFYWAITCMD="inotifywait -q -e modify -e attrib \
 -e move -e move_self -e create -e delete --format %f"
 	# SSH arguments. Force pseudo terminal allocation with -t -t swicthes.
 	SSHARGS="-t -t -o PasswordAuthentication=no -i \
@@ -344,7 +344,7 @@ gitSyncOperations()
 	while [ "$(gitSimpleStatus)" -gt 0 ]; do
 		git add -A 1>&- 2>&-
 		git commit -m "Committed "$path" $USERDATA" 1>&- 2>&-
-		[ "$count" -gt 0 ] && sleep 1
+		[ "$count" -gt 0 ] && sleep "$count"
 		count=$(($count+1))
 	done
 	# Always pull from server first then check for conflicts using return
@@ -433,7 +433,7 @@ callSync()
 syncS()
 {
 	local pathCmd="ssh $SSHCONNECTCMDARGS \
-$INOTIFYWAITCMD "$gnupotRemoteDir""
+$INOTIFYWAITCMD ""$gnupotRemoteDir"/refs/heads/master""
 
 	# return/exit when signal{,s} is/are received.
 	trap "exit 0" $SIGNALS
@@ -472,7 +472,7 @@ syncC()
 	assignGitInfo
 
 	while true; do
-		path=$($INOTIFYWAITCMD --exclude $gnupotInotifyFileExclude \
+		path=$($INOTIFYWAITCMD -r --exclude $gnupotInotifyFileExclude \
 "$gnupotLocalDir" || chkCliDirEx)
 		callSync "client" "$path" "$(getLockFileVal)"
 	done
