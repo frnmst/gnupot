@@ -102,7 +102,7 @@ Exit value:\n\
 \t0\tno error occurred,\n\
 \t1\tsome error occurred.\n\n\
 Report bugs to: franco.masotti@student.unife.it or \
-franco.masotti@live.com\
+franco.masotti@live.com\n\
 Full documentation at: <https://github.com/frnmst/gnupot/wiki>\n\
 or available locally via: man man/gnupot.man\n\n\
 GNUpot  Copyright © 2015  frnmst (Franco Masotti)\n\
