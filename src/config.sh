@@ -57,44 +57,46 @@ displayForm()
 "$winY" "$winX" 0 \
 "Server address or hostname:"		1 1 "$gnupotServer"	1 $fldChrs \
 $action 0 \
-"Remote user name:"			2 1 "$gnupotServerUsername" \
-2 $fldChrs $action 0 \
-"Remote directory path:"		3 1 "$gnupotRemoteDir"	3 $fldChrs \
+"Server port:"				2 1 "$gnupotServerPort"	2 $fldChrs \
 $action 0 \
-"Local directory full path:"		4 1 "$gnupotLocalDir"	4 $fldChrs \
+"Remote user name:"			3 1 "$gnupotServerUsername" \
+3 $fldChrs $action 0 \
+"Remote directory path:"		4 1 "$gnupotRemoteDir"	4 $fldChrs \
 $action 0 \
-"Local RSA keys full path:"		5 1 "$gnupotSSHKeyPath"	5 $fldChrs \
+"Local directory full path:"		5 1 "$gnupotLocalDir"	5 $fldChrs \
 $action 0 \
-"Local RSA keys length (bits):"		6 1 "$gnupotRSAKeyBits"	6 $fldChrs \
+"Local RSA keys full path:"		6 1 "$gnupotSSHKeyPath"	6 $fldChrs \
 $action 0 \
-"Backups to keep (#; 0 = keep all):"	7 1 "$gnupotKeepMaxCommits" \
-7 $fldChrs $action 0 \
-"Exclude file inotify POSIX pattern:"	8 1 "$gnupotInotifyFileExclude" \
+"Local RSA keys length (bits):"		7 1 "$gnupotRSAKeyBits"	7 $fldChrs \
+$action 0 \
+"Backups to keep (#; 0 = keep all):"	8 1 "$gnupotKeepMaxCommits" \
 8 $fldChrs $action 0 \
-"Exclude file git globbing pattern:"	9 1 "$gnupotGitFileExclude" \
+"Exclude file inotify POSIX pattern:"	9 1 "$gnupotInotifyFileExclude" \
 9 $fldChrs $action 0 \
-"git committer user name:"		10 1 "$gnupotGitCommitterUsername" \
+"Exclude file git globbing pattern:"	10 1 "$gnupotGitFileExclude" \
 10 $fldChrs $action 0 \
-"git committer email:"			11 1 "$gnupotGitCommitterEmail" \
+"git committer user name:"		11 1 "$gnupotGitCommitterUsername" \
 11 $fldChrs $action 0 \
-"Time to wait for file changes (s):"	12 1 \
-"$gnupotTimeToWaitForOtherChanges" 12 $fldChrs $action 0 \
-"Time to wait on problem (s):"		13 1 "$gnupotBusyWaitTime" \
-13 $fldChrs $action 0 \
-"SSH server alive interval (s; >= 1):"	14 1 "$gnupotSSHServerAliveInterval" \
+"git committer email:"			12 1 "$gnupotGitCommitterEmail" \
+12 $fldChrs $action 0 \
+"Time to wait for file changes (s):"	13 1 \
+"$gnupotTimeToWaitForOtherChanges" 13 $fldChrs $action 0 \
+"Time to wait on problem (s):"		14 1 "$gnupotBusyWaitTime" \
 14 $fldChrs $action 0 \
+"SSH server alive interval (s; >= 1):"	15 1 "$gnupotSSHServerAliveInterval" \
+15 $fldChrs $action 0 \
 "SSH server alive count max (>= 1):" \
-15 1 "$gnupotSSHServerAliveCountMax" 15 $fldChrs $action 0 \
-"SSH master socket full path:"		16 1 "$gnupotSSHMasterSocketPath" \
-16 $fldChrs $action 0 \
-"Event notification time (ms):"		17 1 "$gnupotNotificationTime" \
+16 1 "$gnupotSSHServerAliveCountMax"	16 $fldChrs $action 0 \
+"SSH master socket full path:"		17 1 "$gnupotSSHMasterSocketPath" \
 17 $fldChrs $action 0 \
-"Lock file full path:"			18 1 "$gnupotLockFilePath" \
+"Event notification time (ms):"		18 1 "$gnupotNotificationTime" \
 18 $fldChrs $action 0 \
+"Lock file full path:"			19 1 "$gnupotLockFilePath" \
+19 $fldChrs $action 0 \
 "Download max speed (KB/s) (0 = no limit):" \
-19 1 "$gnupotDownloadSpeed" 19 $fldChrs $action 0 \
+20 1 "$gnupotDownloadSpeed" 20 $fldChrs $action 0 \
 "Upload max speed (KB/s) (0 = no limit):" \
-20 1 "$gnupotUploadSpeed" 20 $fldChrs $action 0 \
+21 1 "$gnupotUploadSpeed" 21 $fldChrs $action 0 \
 )
 	retval="$?"
 	echo "$opts"
@@ -251,6 +253,7 @@ writeConfigFile()
 
 	printf "\
 gnupotServer=\""$gnupotServer"\"\n\
+gnupotServerPort=\""$gnupotServerPort"\"\n\
 gnupotServerUsername=\""$gnupotServerUsername"\"\n\
 gnupotRemoteDir=\""$gnupotRemoteDir"\"\n\
 gnupotLocalDir=\""$gnupotLocalDir"\"\n\
