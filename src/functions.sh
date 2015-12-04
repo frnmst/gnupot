@@ -89,6 +89,7 @@ Use: gnupot [ OPTION ]\n\
 Yet another libre Dropbox clone (only for the right aspects) written in\n\
 bash and based on git.\n\n\
 Only one option is permitted.\n\
+\t-d\tStart GNUpot in debug mode.\n\
 \t-h\tHelp.\n\
 \t-i\tStart GNUpot.\n\
 \t-k\tKill GNUpot.\n\
@@ -586,8 +587,9 @@ parseOpts()
 	local prgPath="$1" argArray="$2"
 
 	# Get options from special variable $@. Treat no arguments as -i.
-	getopts ":hiklnpsv" opt "$argArray"
+	getopts ":dhiklnpsv" opt "$argArray"
 	case "$opt" in
+		d ) set -x; callMain ;;
 		h ) printHelp; return 1 ;;
 		# Call main function as spawned shell (execute and return
 		# control to the shell).

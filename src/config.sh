@@ -30,7 +30,7 @@ REMOTECHKCMD="which git && which inotifywait"
 
 # Other global variables.
 options=""
-optNum="20"
+optNum="21"
 
 infoMsg()
 {
@@ -112,10 +112,10 @@ to move between fields" "80")
 
 strTok()
 {
-	local FORMVARIABLES="gnupotServer gnupotServerUsername \
-gnupotRemoteDir gnupotLocalDir gnupotSSHKeyPath gnupotRSAKeyBits \
-gnupotKeepMaxCommits gnupotInotifyFileExclude gnupotGitFileExclude \
-gnupotGitCommitterUsername gnupotGitCommitterEmail \
+	local FORMVARIABLES="gnupotServer gnupotServerPort \
+gnupotServerUsername gnupotRemoteDir gnupotLocalDir gnupotSSHKeyPath \
+gnupotRSAKeyBits gnupotKeepMaxCommits gnupotInotifyFileExclude \
+gnupotGitFileExclude gnupotGitCommitterUsername gnupotGitCommitterEmail \
 gnupotTimeToWaitForOtherChanges gnupotBusyWaitTime \
 gnupotSSHServerAliveInterval gnupotSSHServerAliveCountMax \
 gnupotSSHMasterSocketPath gnupotNotificationTime gnupotLockFilePath \
@@ -148,11 +148,12 @@ genSSHKey()
 	fi
 	infoMsg "msgbox" "You will now be prompted for \
 "$gnupotServerUsername"'s password..."
-	ssh-copy-id -i ""$gnupotSSHKeyPath".pub" \
+	ssh-copy-id -p "$gnupotServerPort" -i ""$gnupotSSHKeyPath".pub" \
 "$gnupotServerUsername"@"$gnupotServer"
 
 	# Check if ssh works and if remote programs exist.
-	ssh -o PasswordAuthentication=no -i "$gnupotSSHKeyPath" \
+	ssh -p "$gnupotServerPort" -o PasswordAuthentication=no \
+-i "$gnupotSSHKeyPath" \
 "$gnupotServerUsername"@"$gnupotServer" "$REMOTECHKCMD" 1>&- 2>&-
 
 	return "$?"
@@ -161,9 +162,11 @@ genSSHKey()
 testInfo()
 {
 	# Check if ssh and remote programs already works.
-	{ ssh "$gnupotServerUsername"@"$gnupotServer" \
+	{ ssh -p "$gnupotServerPort" \
+"$gnupotServerUsername"@"$gnupotServer" \
 -o PasswordAuthentication=no 2>&1 | grep denied &>/dev/null \
-&& ssh -o PasswordAuthentication=no -i "$gnupotSSHKeyPath" \
+&& ssh -p "$gnupotServerPort" -o PasswordAuthentication=no \
+-i "$gnupotSSHKeyPath" \
 "$gnupotServerUsername"@"$gnupotServer" "$REMOTECHKCMD" 1>&- 2>&- \
 || genSSHKey; } \
 || { infoMsg "msgbox" "SSH problem or git and/or \
@@ -180,7 +183,8 @@ configuration directory."; return 1; }
 
 initRepo()
 {
-	ssh -i "$gnupotSSHKeyPath" "$gnupotServerUsername"@"$gnupotServer" \
+	ssh -p "$gnupotServerPort" -i "$gnupotSSHKeyPath" \
+"$gnupotServerUsername"@"$gnupotServer" \
 "if [ ! -d "$gnupotRemoteDir" ]; then mkdir -p "$gnupotRemoteDir" \
 && git -C "$gnupotRemoteDir" init --bare --shared; fi \
 && git -C "$gnupotRemoteDir" config --system receive.denyNonFastForwards \

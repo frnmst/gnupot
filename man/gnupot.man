@@ -37,6 +37,14 @@ and based on git.
 Only a single option is permitted.
 
 .TP
+.B -d
+.RS
+Start GNUpot in debug mode. The program will behave normally but all the 
+execution flow will be shown on the console. This is useful to detect 
+and report problems to the developers.
+.RE
+
+.TP
 .B -h
 .RS
 Show GNUpot's help.

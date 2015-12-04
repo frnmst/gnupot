@@ -58,6 +58,14 @@ This variable is used by SSH.
 .RE
 
 .TP
+.B gnupotServerPort
+.RS
+An integer between 1 and 65535 containing the server port.
+.br
+This variable is used by SSH.
+.RE
+
+.TP
 .B gnupotServerUsername
 .RS
 A string containing the server (remote) username.
