@@ -50,54 +50,11 @@ infoMsg()
 
 displayForm()
 {
-	local title="$1" arg="$2" action="$3" opts="" retval="" fldChrs="50"
+	local opts="" retval=""
 
-	opts=$($DIALOG --title "$title" \
---form "$arg" \
-"$winY" "$winX" 0 \
-"Server address or hostname:"		1 1 "$gnupotServer"	1 $fldChrs \
-$action 0 \
-"Server port:"				2 1 "$gnupotServerPort"	2 $fldChrs \
-$action 0 \
-"Remote user name:"			3 1 "$gnupotServerUsername" \
-3 $fldChrs $action 0 \
-"Remote directory path:"		4 1 "$gnupotRemoteDir"	4 $fldChrs \
-$action 0 \
-"Local directory full path:"		5 1 "$gnupotLocalDir"	5 $fldChrs \
-$action 0 \
-"Local RSA keys full path:"		6 1 "$gnupotSSHKeyPath"	6 $fldChrs \
-$action 0 \
-"Local RSA keys length (bits):"		7 1 "$gnupotRSAKeyBits"	7 $fldChrs \
-$action 0 \
-"Backups to keep (#; 0 = keep all):"	8 1 "$gnupotKeepMaxCommits" \
-8 $fldChrs $action 0 \
-"Exclude file inotify POSIX pattern:"	9 1 "$gnupotInotifyFileExclude" \
-9 $fldChrs $action 0 \
-"Exclude file git globbing pattern:"	10 1 "$gnupotGitFileExclude" \
-10 $fldChrs $action 0 \
-"git committer user name:"		11 1 "$gnupotGitCommitterUsername" \
-11 $fldChrs $action 0 \
-"git committer email:"			12 1 "$gnupotGitCommitterEmail" \
-12 $fldChrs $action 0 \
-"Time to wait for file changes (s):"	13 1 \
-"$gnupotTimeToWaitForOtherChanges" 13 $fldChrs $action 0 \
-"Time to wait on problem (s):"		14 1 "$gnupotBusyWaitTime" \
-14 $fldChrs $action 0 \
-"SSH server alive interval (s; >= 1):"	15 1 "$gnupotSSHServerAliveInterval" \
-15 $fldChrs $action 0 \
-"SSH server alive count max (>= 1):" \
-16 1 "$gnupotSSHServerAliveCountMax"	16 $fldChrs $action 0 \
-"SSH master socket full path:"		17 1 "$gnupotSSHMasterSocketPath" \
-17 $fldChrs $action 0 \
-"Event notification time (ms):"		18 1 "$gnupotNotificationTime" \
-18 $fldChrs $action 0 \
-"Lock file full path:"			19 1 "$gnupotLockFilePath" \
-19 $fldChrs $action 0 \
-"Download max speed (KB/s) (0 = no limit):" \
-20 1 "$gnupotDownloadSpeed" 20 $fldChrs $action 0 \
-"Upload max speed (KB/s) (0 = no limit):" \
-21 1 "$gnupotUploadSpeed" 21 $fldChrs $action 0 \
-)
+	# Create the form.
+	. "src/form.sh"
+
 	retval="$?"
 	echo "$opts"
 
@@ -151,7 +108,7 @@ genSSHKey()
 	ssh-copy-id -p "$gnupotServerPort" -i ""$gnupotSSHKeyPath".pub" \
 "$gnupotServerUsername"@"$gnupotServer"
 
-	# Check if ssh works and if remote programs exist.
+	# Check if SSH works and if remote programs exist.
 	ssh -p "$gnupotServerPort" -o PasswordAuthentication=no \
 -i "$gnupotSSHKeyPath" \
 "$gnupotServerUsername"@"$gnupotServer" "$REMOTECHKCMD" 1>&- 2>&-
@@ -161,7 +118,7 @@ genSSHKey()
 
 testInfo()
 {
-	# Check if ssh and remote programs already works.
+	# Check if SSH and remote programs already works.
 	{ ssh -p "$gnupotServerPort" \
 "$gnupotServerUsername"@"$gnupotServer" \
 -o PasswordAuthentication=no 2>&1 | grep denied &>/dev/null \
@@ -170,17 +127,21 @@ testInfo()
 "$gnupotServerUsername"@"$gnupotServer" "$REMOTECHKCMD" 1>&- 2>&- \
 || genSSHKey; } \
 || { infoMsg "msgbox" "SSH problem or git and/or \
-inotifywait missing on server."; return 1; }
+inotifywait missing on server. Please read the wiki at \
+https://github.com/frnmst/gnupot/wiki/"; return 1; }
 
 	return 0
 }
 
+# Local configuration directory.
 initConfigDir()
 {
-	mkdir -p "$CONFIGDIRPATH" || { infoMsg "msgbox" "Cannot create \
-configuration directory."; return 1; }
+	mkdir -p "$CONFIGDIRPATH" && chmod 600 "$CONFIGDIRPATH" \
+|| { infoMsg "msgbox" "Cannot create configuration directory."; return 1; }
 }
 
+# Initialize remote repository, which is bare and allows fast forwards (useful
+# for deleting old history.
 initRepo()
 {
 	ssh -p "$gnupotServerPort" -i "$gnupotSSHKeyPath" \
@@ -222,7 +183,8 @@ git -C "$gnupotLocalDir" commit -am "Update merge by "$USER"." 1>&- 2>&-; }
 
 cloneRepo()
 {
-	GIT_SSH_COMMAND="ssh -i $gnupotSSHKeyPath"
+	# The following is a global variable.
+	GIT_SSH_COMMAND="ssh -p $gnupotServerPort -i $gnupotSSHKeyPath"
 
 	if [ ! -d "$gnupotLocalDir" ]; then
 		infoMsg "infobox" "Cloning remote repository. This may take \
