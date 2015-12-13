@@ -136,7 +136,7 @@ https://github.com/frnmst/gnupot/wiki/"; return 1; }
 # Local configuration directory.
 initConfigDir()
 {
-	mkdir -p "$CONFIGDIRPATH" && chmod 600 "$CONFIGDIRPATH" \
+	mkdir -p "$CONFIGDIRPATH" && chmod 700 "$CONFIGDIRPATH" \
 || { infoMsg "msgbox" "Cannot create configuration directory."; return 1; }
 }
 
