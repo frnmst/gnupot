@@ -26,7 +26,6 @@
 # occurs  or  a readonly  function with the same name already exists.  When
 # executed, the exit status of a function is the exit status  of  the
 # last command executed in the body.
-# git functions follow.
 
 gitStatus() { git -C "$gnupotLocalDir" status -vu --long --ignored; }
 
@@ -61,8 +60,6 @@ gitGetGnupotVersion() { git describe --long; }
 
 gitGetGitVersion() { git --version | awk ' { print $3 } '; }
 
-# The other functions follow.
-
 acquireLockFile() { printf 1 > "$gnupotLockFilePath"; }
 
 freeLockFile() { printf 0 > "$gnupotLockFilePath"; }
@@ -85,7 +82,7 @@ notify()
 printHelp()
 {
 	Err "\
-Use: gnupot [ OPTION ]\n\
+Usage: gnupot [ OPTION ]\n\
 Yet another libre Dropbox clone (only for the right aspects) written in\n\
 bash and based on git.\n\n\
 Only one option is permitted.\n\
@@ -140,9 +137,13 @@ setGloblVars()
 	INOTIFYWAITCMD="inotifywait -q -e modify -e attrib \
 -e move -e move_self -e create -e delete --format %f"
 	# SSH arguments. Force pseudo terminal allocation with -t -t swicthes.
-	SSHARGS="-t -t -o PasswordAuthentication=no -i \
-"$gnupotSSHKeyPath" -C -S \
-"$gnupotSSHMasterSocketPath" -o UserKnownHostsFile=/dev/null \
+	SSHARGS="-t -t \
+-o PasswordAuthentication=no \
+-p "$gnupotServerPort" \
+-i "$gnupotSSHKeyPath" \
+-C \
+-S "$gnupotSSHMasterSocketPath" \
+-o UserKnownHostsFile=/dev/null \
 -o StrictHostKeyChecking=no \
 -o ServerAliveInterval="$gnupotSSHServerAliveInterval" \
 -o ServerAliveCountMax="$gnupotSSHServerAliveCountMax""
@@ -151,19 +152,23 @@ setGloblVars()
 
 parsingErrMsg()
 {
-	local msg="Config or parsing err. Setup: gnupot -n\n"
+	local variable="$1" msg="Config or parsing err. Variable "$variable". \
+Setup: gnupot -n\n"
 
 	Err "$msg"; notify "${msg%%\\n}" "10000"
+
+	return 1
 }
 
 parseConfig()
 {
-        local variableList="ServerS ServerUsernameO RemoteDirO LocalDirO \
-SSHKeyPathO RSAKeyBitsU KeepMaxCommitsU InotifyFileExcludeO GitFileExcludeO \
-GitCommitterUsernameO GitCommitterEmailO TimeToWaitForOtherChangesU \
-BusyWaitTimeU SSHServerAliveIntervalN SSHServerAliveCountMaxN \
-SSHMasterSocketPathO NotificationTimeU LockFilePathO DownloadSpeedU \
-UploadSpeedU" variable="" type=""
+        local variableList="ServerS ServerPortP ServerUsernameO RemoteDirO \
+LocalDirO SSHKeyPathO RSAKeyBitsU KeepMaxCommitsU InotifyFileExcludeO \
+GitFileExcludeO GitCommitterUsernameO GitCommitterEmailO \
+TimeToWaitForOtherChangesU BusyWaitTimeU SSHServerAliveIntervalN \
+SSHServerAliveCountMaxN SSHMasterSocketPathO NotificationTimeU LockFilePathO \
+DownloadSpeedU UploadSpeedU"
+	local variable="" type=""
 
 	for variable in $variableList; do
 		# Get var name and last char of variable to determine type.
@@ -173,19 +178,24 @@ UploadSpeedU" variable="" type=""
 		case "$type" in
 			U ) # Unsigned integers only.
 				case "$variable" in '' | *[!0-9]* )
-					parsingErrMsg; return 1 ;; esac
+					parsingErrMsg "$variable" ;; esac
 			;;
 			N ) # Natural numbers only.
 				case "$variable" in '' | [!1-9]* | *[!0-9]* )
-					parsingErrMsg; return 1 ;; esac
+					parsingErrMsg "$variable" ;; esac
+			;;
+			P ) # Port numbers only.
+				{ [ "$variable" == '' ] \
+|| [ "$variable" -lt 1 ] || [ "$variable" -gt 65535 ]; } \
+&& parsingErrMsg "$variable"
 			;;
 			S ) # Strings without space char.
 				case "$variable" in '' | *[' ']* )
-					parsingErrMsg; return 1 ;; esac
+					parsingErrMsg "$variable" ;; esac
 			;;
 			* ) # All the other variables must be non-empty.
 				case "$variable" in '' )
-					parsingErrMsg; return 1 ;; esac
+					parsingErrMsg "$variable" ;; esac
 			;;
 		esac
 	done

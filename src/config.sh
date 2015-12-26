@@ -205,7 +205,7 @@ Backup old directory and continue [yes] or Delete it and continue [no] ?"; \
 		# 0 = yes; 1 = no. \
 		{ [ "$?" -eq 0 ] && mv "$gnupotLocalDir" \
 ""$gnupotLocalDir"_"$(date +%s)"" || rm -rf "$gnupotLocalDir"; }; \
-		cloneRepo; }
+cloneRepo; }
 	fi
 
 	return 0
