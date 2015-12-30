@@ -83,18 +83,18 @@ printHelp()
 {
 	Err "\
 Usage: gnupot [ OPTION ]\n\
-Yet another libre Dropbox clone (only for the right aspects) written in\n\
-bash and based on git.\n\n\
-Only one option is permitted.\n\
+A fully free, highly customizable and very efficient shell wrapper for\n\
+git and SSH, which imitates Dropbox.\n\n\
+Only none or one option is permitted.\n\
 \t-d\tStart GNUpot in debug mode.\n\
 \t-h\tHelp.\n\
-\t-i\tStart GNUpot.\n\
 \t-k\tKill GNUpot.\n\
 \t-l\tShow GNUpot license.\n\
 \t-n\tNew GNUpot setup.\n\
 \t-p\tPrint configuration file.\n\
 \t-s\tPrint status.\n\
 \t-v\tShow program version.\n\n\
+If no option is given, GNUpot starts normally.\n\n\
 Configuration file is found in ~/.config/gnupot/gnupot.config.\n\n\
 Exit value:\n\
 \t0\tno error occurred,\n\
@@ -587,7 +587,9 @@ main()
 
 # Check if another istance of GNUpot is running. If that is the case exit with
 # error message. The following set makes the script faster because the lock is
-# checked before the function call.
+# checked before the function call. main function is called as a spawned shell.
+# This is done so that even if the current shell is killed, GNUpot is not
+# killed.
 callMain() { lockOnFile "$CONFIGFILEPATH" && { main & : ; } || exit 1; }
 
 printVersion() { Err "GNUpot version "; gitGetGnupotVersion; }
@@ -597,13 +599,10 @@ parseOpts()
 	local prgPath="$1" argArray="$2"
 
 	# Get options from special variable $@. Treat no arguments as -i.
-	getopts ":dhiklnpsv" opt "$argArray"
+	getopts ":dhklnpsv" opt "$argArray"
 	case "$opt" in
 		d ) set -x; callMain ;;
 		h ) printHelp; return 1 ;;
-		# Call main function as spawned shell (execute and return
-		# control to the shell).
-		i ) callMain ;;
 		k ) killall -s SIGINT -q gnupot ;;
 		l ) less "LICENSE" ;;
 		n ) ""${prgPath%/gnupot}"/src/config.sh" ;;

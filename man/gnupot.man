@@ -21,7 +21,7 @@
 .\"
 
 
-.TH GNUPOT 1 "November 2015" "0.3" "User Commands"
+.TH GNUPOT 1 "December 2015" "0.3 experimental branch" "User Commands"
 
 .SH NAME
 gnupot \- Libre file syncronization witten in bash, based on git.
@@ -31,10 +31,11 @@ gnupot \- Libre file syncronization witten in bash, based on git.
 [OPTION]
 
 .SH DESCRIPTION
-Yet another libre Dropbox clone (only for the right aspects) written in bash 
-and based on git.
+A fully free, highly customizable and very efficient shell wrapper for git
+and SSH, which imitates Dropbox.
 .PP
-Only a single option is permitted.
+Only none or a single option is permitted. If no option is specified GNUpot 
+starts normally.
 
 .TP
 .B -d
@@ -48,12 +49,6 @@ and report problems to the developers.
 .B -h
 .RS
 Show GNUpot's help.
-.RE
-
-.TP
-.B -i
-.RS
-Start GNUpot. This is the same as executing it without option.
 .RE
 
 .TP

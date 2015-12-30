@@ -1,7 +1,7 @@
 GNUpot
 ======
-Yet another libre Dropbox clone (only for the right aspects) written in bash 
-and based on git. 
+A fully free, highly customizable and very efficient shell wrapper for git 
+and SSH, which imitates Dropbox.
 
 ##Purpose of this project
 
