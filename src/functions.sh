@@ -603,7 +603,7 @@ parseOpts()
 	case "$opt" in
 		d ) set -x; callMain ;;
 		h ) printHelp; return 1 ;;
-		k ) killall -s SIGINT -q gnupot ;;
+		k ) Err "Killing GNUpot...\n" && killall -s SIGINT -q gnupot ;;
 		l ) less "LICENSE" ;;
 		n ) ""${prgPath%/gnupot}"/src/config.sh" ;;
 		p ) cat "$CONFIGFILEPATH" ;;
