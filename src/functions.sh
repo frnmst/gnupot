@@ -76,7 +76,8 @@ notify()
 	local msg="$1" ms="$2"
 
 	# If you are running GNUpot in a GUI then notify else do nothing.
-	[ -n "$DISPLAY" ] && notify-send -t "$ms" "$msg" 1>&- 2>&-
+	[ -n "$DISPLAY" ] && notify-send -i "$iconPath" \
+-t "$ms" "GNUpot" "$msg" 1>&- 2>&-
 }
 
 printHelp()
@@ -256,7 +257,7 @@ chkCliDirEx() { gitChkExLocl || DirErr; }
 
 lockOnFile()
 {
-	local lockFile="$1" errMsg="GNUpot is already running.\n"
+	local lockFile="$1" errMsg="GNUpot already running.\n"
 
 	# Get a dynamic file descriptor.
 	exec {FD}>>"$lockFile"
@@ -273,7 +274,7 @@ busyWait()
 	local tmp="$(getLockFileVal)"
 
 	busyWaitAcquireLockFile
-	notify "GNUpot connection or auth problem. Retrying in \
+	notify "Connection or auth problem. Retrying in \
 "$gnupotBusyWaitTime" seconds..." "$gnupotNotificationTime"
 	sleep "$gnupotBusyWaitTime"
 	updateDNSRecord
@@ -388,7 +389,7 @@ syncOperation()
 	local source="$1" path="$2"
 
 	sleep "$gnupotTimeToWaitForOtherChanges"
-	notify "GNUpot syncing $path from $source" "$gnupotNotificationTime"
+	notify "Syncing $path from $source" "$gnupotNotificationTime"
 	# Do all git operations in the correct directory before returning.
 	# The compressed (list) vewrsion of this didn't work. It also made a
 	# double, unexplicable call to gitSyncOperations
@@ -407,7 +408,7 @@ syncOperation()
 	fi
 
 	execSSHCmd "git push origin master" && cd "$OLDPWD"
-	notify "GNUpot $path done. Changed "$chgFilesNum" file(s)." \
+	notify "$path done. Changed "$chgFilesNum" file(s)." \
 "$gnupotNotificationTime"
 }
 
@@ -577,10 +578,10 @@ main()
 	# Enable signal interpretation to kill all subshells
 	trap "sigHandler" $SIGNALS
 
-	notify "GNUpot starting..." "$gnupotNotificationTime"
+	notify "Starting..." "$gnupotNotificationTime"
 	freeLockFile
 	callThreads
-	notify "GNUpot stopped." "$gnupotNotificationTime"
+	notify "Stopped." "$gnupotNotificationTime"
 
 	exit 0
 }
@@ -597,6 +598,11 @@ printVersion() { Err "GNUpot version "; gitGetGnupotVersion; }
 parseOpts()
 {
 	local prgPath="$1" argArray="$2"
+
+    # NOTE: notify-send works only with full paths. Variable setting here must
+    # changed, otherwise it cannot be handled in the PKGBUILD. It can be set in
+    # the setup so it's simpler...
+    iconPath=""$(pwd)"/src/gnupotIcon.png"
 
 	# Get options from special variable $@. Treat no arguments as -i.
 	getopts ":dhklnpsv" opt "$argArray"
