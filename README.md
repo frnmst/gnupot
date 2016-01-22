@@ -48,3 +48,16 @@ I also need **lots of feedback and critics** based on program testing.
 You can open issues directly here on GitHub and/or send an email. Please have a look at 
 [Contributing and contacts](https://github.com/frnmst/gnupot/wiki/B.-Contributing-and-contacts) 
 wiki page.
+
+# License
+
+![GPLv3 logo](https://www.gnu.org/graphics/gplv3-127x51.png "https://www.gnu.org/graphics/license-logos.en.html by Christian Cadena")
+
+Copyright (C) 2016 frnmst (Franco Masotti) <franco.masotti@live.com>
+<franco.masotti@student.unife.it>
+
+GNUpot is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
