@@ -51,7 +51,7 @@ wiki page.
 
 # License
 
-![GPLv3 logo](https://www.gnu.org/graphics/gplv3-127x51.png "https://www.gnu.org/graphics/license-logos.en.html by Christian Cadena")
+![https://www.gnu.org/graphics/gplv3-127x51.png](https://www.gnu.org/graphics/gplv3-127x51.png)
 
 Copyright (C) 2016 frnmst (Franco Masotti) <franco.masotti@live.com>
 <franco.masotti@student.unife.it>
