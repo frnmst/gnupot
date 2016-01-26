@@ -3,7 +3,7 @@
 #
 # gnupot.sh
 #
-# Copyright (C) 2015 frnmst (Franco Masotti) <franco.masotti@live.com>
+# Copyright (C) 2015, 2016 frnmst (Franco Masotti) <franco.masotti@live.com>
 #                                            <franco.masotti@student.unife.it>
 #
 # This file is part of GNUpot.
