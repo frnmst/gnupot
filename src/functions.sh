@@ -104,7 +104,7 @@ Report bugs to: franco.masotti@student.unife.it or \
 franco.masotti@live.com\n\
 Full documentation at: <https://github.com/frnmst/gnupot/wiki>\n\
 or available locally via: man man/gnupot.man\n\n\
-GNUpot  Copyright © 2015  frnmst (Franco Masotti)\n\
+GNUpot  Copyright © 2015, 2016  frnmst (Franco Masotti)\n\
 This program comes with ABSOLUTELY NO WARRANTY; for details type \
 \`gnupot -l'.\n\
 This is free software, and you are welcome to redistribute it \n\
