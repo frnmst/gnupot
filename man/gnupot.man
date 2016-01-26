@@ -1,7 +1,7 @@
 .\"
 .\" gnupot.man
 .\"
-.\" Copyright (C) 2015 frnmst (Franco Masotti) <franco.masotti@live.com>
+.\" Copyright (C) 2015, 2016 frnmst (Franco Masotti) <franco.masotti@live.com>
 .\"                                            <franco.masotti@student.unife.it>
 .\"
 .\" This file is part of GNUpot.
@@ -21,7 +21,7 @@
 .\"
 
 
-.TH GNUPOT 1 "December 2015" "0.3 experimental branch" "User Commands"
+.TH GNUPOT 1 "January 2016" "0.4" "User Commands"
 
 .SH NAME
 gnupot \- Libre file syncronization witten in bash, based on git.
