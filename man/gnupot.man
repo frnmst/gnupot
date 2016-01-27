@@ -58,12 +58,6 @@ Quit GNUpot.
 .RE
 
 .TP
-.B -l
-.RS
-Show GNUpot's license.
-.RE
-
-.TP
 .B -n
 .RS
 Setup a GNUpot instance.
@@ -119,8 +113,8 @@ Report bugs in the issue page: <https://github.com/frnmst/gnupot/issues>
 or email at: <franco.masotti@student.unife.it>
 
 .SH COPYRIGHT
-Copyright © 2015 frnmst/Franco Masotti.   License  GPLv3+:  GNU GPL version 3 
-or later <http://gnu.org/licenses/gpl.html>.
+Copyright © 2015, 2016 frnmst/Franco Masotti.   License  GPLv3+:  GNU GPL 
+version 3 or later <http://gnu.org/licenses/gpl.html>.
 .br
 This  is  free  software:  you  are free to change and redistribute it. There 
 is NO WARRANTY, to the extent permitted by law.
