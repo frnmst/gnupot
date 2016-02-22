@@ -293,8 +293,12 @@ except that this is the upload speed.
 .TP
 .B gnupotIcon
 .RS
-A string containing the full path of GNUpot's icon. This icon will appear on 
-the desktop notifications.
+A string containing the full path of the directory containing GNUpots' icons. 
+These iconswill appear on the desktop notifications.
+.br
+The following is a list of all the possible icon names depending from the 
+action.
+TODO
 .br
 For further information read
 .B notify-send\ --help

@@ -69,5 +69,6 @@ $action 0 \
 20 1 "$gnupotDownloadSpeed" 20 $fldChrs $action 0 \
 "Upload max speed (KB/s) (0 = no limit):" \
 21 1 "$gnupotUploadSpeed" 21 $fldChrs $action 0 \
-"GNUpot icon full path:" 22 1 "$gnupotIcon" 22 $fldChrs $action 0 \
+"GNUpot icons directory full path:" 22 1 "$gnupotIconsDir" \
+22 $fldChrs $action 0 \
 )

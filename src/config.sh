@@ -76,7 +76,7 @@ gnupotGitFileExclude gnupotGitCommitterUsername gnupotGitCommitterEmail \
 gnupotTimeToWaitForOtherChanges gnupotBusyWaitTime \
 gnupotSSHServerAliveInterval gnupotSSHServerAliveCountMax \
 gnupotSSHMasterSocketPath gnupotNotificationTime gnupotLockFilePath \
-gnupotDownloadSpeed gnupotUploadSpeed gnupotIcon"
+gnupotDownloadSpeed gnupotUploadSpeed gnupotIconsDir"
 
 	# Control bash version to avoid IFS bug. bash <=4.2 has this bug. If
 	# bash is <=4.2 spaces must be avoided in form fields.
@@ -239,7 +239,7 @@ gnupotNotificationTime=\""$gnupotNotificationTime"\"\n\
 gnupotLockFilePath=\""$gnupotLockFilePath"\"\n\
 gnupotDownloadSpeed=\""$gnupotDownloadSpeed"\"\n\
 gnupotUploadSpeed=\""$gnupotUploadSpeed"\"\n\
-gnupotIcon=\""$gnupotIcon"\"\n\
+gnupotIconsDir=\""$gnupotIconsDir"\"\n\
 " > "$CONFIGFILEPATH"
 
 	chmod 600 "$CONFIGFILEPATH"

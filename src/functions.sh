@@ -73,7 +73,18 @@ Err() { local msg="$1"; printf "$msg" 1>&2; }
 # General notification function.
 notify()
 {
-	local msg="$1" ms="$2"
+	local msg="$1" ms="$2" action="$3"
+
+    [ -z "$action" ] && iconPath=""$gnupotIconsDir"/gnupotIcon.png"
+
+    [ "$action" = "client" ] && \
+iconPath=""$gnupotIconsDir"/gnupotSyncLocal.png"
+
+    [ "$action" = "server" ] && \
+iconPath=""$gnupotIconsDir"/gnupotSyncRemote.png"
+
+    [ "$action" = "warining" ] && \
+iconPath=""$gnupotIconsDir"/gnupotWarning.png"
 
 	# If you are running GNUpot in a GUI then notify else do nothing.
 	[ -n "$DISPLAY" ] && notify-send -i "$iconPath" \
@@ -168,7 +179,7 @@ LocalDirO SSHKeyPathO RSAKeyBitsU KeepMaxCommitsU InotifyFileExcludeO \
 GitFileExcludeO GitCommitterUsernameO GitCommitterEmailO \
 TimeToWaitForOtherChangesU BusyWaitTimeU SSHServerAliveIntervalN \
 SSHServerAliveCountMaxN SSHMasterSocketPathO NotificationTimeU LockFilePathO \
-DownloadSpeedU UploadSpeedU IconO"
+DownloadSpeedU UploadSpeedU IconsDirO"
 	local variable="" type=""
 
 	for variable in $variableList; do
@@ -245,7 +256,7 @@ DirErr()
 exist, or no git repository."
 
 	Err "$errMsg\n"
-	notify "$errMsg" "$gnupotNotificationTime"
+	notify "$errMsg" "$gnupotNotificationTime" "warning"
 	kill -s SIGINT 0
 }
 
@@ -275,7 +286,7 @@ busyWait()
 
 	busyWaitAcquireLockFile
 	notify "Connection or auth problem. Retrying in \
-"$gnupotBusyWaitTime" seconds..." "$gnupotNotificationTime"
+"$gnupotBusyWaitTime" seconds..." "$gnupotNotificationTime" "warning"
 	sleep "$gnupotBusyWaitTime"
 	updateDNSRecord
 	# Restore previous state in lock file.
@@ -343,7 +354,7 @@ resolveConflicts()
 	local returnedVal="$1" path="$2"
 
 	[ "$returnedVal" -eq 1 ] \
-&& { notify "Resolving file conflicts." "$gnupotNotificationTime"; \
+&& { notify "Resolving file conflicts." "$gnupotNotificationTime" "warning"; \
 git commit -a -m "Committed "$path" $USERDATA Handled conflicts"; }
 }
 
@@ -389,7 +400,7 @@ syncOperation()
 	local source="$1" path="$2"
 
 	sleep "$gnupotTimeToWaitForOtherChanges"
-	notify "Syncing $path from $source" "$gnupotNotificationTime"
+	notify "Syncing $path from $source" "$gnupotNotificationTime" "$source"
 	# Do all git operations in the correct directory before returning.
 	# The compressed (list) vewrsion of this didn't work. It also made a
 	# double, unexplicable call to gitSyncOperations
@@ -598,11 +609,6 @@ printVersion() { Err "GNUpot version "; gitGetGnupotVersion; }
 parseOpts()
 {
 	local prgPath="$1" argArray="$2"
-
-    # NOTE: notify-send works only with full paths. Variable setting here must
-    # changed, otherwise it cannot be handled in the PKGBUILD. It can be set in
-    # the setup so it's simpler...
-    iconPath="$gnupotIcon"
 
 	# Get options from special variable $@. Treat no arguments as -i.
 	getopts ":dhknpsv" opt "$argArray"
