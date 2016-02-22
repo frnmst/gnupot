@@ -30,7 +30,7 @@ REMOTECHKCMD="which git && which inotifywait"
 
 # Other global variables.
 options=""
-optNum="21"
+optNum="22"
 
 infoMsg()
 {
@@ -76,7 +76,7 @@ gnupotGitFileExclude gnupotGitCommitterUsername gnupotGitCommitterEmail \
 gnupotTimeToWaitForOtherChanges gnupotBusyWaitTime \
 gnupotSSHServerAliveInterval gnupotSSHServerAliveCountMax \
 gnupotSSHMasterSocketPath gnupotNotificationTime gnupotLockFilePath \
-gnupotDownloadSpeed gnupotUploadSpeed"
+gnupotDownloadSpeed gnupotUploadSpeed gnupotIcon"
 
 	# Control bash version to avoid IFS bug. bash <=4.2 has this bug. If
 	# bash is <=4.2 spaces must be avoided in form fields.
@@ -239,6 +239,7 @@ gnupotNotificationTime=\""$gnupotNotificationTime"\"\n\
 gnupotLockFilePath=\""$gnupotLockFilePath"\"\n\
 gnupotDownloadSpeed=\""$gnupotDownloadSpeed"\"\n\
 gnupotUploadSpeed=\""$gnupotUploadSpeed"\"\n\
+gnupotIcon=\""$gnupotIcon"\"\n\
 " > "$CONFIGFILEPATH"
 
 	chmod 600 "$CONFIGFILEPATH"

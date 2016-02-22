@@ -21,7 +21,7 @@
 .\"
 
 
-.TH GNUPOT 5 "January 2016" "0.4" "File Formats Manual"
+.TH GNUPOT 5 "February 2016" "0.4" "File Formats Manual"
 
 .SH NAME
 gnupot.conf \- Configuration file for GNUpot.
@@ -288,6 +288,16 @@ A value of 0 does not set any limit.
 The same as
 .B gnupotDownloadSpeed 
 except that this is the upload speed.
+.RE
+
+.TP
+.B gnupotIcon
+.RS
+A string containing the full path of GNUpot's icon. This icon will appear on 
+the desktop notifications.
+.br
+For further information read
+.B notify-send\ --help
 .RE
 
 .SH AUTHOR

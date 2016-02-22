@@ -168,7 +168,7 @@ LocalDirO SSHKeyPathO RSAKeyBitsU KeepMaxCommitsU InotifyFileExcludeO \
 GitFileExcludeO GitCommitterUsernameO GitCommitterEmailO \
 TimeToWaitForOtherChangesU BusyWaitTimeU SSHServerAliveIntervalN \
 SSHServerAliveCountMaxN SSHMasterSocketPathO NotificationTimeU LockFilePathO \
-DownloadSpeedU UploadSpeedU"
+DownloadSpeedU UploadSpeedU IconO"
 	local variable="" type=""
 
 	for variable in $variableList; do
@@ -602,7 +602,7 @@ parseOpts()
     # NOTE: notify-send works only with full paths. Variable setting here must
     # changed, otherwise it cannot be handled in the PKGBUILD. It can be set in
     # the setup so it's simpler...
-    iconPath=""$(pwd)"/src/gnupotIcon.png"
+    iconPath="$gnupotIcon"
 
 	# Get options from special variable $@. Treat no arguments as -i.
 	getopts ":dhknpsv" opt "$argArray"
