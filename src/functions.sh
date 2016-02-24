@@ -77,14 +77,16 @@ notify()
 
     [ -z "$action" ] && iconPath=""$gnupotIconsDir"/gnupotIcon.png"
 
-    [ "$action" = "client" ] && \
+    if [ "$action" = "client" ]; then
 iconPath=""$gnupotIconsDir"/gnupotSyncLocal.png"
 
-    [ "$action" = "server" ] && \
+    elif [ "$action" = "server" ]; then
 iconPath=""$gnupotIconsDir"/gnupotSyncRemote.png"
 
-    [ "$action" = "warining" ] && \
+    elif [ "$action" = "warining" ]; then
 iconPath=""$gnupotIconsDir"/gnupotWarning.png"
+
+    fi
 
 	# If you are running GNUpot in a GUI then notify else do nothing.
 	[ -n "$DISPLAY" ] && notify-send -i "$iconPath" \
@@ -358,6 +360,14 @@ resolveConflicts()
 git commit -a -m "Committed "$path" $USERDATA Handled conflicts"; }
 }
 
+pullAndRebase()
+{
+    local rebaseToDo="$(execSSHCmd "git rev-list HEAD --count")"
+
+    [ "$rebaseToDo" = "1" ] && execSSHCmd "git pull --rebase origin master" \
+|| execSSHCmd "git pull origin master"
+}
+
 gitSyncOperations()
 {
 	# Transform path with spaces in dashes to avoid problems.
@@ -372,7 +382,7 @@ gitSyncOperations()
 	done
 	# Always pull from server first then check for conflicts using return
 	# value.
-	execSSHCmd "git pull origin master"
+    pullAndRebase
 	resolveConflicts "$?" "$path"
 }
 
@@ -391,6 +401,44 @@ checkFileChanges()
 && printf 0 \
 || { [ "$(gitGetCommitNumber)" -gt 1 ] && printf "$(gitGetCommitNumDiff)" \
 || printf "unknown"; }
+}
+
+# Clean useless files and keep maximum user defined number of backups.
+# Do the syncing. To be able to clean: git config --system \
+# receive.denyNonFastForwards true
+backupAndPush()
+{
+       local commitSha=""
+
+        # if Max backups is set to 0 it means always to do a simple commit.
+        # Otherwise use mod operator to find out when to truncate history (if
+        # result is 0 it means that history must be truncated.
+       if [ "$gnupotKeepMaxCommits" -ne 0 ] \
+&& [ $(expr "$(gitGetCommitNumber)" % "$gnupotKeepMaxCommits") -eq 0 ]; then
+                # Get sha of interest.
+               commitSha=$(git rev-list --max-count="$gnupotKeepMaxCommits" \
+HEAD | tail -n 1)
+                # From man git-checkout:
+                # Create a new orphan branch, named <new_branch>, started from
+                # <start_point> and switch to it.
+               git checkout --orphan tmp "$commitSha"
+                # Change old commit.
+               git commit -m "Truncated history $USERDATA"
+                # From man git-rebase:
+                # Forward-port local commits to the updated upstream head.
+               git rebase --onto tmp "$commitSha" master
+               #git rebase --continue
+               git checkout master
+                # Delete tmp branch.
+               git branch -D tmp
+                # Garbage collector for stuff older than 1d.
+                # TODO better.
+               git gc --auto --prune=1d
+
+               execSSHCmd "git push -f origin master"
+       else
+               execSSHCmd "git push origin master"
+       fi
 }
 
 # Main file syncronization function.
@@ -418,7 +466,7 @@ syncOperation()
 		gitSyncOperations "$path"; chgFilesNum="$(checkFileChanges)";
 	fi
 
-	execSSHCmd "git push origin master" && cd "$OLDPWD"
+	backupAndPush && cd "$OLDPWD"
 	notify "$path done. Changed "$chgFilesNum" file(s)." \
 "$gnupotNotificationTime"
 }

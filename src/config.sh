@@ -147,9 +147,12 @@ initRepo()
 	ssh -p "$gnupotServerPort" -i "$gnupotSSHKeyPath" \
 "$gnupotServerUsername"@"$gnupotServer" \
 "if [ ! -d "$gnupotRemoteDir" ]; then mkdir -p "$gnupotRemoteDir" \
-&& git -C "$gnupotRemoteDir" init --bare --shared; fi \
+&& git -C "$gnupotRemoteDir" init --bare --shared \
 && git -C "$gnupotRemoteDir" config --system receive.denyNonFastForwards \
-false" 1>&- 2>&-
+false; fi" 1>&- 2>&-
+
+#Problem here.
+
 }
 
 # Make a fake commit to avoid problems at the first push of a new repository.
