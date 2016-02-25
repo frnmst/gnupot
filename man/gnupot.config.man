@@ -21,7 +21,7 @@
 .\"
 
 
-.TH GNUPOT 5 "February 2016" "0.4" "File Formats Manual"
+.TH GNUPOT.CONFIG 5 "February 2016" "0.4.experimental" "File Formats Manual"
 
 .SH NAME
 gnupot.conf \- Configuration file for GNUpot.
@@ -133,6 +133,10 @@ means to keep all commits.
 This means that every 
 .B gnupotKeepMaxCommits
 history is truncated and starts from that current commit.
+.br
+Under certain circumstances however history gets merged or it does not get 
+truncated even if this variable is set to a non-zero value. This happens 
+because of efficiency and also to avoid unrecoverable situations.
 .RE
 
 .TP
@@ -297,8 +301,33 @@ A string containing the full path of the directory containing GNUpots' icons.
 These iconswill appear on the desktop notifications.
 .br
 The following is a list of all the possible icon names depending from the 
-action.
-TODO
+action. The name of each file determines on which action that same file will be 
+used.
+.br
+ 
+.br
+.B gnupotIcon.png
+.RS
+Icon used to describe no particular sitation.
+.RE
+.br
+.B gnupotSyncLocal.png
+.RS
+Icon used to describe uploading of files.
+.RE
+.br
+.B gnupotSyncRemote.png
+.RS
+Icon used to describe downloading of files.
+.RE
+.br
+.B gnupotWarning.png
+.RS
+Icon used to describe some kind of problem (for example connection or 
+authentication).
+.RE
+.br
+ 
 .br
 For further information read
 .B notify-send\ --help
