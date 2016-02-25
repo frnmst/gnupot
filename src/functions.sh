@@ -46,6 +46,10 @@ gitGetRemLastCommitSha() { git ls-remote --heads  2>&- | awk ' { print $1 } '; }
 gitRemoteSetHead() { git -C "$gnupotLocalDir" remote set head origin master \
 1>&- 2>&-; }
 
+gitRemoveCache() { git -C "$gnupotLocalDir" reflog expire --expire=now \
+--all 1>&- 2>&-; git -C "$gnupotLocalDir" gc --prune=now --aggressive \
+1>&- 2>&-; }
+
 # User and exclude file settings.
 assignGitInfo()
 {
@@ -363,18 +367,21 @@ git commit -a -m "Committed "$path" $USERDATA Handled conflicts"; }
 gitSyncOperations()
 {
 	# Transform path with spaces in dashes to avoid problems.
-	local path="$(echo "$1" | tr " " "-")" count=0
+	local path="$(echo "$1" | tr " " "-")" count=0 rebaseToDo=1
 
 	# This loop is needed for "big" or lots of files.
 	while [ "$(gitSimpleStatus)" -gt 0 ]; do
+        rebaseToDo=0
 		git add -A 1>&- 2>&-
 		git commit -m "Committed "$path" $USERDATA" 1>&- 2>&-
 		[ "$count" -gt 0 ] && sleep "$count"
 		count=$(($count+1))
 	done
 	# Always pull from server first then check for conflicts using return
-	# value.
-    execSSHCmd "git pull --rebase origin master"
+	# value. If there are new committed files, rebase is postponed till the
+    # next time and a merge is done instead.
+    [ "$rebaseToDo" -eq 1 ] && execSSHCmd "git pull --rebase origin master" \
+|| execSSHCmd "git pull origin master"
 	resolveConflicts "$?" "$path"
 }
 
@@ -583,6 +590,8 @@ callThreads()
 	rm -rf ""$gnupotLocalDir"/.git/refs/heads/master.lock"
 	# Set default remote head
 	gitRemoteSetHead
+    # Remove cache of non existing commits.
+    gitRemoveCache
 	# Listen from server and send to client.
 	syncS & srvPid="$!"
 	# Listen from client and send to server.

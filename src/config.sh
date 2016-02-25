@@ -148,11 +148,8 @@ initRepo()
 "$gnupotServerUsername"@"$gnupotServer" \
 "if [ ! -d "$gnupotRemoteDir" ]; then mkdir -p "$gnupotRemoteDir" \
 && git -C "$gnupotRemoteDir" init --bare --shared \
-&& git -C "$gnupotRemoteDir" config --system receive.denyNonFastForwards \
-false; fi" 1>&- 2>&-
-
-#Problem here.
-
+&& git -C "$gnupotRemoteDir" config receive.denyNonFastForwards false; fi" \
+1>&- 2>&-
 }
 
 # Make a fake commit to avoid problems at the first push of a new repository.
