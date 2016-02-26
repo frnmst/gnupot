@@ -87,7 +87,7 @@ iconPath=""$gnupotIconsDir"/gnupotSyncLocal.png"
     elif [ "$action" = "server" ]; then
 iconPath=""$gnupotIconsDir"/gnupotSyncRemote.png"
 
-    elif [ "$action" = "warining" ]; then
+    elif [ "$action" = "warning" ]; then
 iconPath=""$gnupotIconsDir"/gnupotWarning.png"
 
     fi
