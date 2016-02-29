@@ -154,8 +154,8 @@ setGloblVars()
 	# inotifywait args: recursive, quiet, listen only to certain events.
 	INOTIFYWAITCMD="inotifywait -q -e modify -e attrib \
 -e move -e move_self -e create -e delete --format %f"
-	# SSH arguments. Force pseudo terminal allocation with -t -t swicthes.
-	SSHARGS="-t -t \
+	# SSH arguments.
+	SSHARGS="\
 -o PasswordAuthentication=no \
 -p "$gnupotServerPort" \
 -i "$gnupotSSHKeyPath" \
@@ -482,7 +482,8 @@ callSync()
 # Server sync thread.
 syncS()
 {
-	local pathCmd="ssh $SSHCONNECTCMDARGS \
+    # Force pseudo terminal allocation with -t -t swicthes.
+	local pathCmd="ssh -t -t $SSHCONNECTCMDARGS \
 $INOTIFYWAITCMD ""$gnupotRemoteDir"/refs/heads/master""
 
 	# return/exit when signal{,s} is/are received.
