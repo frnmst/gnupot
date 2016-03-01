@@ -415,6 +415,8 @@ backupAndPush()
 && [ $(expr "$(gitGetCommitNumber)" % "$gnupotKeepMaxCommits") -eq 0 ]; then
         git reset $(git commit-tree HEAD^{tree} -m "Compressed history.")
         execSSHCmd "git push -f origin master"
+        # Remove cache of non existing commits.
+        gitRemoveCache
     else
         execSSHCmd "git push origin master"
     fi
@@ -444,7 +446,6 @@ syncOperation()
 	else
 		gitSyncOperations "$path"; chgFilesNum="$(checkFileChanges)";
 	fi
-
 	backupAndPush && cd "$OLDPWD"
 	notify "$path done. Changed "$chgFilesNum" file(s)." \
 "$gnupotNotificationTime"
@@ -591,8 +592,6 @@ callThreads()
 	rm -rf ""$gnupotLocalDir"/.git/refs/heads/master.lock"
 	# Set default remote head
 	gitRemoteSetHead
-    # Remove cache of non existing commits.
-    gitRemoveCache
 	# Listen from server and send to client.
 	syncS & srvPid="$!"
 	# Listen from client and send to server.
