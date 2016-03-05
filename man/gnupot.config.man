@@ -21,7 +21,7 @@
 .\"
 
 
-.TH GNUPOT.CONFIG 5 "February 2016" "0.4.experimental" "File Formats Manual"
+.TH GNUPOT.CONFIG 5 "March 2016" "0.4.experimental" "File Formats Manual"
 
 .SH NAME
 gnupot.conf \- Configuration file for GNUpot.
@@ -132,7 +132,8 @@ means to keep all commits.
 .br
 This means that every 
 .B gnupotKeepMaxCommits
-history is truncated and starts from that current commit.
+history is squashed and starts from a new commit generated with the 
+current files.
 .br
 Under certain circumstances however history gets merged or it does not get 
 truncated even if this variable is set to a non-zero value. This happens 

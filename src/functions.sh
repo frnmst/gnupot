@@ -79,9 +79,10 @@ notify()
 {
 	local msg="$1" ms="$2" action="$3"
 
-    [ -z "$action" ] && iconPath=""$gnupotIconsDir"/gnupotIcon.png"
+    if [ -z "$action" ]; then
+iconPath=""$gnupotIconsDir"/gnupotIcon.png"
 
-    if [ "$action" = "client" ]; then
+    elif [ "$action" = "client" ]; then
 iconPath=""$gnupotIconsDir"/gnupotSyncLocal.png"
 
     elif [ "$action" = "server" ]; then
@@ -89,7 +90,6 @@ iconPath=""$gnupotIconsDir"/gnupotSyncRemote.png"
 
     elif [ "$action" = "warning" ]; then
 iconPath=""$gnupotIconsDir"/gnupotWarning.png"
-
     fi
 
 	# If you are running GNUpot in a GUI then notify else do nothing.
@@ -408,11 +408,10 @@ checkFileChanges()
 backupAndPush()
 {
 
-    # if Max backups is set to 0 it means always to do a simple commit.
-    # Otherwise use mod operator to find out when to truncate history (if
-    # result is 0 it means that history must be truncated.
+    # If Max backups is set to 0 it means always to do a simple commit
+    # otherwise don't keep more than $gnupotKeepMaxCommits commits.
     if [ "$gnupotKeepMaxCommits" -ne 0 ] \
-&& [ $(expr "$(gitGetCommitNumber)" % "$gnupotKeepMaxCommits") -eq 0 ]; then
+&& [ "$(gitGetCommitNumber)" -ge "$gnupotKeepMaxCommits" ]; then
         git reset $(git commit-tree HEAD^{tree} -m "Compressed history.")
         execSSHCmd "git push -f origin master"
         # Remove cache of non existing commits.
@@ -514,7 +513,7 @@ $INOTIFYWAITCMD ""$gnupotRemoteDir"/refs/heads/master""
 # Client sync thread.
 syncC()
 {
-	local path="" lockVal=""
+	local path=""
 
 	trap "exit 0" $SIGNALS
 
