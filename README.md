@@ -5,7 +5,7 @@ and SSH, which imitates Dropbox.
 
 ##More
 
-For technical and philosophical information read the 
+For all the technical and philosophical information read the 
 [GNUpot WIKI](https://github.com/frnmst/gnupot/wiki)
 
 #GNUpot is looking for volunteers
