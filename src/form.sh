@@ -20,6 +20,7 @@
 # along with GNUpot.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+
 # This file is sourced from config.sh and contains the form for the setup.
 
 local title="$1" arg="$2" action="$3" fldChrs="50"

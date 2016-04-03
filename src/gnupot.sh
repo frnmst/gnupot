@@ -34,21 +34,31 @@ savedEnv="$(set +o)"
 set -ma
 
 # Set paths and constants.
+procNum="3"
 PATH="$PATH":/usr/bin
 CONFIGDIRPATH=""$HOME"/.config/gnupot"
 CONFIGFILEPATH=""$CONFIGDIRPATH"/gnupot.config"
-procNum="3"
+
+##############################################################################
+##############################################################################
+##############################################################################
+
+# You can edit the following variables (with caution).
+# List of installed programs that GNUpot uses. If display variable is
+# set notify-send is also required.
+PROGRAMS="bash ssh inotifywait flock git getent trickle"
+[ -n "$DISPLAY" ] && PROGRAMS="$PROGRAMS notify-send"
+# Subset of the commit message.
+USERDATA="by "$USER"@"$HOSTNAME"."
 
 # Source functions file.
 . ""${0%/gnupot}"/src/functions.sh"
 
-# Update Dbus environment so that notification will be show.
+# Update Dbus environment so that notification will be shown.
 [ -x "/usr/bin/dbus-update-activation-environment" ] \
 && /usr/bin/dbus-update-activation-environment DISPLAY
 
-loadConfig "$1"
-checkExecutables
-parseOpts "$0" "$@"; retval="$?"
+parseOpts "$0" "$1"; retval="$?"
 # Restore the previous option settings.
 $savedEnv
 

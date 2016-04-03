@@ -22,6 +22,8 @@
 # along with GNUpot.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+# FIXME
+set -am
 
 # Macros.
 BACKTITLE="https://github.com/frnmst/gnupot"
@@ -52,9 +54,7 @@ displayForm()
 {
 	local opts="" retval=""
 
-	# Create the form.
 	. "src/form.sh"
-
 	retval="$?"
 	echo "$opts"
 
@@ -78,7 +78,7 @@ gnupotSSHServerAliveInterval gnupotSSHServerAliveCountMax \
 gnupotSSHMasterSocketPath gnupotNotificationTime gnupotLockFilePath \
 gnupotDownloadSpeed gnupotUploadSpeed gnupotIconsDir"
 
-	# Control bash version to avoid IFS bug. bash <=4.2 has this bug. If
+	# Check bash version to avoid IFS bug. bash <=4.2 has this bug. If
 	# bash is <=4.2 spaces must be avoided in form fields.
 	local bashVersion="${BASH_VERSINFO[0]}${BASH_VERSINFO[1]}"
 	[ "$bashVersion" -le 42 ] && options="$(echo $options | tr " " ";")" \
@@ -98,7 +98,7 @@ verifyConfig()
 
 genSSHKey()
 {
-	if [ ! -r "$SSHKeyPath" ]; then
+	if [ ! -r "$gnupotSSHKeyPath" ]; then
 		infoMsg "infobox" "Generating SSH keys. Please wait."
 		ssh-keygen -t rsa -b "$gnupotRSAKeyBits" -C \
 "gnupot:$USER@$HOSTNAME:$(date -I)" -f "$gnupotSSHKeyPath" -N "" -q
@@ -136,12 +136,13 @@ https://github.com/frnmst/gnupot/wiki/"; return 1; }
 # Local configuration directory.
 initConfigDir()
 {
-	mkdir -p "$CONFIGDIRPATH" && chmod 700 "$CONFIGDIRPATH" \
+	mkdir -p "$CONFIGDIRPATH" \
+&& chmod 700 "$CONFIGDIRPATH" \
 || { infoMsg "msgbox" "Cannot create configuration directory."; return 1; }
 }
 
 # Initialize remote repository, which is bare and allows fast forwards (useful
-# for deleting old history.
+# for deleting old history).
 initRepo()
 {
 	ssh -p "$gnupotServerPort" -i "$gnupotSSHKeyPath" \
@@ -156,7 +157,7 @@ initRepo()
 makeFirstCommit()
 {
 	cd "$gnupotLocalDir"
-	# Check if git's HEAD exists.
+	# If git head does not exist, make the first commit.
 	[ -z "$(git show-ref --head)" ] \
 && { git commit -m "First commit by "$USER"." --allow-empty 1>&- 2>&-; \
 git push origin master 1>&- 2>&-; }
@@ -197,8 +198,8 @@ repository."; return 1; }
 		makeFirstCommit
 	else
 		# Check if local and remote commits are equal.
-		updateRepo || \
-		{ infoMsg "yesno" "Local destination directory already exists \
+		updateRepo \
+|| { infoMsg "yesno" "Local destination directory already exists \
 and commit history differs from the remote server's one (or the selected \
 diretory is not a git repository). \
 Backup old directory and continue [yes] or Delete it and continue [no] ?"; \
@@ -256,12 +257,10 @@ mainSetup()
 		getConfig || return 1
 		verifyConfig || { mainSetup; return 0; }
 		strTok
-		parseConfig || { infoMsg "msgbox" "Value/s type invalid."; \
-$(return 1); }
-		[ "$?" -ne 0 ] && { mainSetup; return 0; }
+		parseConfig || { infoMsg "msgbox" "Value/s type invalid." \
+|| { mainSetup; return 0; } }
 		displayForm "GNUpot setup summary" "Are the displayed values \
 correct?" "0" || { mainSetup; return 0; }
-		initConfigDir || { mainSetup; return 0; }
 		testInfo || { mainSetup; return 0; }
 		initRepo
 		cloneRepo || { mainSetup; return 0; }

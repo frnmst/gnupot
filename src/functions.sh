@@ -27,6 +27,10 @@
 # executed, the exit status of a function is the exit status  of  the
 # last command executed in the body.
 
+Err() { local msg="$1"; printf "$msg" 1>&2; }
+
+gitGetGnupotVersion() { git describe --long; }
+
 gitStatus() { git -C "$gnupotLocalDir" status -vu --long --ignored; }
 
 gitGetCommitNumber() { git rev-list HEAD --count; }
@@ -35,7 +39,7 @@ gitSimpleStatus() { git status --porcelain | wc -m; }
 
 gitGetCommitNumDiff() { git diff --name-only HEAD~1 HEAD | wc -l; }
 
-gitChkExLocl() { git -C "$gnupotLocalDir" status -s 1>&- 2>&-; return "$?"; }
+gitChkExLocl() { git -C "$gnupotLocalDir" status -s 1>&- 2>&-; }
 
 gitChkExRem() { git -C "$gnupotLocalDir" ls-remote --exit-code -h 1>&- 2>&-; }
 
@@ -43,24 +47,27 @@ gitGetLoclLastCommitSha() { git rev-list HEAD --max-count=1; }
 
 gitGetRemLastCommitSha() { git ls-remote --heads  2>&- | awk ' { print $1 } '; }
 
-gitRemoteSetHead() { git -C "$gnupotLocalDir" remote set head origin master \
-1>&- 2>&-; }
+gitRemoteSetHead()
+{
+    git -C "$gnupotLocalDir" remote set head origin master 1>&- 2>&-;
+}
 
-gitRemoveCache() { git -C "$gnupotLocalDir" reflog expire --expire=now \
---all 1>&- 2>&-; git -C "$gnupotLocalDir" gc --prune=now --aggressive \
-1>&- 2>&-; }
+# A modified version of the following needs to be done on the server.
+gitRemoveCache()
+{
+    git -C "$gnupotLocalDir" reflog expire --expire=now --all 1>&- 2>&-
+    git -C "$gnupotLocalDir" gc --prune=now --aggressive 1>&- 2>&-
+}
 
 # User and exclude file settings.
 assignGitInfo()
 {
-	cd "$gnupotLocalDir" && { { git config user.name \
-"$gnupotGitCommitterUsername" && git config user.email \
-"$gnupotGitCommitterEmail"; } \
+	cd "$gnupotLocalDir" \
+&& { { git config user.name "$gnupotGitCommitterUsername" \
+&& git config user.email "$gnupotGitCommitterEmail"; } \
 && printf "#Exclude files\n"$gnupotGitFileExclude"\n" > ".git/info/exclude" \
 && cd "$OLDPWD"; }
 }
-
-gitGetGnupotVersion() { git describe --long; }
 
 gitGetGitVersion() { git --version | awk ' { print $3 } '; }
 
@@ -71,8 +78,6 @@ freeLockFile() { printf 0 > "$gnupotLockFilePath"; }
 busyWaitAcquireLockFile() { printf 2 > "$gnupotLockFilePath"; }
 
 getLockFileVal() { cat "$gnupotLockFilePath"; }
-
-Err() { local msg="$1"; printf "$msg" 1>&2; }
 
 # General notification function.
 notify()
@@ -93,40 +98,7 @@ iconPath=""$gnupotIconsDir"/gnupotWarning.png"
     fi
 
 	# If you are running GNUpot in a GUI then notify else do nothing.
-	[ -n "$DISPLAY" ] && notify-send -i "$iconPath" \
--t "$ms" "GNUpot" "$msg" 1>&- 2>&-
-}
-
-printHelp()
-{
-	Err "\
-Usage: gnupot [ OPTION ]\n\
-A fully free, highly customizable and very efficient shell wrapper for\n\
-git and SSH, which imitates Dropbox.\n\n\
-Only none or one option is permitted.\n\
-\t-d\tStart GNUpot in debug mode.\n\
-\t-h\tHelp.\n\
-\t-k\tKill GNUpot.\n\
-\t-n\tNew GNUpot setup.\n\
-\t-p\tPrint configuration file.\n\
-\t-s\tPrint status.\n\
-\t-v\tShow program version.\n\n\
-If no option is given, GNUpot starts normally.\n\n\
-Configuration file is found in ~/.config/gnupot/gnupot.config.\n\n\
-Exit value:\n\
-\t0\tno error occurred,\n\
-\t1\tsome error occurred.\n\n\
-Report bugs to: franco.masotti@student.unife.it or \
-franco.masotti@live.com\n\
-Full documentation at: <https://github.com/frnmst/gnupot/wiki>\n\
-or available locally via: man man/gnupot.man\n\n\
-GNUpot  Copyright © 2015, 2016  frnmst (Franco Masotti)\n\
-This program comes with ABSOLUTELY NO WARRANTY; for details see \n\
-'LICENSE' file or <https://www.gnu.org/licenses/gpl-3.0.en.html> \n\
-This is free software, and you are welcome to redistribute it \n\
-under certain conditions; see 'LICENSE' file or \n\
-<https://www.gnu.org/licenses/gpl-3.0.en.html> for details.\n\
-"
+	[ -n "$DISPLAY" ] && notify-send -i "$iconPath" -t "$ms" "GNUpot" "$msg"
 }
 
 setUpdateableGloblVars()
@@ -135,8 +107,7 @@ setUpdateableGloblVars()
 	SSHCONNECTCMDARGS="$SSHARGS "$gnupotServerUsername"@"$gnupotServer""
 	# Open master socket so that further connection will result faster
 	# (using multiplexing to avoid re-authentication).
-	SSHMASTERSOCKCMDARGS="-M -o \
-ControlPersist=yes $SSHCONNECTCMDARGS exit"
+	SSHMASTERSOCKCMDARGS="-M -o ControlPersist=yes $SSHCONNECTCMDARGS exit"
 	# git environment variable for ssh.
 	GIT_SSH_COMMAND="ssh $SSHARGS"
 }
@@ -145,15 +116,11 @@ setGloblVars()
 {
 	# List of signals to be trapped.
 	SIGNALS="SIGABRT SIGCHLD SIGHUP SIGINT SIGQUIT SIGTERM SIGTSTP"
-	# List of installed programs that GNUpot uses. If display variable is
-	# set notify-send is also required.
-	PROGRAMS="bash ssh inotifywait flock git getent trickle"
-	[ -n "$DISPLAY" ] && PROGRAMS="$PROGRAMS notify-send"
-	# Subset of the commit message.
-	USERDATA="by "$USER"@"$HOSTNAME"."
+
 	# inotifywait args: recursive, quiet, listen only to certain events.
 	INOTIFYWAITCMD="inotifywait -q -e modify -e attrib \
 -e move -e move_self -e create -e delete --format %f"
+
 	# SSH arguments.
 	SSHARGS="\
 -o PasswordAuthentication=no \
@@ -238,19 +205,14 @@ loadConfig()
 {
 	local arg="$1"
 
-	# Check when to setup a new GNUpot configuration. If that is the case
-	# ignore loading and parsing configuration file as well as other
-	# variables. Just set some global variables.
-	if [ "$arg" != "-n" ]; then
-		# "." is the same as "source" but it is more portable.
-		[ -r "$CONFIGFILEPATH" ] && . "$CONFIGFILEPATH" 2>&- \
-|| { parsingErrMsg; exit 1; }
-		parseConfig || exit 1
-		# Global variable.
-		gnupotServerORIG="$gnupotServer"
-		# If gnupot is started then find IP address from host name.
-		[ -z "$arg" ] || [ "$arg" = "-i" ] && getAddrByName
-	fi
+	# "." is the same as "source" but it is more portable.
+	[ -r "$CONFIGFILEPATH" ] && . "$CONFIGFILEPATH" 2>&- \
+|| { parsingErrMsg; return 1; }
+	parseConfig || return 1
+	# Global variable.
+	gnupotServerORIG="$gnupotServer"
+	# If gnupot is started then find IP address from host name.
+    [ -z "$arg" ] && getAddrByName
 
 	setGloblVars
 }
@@ -560,9 +522,14 @@ checkExecutables()
 {
 	# Redirect which stderr and stdout to /dev/null (see bash
 	# redirection) otherwise which returns error..
-	checkGitVersion && which $PROGRAMS 1>/dev/null 2>/dev/null \
+    { which $PROGRAMS 1>/dev/null 2>/dev/null && checkGitVersion \
+&& return 0; } \
 || { Err "Missing programs or unsupported. Check: $PROGRAMS. \
-Also check package versions.\n"; exit 1; }
+Also check package versions.\n\
+For more information visit\n\
+<https://github.com/frnmst/gnupot/wiki/3.-Package-dependencies>\n\
+and\n\
+<https://github.com/frnmst/gnupot/wiki/8.-Tests>\n"; return 1; }
 }
 
 # Signal handler function.
@@ -632,23 +599,60 @@ main()
 # killed.
 callMain() { lockOnFile "$CONFIGFILEPATH" && { main & : ; } || exit 1; }
 
-printVersion() { Err "GNUpot version "; gitGetGnupotVersion; }
+printHelp()
+{
+	printf "\
+Usage: gnupot [ OPTION ]\n\
+A fully free, highly customizable and very efficient shell wrapper for\n\
+git and SSH, which imitates Dropbox.\n\n\
+Only none or one option is permitted.\n\
+\t-d, --debug\tStart GNUpot in debug mode.\n\
+\t-h, --help\tHelp.\n\
+\t-k, --kill\tKill GNUpot.\n\
+\t-n, --new\tNew GNUpot setup.\n\
+\t-p, --print\tPrint configuration file.\n\
+\t-s, --status\tPrint status.\n\
+\t-v, --version\tShow program version.\n\n\
+If no option is given, GNUpot starts normally.\n\n\
+Configuration file is found in ~/.config/gnupot/gnupot.config.\n\n\
+Exit value:\n\
+\t0\tno error occurred,\n\
+\t1\tsome error occurred.\n\n\
+Report bugs to: franco.masotti@student.unife.it or \
+franco.masotti@live.com\n\
+GNUpot home page: <https://github.com/frnmst/gnupot>\n\
+Full documentation at: <https://github.com/frnmst/gnupot/wiki>\n\
+or available locally via: man man/gnupot.man\n\
+"
+}
+
+printVersion()
+{
+    Err "\
+GNUpot "$(gitGetGnupotVersion)"\n\
+Copyright (C) 2016 frnmst (Franco Masotti)\n\
+License GPLv3+: GNU GPL version 3 or later \
+<http://gnu.org/licenses/gpl.html>\n\
+This is free software: you are free to change and redistribute it.\n\
+There is NO WARRANTY, to the extent permitted by law.\n\
+"
+}
 
 parseOpts()
 {
-	local prgPath="$1" argArray="$2"
+	local prgPath="$1" arg="$2"
 
-	# Get options from special variable $@. Treat no arguments as -i.
-	getopts ":dhknpsv" opt "$argArray"
-	case "$opt" in
-		d ) set -x; callMain ;;
-		h ) printHelp; return 1 ;;
-		k ) Err "Killing GNUpot...\n" && killall -s SIGINT -q gnupot ;;
-		n ) ""${prgPath%/gnupot}"/src/config.sh" ;;
-		p ) cat "$CONFIGFILEPATH" ;;
-		s ) printStatus ;;
-		v ) printVersion ;;
-		? ) [ -z "$argArray" ] && callMain \
-|| { printHelp "$prgPath"; return 1; } ;;
+    # This is much easier than using getopt{,s}
+	case "$arg" in
+		-d | --debug ) checkExecutables && loadConfig && { set -x; callMain; } ;;
+		-h | --help ) printHelp; return 0 ;;
+		-k | --kill ) Err "Killing GNUpot...\n"; killall -s SIGINT -q gnupot ;;
+		-n | --new ) checkExecutables && \
+""${prgPath%/gnupot}"/src/config.sh" ;;
+		-p | --print ) [ -r "$CONFIGFILEPATH" ] && cat "$CONFIGFILEPATH" ;;
+		-s | --status ) checkExecutables && loadConfig && printStatus ;;
+		-v | --version ) checkExecutables && printVersion ;;
+		"" ) checkExecutables && loadConfig && callMain ;;
+        * ) printHelp; return 1 ;;
 	esac
 }
