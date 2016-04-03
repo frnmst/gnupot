@@ -37,6 +37,14 @@ gitGetCommitNumber() { git rev-list HEAD --count; }
 
 gitSimpleStatus() { git status --porcelain | wc -m; }
 
+# Return the number of file changed from the last: git add -A
+gitFileChanged()
+{
+    tmp="$(git status --porcelain | awk ' {print $1} ' | tr '\n' 'A')"
+    tmp="${tmp//[A]}"
+    echo "$tmp" | tr -d '\n' | wc -c
+}
+
 gitGetCommitNumDiff() { git diff --name-only HEAD~1 HEAD | wc -l; }
 
 gitChkExLocl() { git -C "$gnupotLocalDir" status -s 1>&- 2>&-; }
@@ -163,24 +171,24 @@ DownloadSpeedU UploadSpeedU IconsDirO"
 		case "$type" in
 			U ) # Unsigned integers only.
 				case "$variable" in '' | *[!0-9]* )
-					parsingErrMsg "$variable" ;; esac
+					parsingErrMsg "$variable"; return 1 ;; esac
 			;;
 			N ) # Natural numbers only.
 				case "$variable" in '' | [!1-9]* | *[!0-9]* )
-					parsingErrMsg "$variable" ;; esac
+					parsingErrMsg "$variable"; return 1 ;; esac
 			;;
 			P ) # Port numbers only.
 				{ [ "$variable" == '' ] \
 || [ "$variable" -lt 1 ] || [ "$variable" -gt 65535 ]; } \
-&& parsingErrMsg "$variable"
+&& { parsingErrMsg "$variable"; return 1; }
 			;;
 			S ) # Strings without space char.
 				case "$variable" in '' | *[' ']* )
-					parsingErrMsg "$variable" ;; esac
+					parsingErrMsg "$variable"; return 1 ;; esac
 			;;
 			* ) # All the other variables must be non-empty.
 				case "$variable" in '' )
-					parsingErrMsg "$variable" ;; esac
+					parsingErrMsg "$variable"; return 1 ;; esac
 			;;
 		esac
 	done
@@ -205,7 +213,6 @@ loadConfig()
 {
 	local arg="$1"
 
-	# "." is the same as "source" but it is more portable.
 	[ -r "$CONFIGFILEPATH" ] && . "$CONFIGFILEPATH" 2>&- \
 || { parsingErrMsg; return 1; }
 	parseConfig || return 1
@@ -334,9 +341,9 @@ gitSyncOperations()
 	# This loop is needed for "big" or lots of files.
 	while [ "$(gitSimpleStatus)" -gt 0 ]; do
         rebaseToDo=0
-		git add -A 1>&- 2>&-
-		git commit -m "Committed "$path" $USERDATA" 1>&- 2>&-
-		[ "$count" -gt 0 ] && sleep "$count"
+		git add -A 1>&- 2>&-; sleep "$count"
+        [ "$(gitFileChanged)" -eq 0 ] \
+&& git commit -m "Committed "$path" $USERDATA" 1>&- 2>&-
 		count=$(($count+1))
 	done
 	# Always pull from server first then check for conflicts using return
