@@ -1,0 +1,74 @@
+/* This CSS is quite improvised since I'm not very good at it. However it 
+ * works more or less as I imagined it at first.
+ */
+:root {
+    background-color: #040404;
+    font-family: "Courier New", Courier, monospace;
+    font-size: 1.10em;
+    color: #fafafa;
+}
+
+.description {
+    font-style: italic;
+    text-align: left;
+    margin-top: 1em;
+    margin-bottom: 2em;
+    margin-left: 2em;
+    margin-right: auto;
+    width: 20em;
+}
+
+.quotation {
+    font-family: "Times New Roman", Times, serif;
+    font-style: italic;
+    font-size: 3em;
+}
+
+.global-footer {
+    margin-left: none;
+    margin-right: auto;
+    width: 30em;
+}
+
+.divisor {
+    margin-left: none;
+    margin-right: auto;
+    width: 30em;
+}
+
+a {
+    text-decoration: none;
+    color: #fafafa;
+    /* No grey dotted border. */
+    outline: 0;
+}
+
+table {
+    border-spacing: 20px;
+}
+
+td {
+    resize: both;
+    overflow: auto;
+/*    width: 10em;
+    height: 0px;*/
+}
+
+td a {
+    padding: 1em;
+    width: 26em;
+    height: 1.5em;
+    border-radius: 12em;
+    display:block;
+    text-align: center;
+    -webkit-transition-duration: 0.4s;
+    transition-duration: 0.4s;
+}
+
+
+td a:hover {
+    background-color: #fafafa;
+    color: #040404;
+}
+
+

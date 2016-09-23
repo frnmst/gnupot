@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>GNUpot</title>
+    <description>A fully free, highly customizable and very efficient shell wrapper for git  and SSH, which imitates Dropbox.
+</description>
+    <link>http://127.0.0.1:4000/gnupot/</link>
+    <atom:link href="http://127.0.0.1:4000/gnupot/feed.xml" rel="self" type="application/rss+xml"/>
+    <pubDate>Fri, 23 Sep 2016 18:38:02 +0200</pubDate>
+    <lastBuildDate>Fri, 23 Sep 2016 18:38:02 +0200</lastBuildDate>
+    <generator>Jekyll v3.2.1</generator>
+    
+  </channel>
+</rss>
