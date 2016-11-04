@@ -105,13 +105,14 @@ genSSHKey()
 	fi
 	infoMsg "msgbox" "You will now be prompted for \
 "$gnupotServerUsername"'s password..."
-	ssh-copy-id -p "$gnupotServerPort" -i ""$gnupotSSHKeyPath".pub" \
+	ssh-copy-id -p "$gnupotServerPort" \
+-i ""$gnupotSSHKeyPath".pub" \
 "$gnupotServerUsername"@"$gnupotServer"
 
 	# Check if SSH works and if remote programs exist.
-	ssh -p "$gnupotServerPort" -o PasswordAuthentication=no \
--i "$gnupotSSHKeyPath" \
-"$gnupotServerUsername"@"$gnupotServer" "$REMOTECHKCMD" 1>&- 2>&-
+	ssh -l "$gnupotServerUsername" -p "$gnupotServerPort" \
+-o PasswordAuthentication=no -i "$gnupotSSHKeyPath" \
+"$gnupotServer" "$REMOTECHKCMD" 1>&- 2>&-
 
 	return "$?"
 }
@@ -122,9 +123,9 @@ testInfo()
 	{ ssh -p "$gnupotServerPort" \
 "$gnupotServerUsername"@"$gnupotServer" \
 -o PasswordAuthentication=no 2>&1 | grep denied &>/dev/null \
-&& ssh -p "$gnupotServerPort" -o PasswordAuthentication=no \
--i "$gnupotSSHKeyPath" \
-"$gnupotServerUsername"@"$gnupotServer" "$REMOTECHKCMD" 1>&- 2>&- \
+&& ssh -p "$gnupotServerPort" -l "$gnupotServerUsername" \
+-o PasswordAuthentication=no -i "$gnupotSSHKeyPath" \
+"$gnupotServer" "$REMOTECHKCMD" 1>&- 2>&- \
 || genSSHKey; } \
 || { infoMsg "msgbox" "SSH problem or git and/or \
 inotifywait missing on server. Please read the wiki at \
@@ -144,8 +145,8 @@ initConfigDir()
 # for deleting old history.
 initRepo()
 {
-	ssh -p "$gnupotServerPort" -i "$gnupotSSHKeyPath" \
-"$gnupotServerUsername"@"$gnupotServer" \
+	ssh -l "$gnupotServerUsername" -p "$gnupotServerPort" \
+-i "$gnupotSSHKeyPath" "$gnupotServer" \
 "if [ ! -d "$gnupotRemoteDir" ]; then mkdir -p "$gnupotRemoteDir" \
 && git -C "$gnupotRemoteDir" init --bare --shared \
 && git -C "$gnupotRemoteDir" config receive.denyNonFastForwards false; fi" \

@@ -24,7 +24,7 @@ And finally someone really interested in this project who is able to promote it.
  
 I also need **lots of feedback and critics** based on program testing.
 You can open issues directly here on GitHub and/or send an email. Please have a look at 
-[Contributing and contacts](https://github.com/frnmst/gnupot/wiki/B.-Contributing-and-contacts) 
+[Contributing and contacts](https://github.com/frnmst/gnupot/wiki/D.-Contributing-and-contacts) 
 wiki page.
 
 # License

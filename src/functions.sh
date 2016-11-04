@@ -99,34 +99,39 @@ iconPath=""$gnupotIconsDir"/gnupotWarning.png"
 
 printHelp()
 {
-	Err "\
-Usage: gnupot [ OPTION ]\n\
-A fully free, highly customizable and very efficient shell wrapper for\n\
-git and SSH, which imitates Dropbox.\n\n\
-Only none or one option is permitted.\n\
-\t-d\tStart GNUpot in debug mode.\n\
-\t-h\tHelp.\n\
-\t-k\tKill GNUpot.\n\
-\t-n\tNew GNUpot setup.\n\
-\t-p\tPrint configuration file.\n\
-\t-s\tPrint status.\n\
-\t-v\tShow program version.\n\n\
-If no option is given, GNUpot starts normally.\n\n\
-Configuration file is found in ~/.config/gnupot/gnupot.config.\n\n\
-Exit value:\n\
-\t0\tno error occurred,\n\
-\t1\tsome error occurred.\n\n\
-Report bugs to: franco.masotti@student.unife.it or \
-franco.masotti@live.com\n\
-Full documentation at: <https://github.com/frnmst/gnupot/wiki>\n\
-or available locally via: man man/gnupot.man\n\n\
-GNUpot  Copyright © 2015, 2016  frnmst (Franco Masotti)\n\
-This program comes with ABSOLUTELY NO WARRANTY; for details see \n\
-'LICENSE' file or <https://www.gnu.org/licenses/gpl-3.0.en.html> \n\
-This is free software, and you are welcome to redistribute it \n\
-under certain conditions; see 'LICENSE' file or \n\
-<https://www.gnu.org/licenses/gpl-3.0.en.html> for details.\n\
-"
+	cat<<-EOF
+Usage: gnupot [ OPTION ]
+A fully free, highly customizable and very efficient shell wrapper for
+git and SSH, which imitates Dropbox.n
+Only none or one option is permitted.
+    -d  Start GNUpot in debug mode.
+    -h  Help.
+    -k  Kill GNUpot.
+    -n  New GNUpot setup.
+    -p  Print configuration file.
+    -s  Print status.
+    -v  Show program version.
+
+If no option is given, GNUpot starts normally.
+Configuration file is found in ~/.config/gnupot/gnupot.config.
+
+Exit value:
+    0 no error occurred,
+    1 some error occurred.
+
+Report bugs to: franco.masotti@student.unife.it or
+franco.masotti@live.com
+
+Full documentation at: <https://github.com/frnmst/gnupot/wiki>
+or available locally via: man man/gnupot.man
+
+GNUpot  Copyright © 2015, 2016  frnmst (Franco Masotti)
+This program comes with ABSOLUTELY NO WARRANTY; for details see 
+'LICENSE' file or <https://www.gnu.org/licenses/gpl-3.0.en.html> 
+This is free software, and you are welcome to redistribute it 
+under certain conditions; see 'LICENSE' file or 
+<https://www.gnu.org/licenses/gpl-3.0.en.html> for details.
+EOF
 }
 
 setUpdateableGloblVars()
