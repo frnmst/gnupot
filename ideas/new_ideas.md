@@ -24,9 +24,52 @@
   as the parser. This seems to be the best bet**. Packages are available for 
   Trisquel and Parabola (and I guess for most free distros).
 
-  - Here is a possible extract of configuration file in JSON:
+  - Here is a possible extract of configuration file in JSON: (I don't know if 
+    bash variables get expanded, but this is the idea...):
 
-        TODO
+
+        {
+            "profile0": [
+                {
+                    "name": "default",
+                    "comment": "Default profile"
+                },
+                {
+                    "server": null,
+                    "serverPort": 22,
+                    "serverUsername": "gnupot",
+                    "remoteDir": "GNUpot",
+                    "localDir": "\"$HOME\"/GNUpot",
+                    "sshKeyPath": "\"$HOME\"/.config/gnupot/id_rsa_gnupot",
+                    "rSAKeyBits": 8192,
+                    "keepMaxCommits": 0,
+                    "inotifyFileExclude: "\.(git|swp|save)",
+                    "gitFileExclude="**/*.swp\n**/*.save*",
+                    "gitCommitterUsername": "whatever",
+                    "gitCommitterEmail": "whatever",
+                    "timeToWaitForOtherChanges": 5,
+                    "busyWaitTime": 60,
+                    "sSHServerAliveInterval": 30,
+                    "sSHServerAliveCountMax: 1,
+                    "sSHMasterSocketPath": "\"$HOME\"/.config/gnupot/SSHMasterSocket",
+                    "notificationTime: 2000,
+                    "lockFilePath: "/dev/shm/.gnupotLockFile",
+                    "downloadSpeed: 0,
+                    "uploadSpeed: 0,
+                    "iconsDir": "/opt/gnupot/icons"
+                }
+            ],
+            "profile1": [
+                {
+                    "name": "backup",
+                    "comment": "A second profile"
+                },
+                {
+                    ...
+                }
+            ]
+        }
+
 
   - A new version of the setup might be like the following:
 
