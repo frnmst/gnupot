@@ -24,6 +24,14 @@
   as the parser. This seems to be the best bet**. Packages are available for 
   Trisquel and Parabola (and I guess for most free distros).
 
+  - Here is a possible extract of configuration file in JSON:
+
+        TODO
+
+  - A new version of the setup might be like the following:
+
+    ![Setup idea](https://github.com/frnmst/gnupot/raw/gnu-std-compilant/ideas/new_setup_idea.jpg "Setup idea")
+
 - Use [GNU Parallel](https://www.gnu.org/software/parallel/) to handle
   multi-server and multi-directory situations (instead of for loops or
   similar)?
