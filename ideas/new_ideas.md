@@ -6,13 +6,23 @@
 
 - Fix command line options and all ouputs to conform to the GNU coding 
   standards.
+- Move all documentation to texinfo.
+- Use `gettext` for internationalization.
+
+
 - Use `getopt` in place of `getopts`.
 - Use outputs like in SINC.
 - Correct `form.sh` quotations.
 - Correct `printf "string\n"` to `print "%s\n" "string"`.
-- Move all documentation to texinfo.
+
 
 ### Other
+
+- Conflict file resolution policy must be decided by the user at configuration
+  time. Possible choices are:
+  - Merge.
+  - Keep a copy of both files.
+  - Any other policy you can think of.
 
 - Configuration can be saved in a json file which can then be parsed by `jq`, 
   `jshon` or similar. This avoids using the custom insufficient parser, and 
