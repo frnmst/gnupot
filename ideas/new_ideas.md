@@ -2,19 +2,21 @@
 
 ## Top priority
 
-### GNU coding standards
+### GNU coding standards and policies
 
 - Fix command line options and all ouputs to conform to the GNU coding 
   standards.
 - Move all documentation to texinfo.
 - Use `gettext` for internationalization.
+- Move repo to GitLab or any other full free CVS wesite
+  (Savannah, Notabug, etc...). Keep GitHub as mirror only.
 
+### Technical stuff to fix
 
 - Use `getopt` in place of `getopts`.
 - Use outputs like in SINC.
 - Correct `form.sh` quotations.
 - Correct `printf "string\n"` to `print "%s\n" "string"`.
-
 
 ### Other
 
@@ -101,8 +103,6 @@
 
 - Use `ssh -l username server` instead of `ssh username@server`. This is much
   more readable. Do it whenever possible.
-  
-
 
 ## Artwork
 
@@ -110,11 +110,10 @@
 
 ## Other
 
-- (Move the repo to Savannah and keep GitHub as a mirror)?
-
 - Get the best remaining concepts from SINC.
   - Is using fake closures a good idea?
 
-- 1 source file + 1 default config file.
+- (1 source file + 1 default config file) || (Lots of files based on their functions
+  which get built with a Makefile in a single file) ???
 
 
