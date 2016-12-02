@@ -80,10 +80,20 @@ gnupotDownloadSpeed gnupotUploadSpeed gnupotIconsDir"
 
 	# Control bash version to avoid IFS bug. bash <=4.2 has this bug. If
 	# bash is <=4.2 spaces must be avoided in form fields.
-	local bashVersion="${BASH_VERSINFO[0]}${BASH_VERSINFO[1]}"
-	[ "$bashVersion" -le 42 ] && options="$(echo $options | tr " " ";")" \
-&& IFS=";" read -r $FORMVARIABLES <<< "$options" \
-|| IFS=' ' read -r $FORMVARIABLES <<< $options
+    #
+    # Something causes failure in the setup in this point, again :(
+    #
+    # FIXME
+    #
+#	local bashVersion="${BASH_VERSINFO[0]}${BASH_VERSINFO[1]}"
+#	[ "$bashVersion" -le 42 ] && options="$(echo $options | tr " " ";")" \
+#&& IFS=";" read -r $FORMVARIABLES <<< "$options" \
+#|| IFS=' ' read -r $FORMVARIABLES <<< $options
+    #
+    # Temporary fix... Please don't use ';' in the form fields.
+    #
+	options="$(echo $options | tr " " ";")" \
+&& IFS=";" read -r $FORMVARIABLES <<< "$options"
 
 	return 0
 }
